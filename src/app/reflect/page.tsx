@@ -1002,7 +1002,8 @@ export default function ReflectPage() {
                     <span className="text-xs text-gray-500">Mode</span>
                     <select
                       value={userIntent}
-                      onChange={(e) => setUserIntent(e.target.value as UserIntent)}
+                      onChange={(e) => setUserIntent(e.target.value as UserIntent)
+                      disabled={isLoading || isSaving}}
                       className="text-xs border border-gray-200 bg-white/80 rounded-lg px-2 py-1 shadow-sm"
                     >
                       <option value="AUTO">AUTO</option>
