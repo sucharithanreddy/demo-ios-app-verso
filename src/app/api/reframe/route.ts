@@ -48,7 +48,7 @@ function normalizeForCompare(s: string): string {
 }
 
 // ============================================================================
-// FIX: Hard Block Exact Repetition (questions + reframes)
+// FIX: Hard Block Exact Repetition (questions + reframes + pattern notes)
 // ============================================================================
 
 function isDuplicateReframe(reframe: string, previousReframes: string[]): boolean {
@@ -59,6 +59,11 @@ function isDuplicateReframe(reframe: string, previousReframes: string[]): boolea
 function isDuplicateQuestion(question: string, previousQuestions: string[]): boolean {
   const cur = normalizeForCompare(question);
   return previousQuestions.map(normalizeForCompare).some(prev => prev === cur);
+}
+
+function isDuplicatePatternNote(note: string, previousNotes: string[]): boolean {
+  const cur = normalizeForCompare(note);
+  return previousNotes.map(normalizeForCompare).some(prev => prev === cur);
 }
 
 // ============================================================================
@@ -100,7 +105,7 @@ function detectRepeatedEffort(text: string): boolean {
     'every time', 'each time', 'repeatedly', 'keep failing',
     'tired of trying', 'sick of trying', 'gave up', 'given up',
     'nothing ever goes', 'nothing ever works', 'can never',
-    'doesn\'t matter what', 'does not matter what',
+    "doesn't matter what", 'does not matter what',
   ];
   return effortPatterns.some(p => s.includes(p));
 }
@@ -191,6 +196,18 @@ function choiceQuestion(): string {
   return 'Do you want comfort right now, or a tiny practical step?';
 }
 
+// ✅ Fix: detect actual choice question text + synonyms
+function isChoiceQuestionText(q: string): boolean {
+  const s = (q || '').toLowerCase();
+  if (!s) return false;
+  return (
+    s.includes('comfort right now') ||
+    s.includes('tiny practical step') ||
+    s.includes('comfort') && s.includes('practical') ||
+    s.includes('do you want') && s.includes('or')
+  );
+}
+
 function finalizeQuestion(
   question: string,
   effectiveLayer: EffectiveLayer,
@@ -207,24 +224,22 @@ function finalizeQuestion(
 
   // ✅ GROUNDING MODE: No choice questions, no deep exploration prompts
   if (groundingMode) {
-    // Return simple, present-tense, sensory questions only
-    if (!q || probe) {
-      return '';  // Silence is fine in grounding mode
-    }
+    if (!q || probe) return '';
     const one = q.split(/[.!?]\s/)[0]?.trim() || q;
-    // Block choice questions in grounding mode
-    if (one.toLowerCase().includes('explore') || 
-        one.toLowerCase().includes('grounding') ||
-        one.toLowerCase().includes('deeply')) {
+    if (
+      one.toLowerCase().includes('explore') ||
+      one.toLowerCase().includes('grounding') ||
+      one.toLowerCase().includes('deeply')
+    ) {
       return '';
     }
     return one.endsWith('?') ? one : `${one}?`;
   }
 
   // ✅ BLOCK: Don't ask choice question if last question was choice
-  const isChoiceQ = q.toLowerCase().includes('explore') && q.toLowerCase().includes('grounding');
+  const isChoiceQ = isChoiceQuestionText(q);
   if (lastQuestionType === 'choice' && isChoiceQ) {
-    return 'What comes up when you think about that?';
+    return 'What feels most intense about it right now?';
   }
 
   // Outside CORE_WOUND: keep the model question (trimmed to 1 sentence)
@@ -242,7 +257,6 @@ function finalizeQuestion(
     return flooded ? choiceQuestion() : '';
   }
 
-  // Model provided a valid gentle question - keep it (but short)
   const one = q.split(/[.!?]\s/)[0]?.trim() || q;
   const out = one.endsWith('?') ? one : `${one}?`;
 
@@ -255,9 +269,9 @@ function finalizeQuestion(
 // ============================================================================
 
 function normalizeThoughtPattern(p?: string): string {
-  if (!p) return 'All-or-nothing thinking';
+  if (!p) return '';
   const s = String(p).trim();
-  
+
   const normalizations: Record<string, string> = {
     'black-and-white': 'All-or-nothing thinking',
     'black and white': 'All-or-nothing thinking',
@@ -280,13 +294,46 @@ function normalizeThoughtPattern(p?: string): string {
     'core belief': 'Core Belief',
     'identity belief': 'Core Belief',
   };
-  
+
   const lower = s.toLowerCase();
   for (const [key, value] of Object.entries(normalizations)) {
     if (lower.includes(key)) return value;
   }
-  
+
   return s;
+}
+
+// ============================================================================
+// Smart fallback distortion inference (prevents "All-or-nothing" for facts)
+// ============================================================================
+
+function inferFallbackThoughtPattern(userText: string, effectiveLayer: EffectiveLayer): string {
+  if (effectiveLayer === 'CORE_WOUND') return 'Core Belief';
+
+  const t = (userText || '').toLowerCase();
+
+  // identity-style statements
+  if (/(i am|i'm)\s+(a\s+)?(failure|loser|mess|burden|worthless|broken|unlovable|undesirable)/i.test(userText)) {
+    return 'Labeling';
+  }
+
+  // rumination / looping
+  if (/(replay|loop|can'?t stop thinking|ruminat|over and over|again and again)/i.test(userText)) {
+    return 'Rumination';
+  }
+
+  // catastrophizing
+  if (/(ruin|disaster|everything will|i'?ll be fired|worst case|end of the world)/i.test(userText)) {
+    return 'Catastrophizing';
+  }
+
+  // true all-or-nothing markers (NOT just "can't")
+  if (/\b(always|never|everything|nothing|completely|totally|either|only)\b/i.test(userText)) {
+    return 'All-or-nothing thinking';
+  }
+
+  // default: no label (UI can hide it)
+  return '';
 }
 
 // ============================================================================
@@ -317,73 +364,65 @@ function sanitizeReframeAllLayers(
   effectiveLayer: EffectiveLayer
 ): string {
   const r = (reframe || '').trim();
-  
-  // ✅ PREMIUM FALLBACKS: Context-aware, not template-y
+
   const coreWound = (analysis.core_wound || '').toLowerCase();
   const underlyingFear = (analysis.underlying_fear || '').toLowerCase();
-  const isAbandonment = coreWound.includes('love') || coreWound.includes('alon') ||
-                        coreWound.includes('leave') || coreWound.includes('want') ||
-                        underlyingFear.includes('love') || underlyingFear.includes('alon');
-  const isFailure = coreWound.includes('fail') || coreWound.includes('enough') ||
-                    underlyingFear.includes('fail') || underlyingFear.includes('enough');
-  const isWorth = coreWound.includes('worth') || coreWound.includes('value') ||
-                  underlyingFear.includes('worth') || underlyingFear.includes('value');
+  const isAbandonment =
+    coreWound.includes('love') || coreWound.includes('alon') ||
+    coreWound.includes('leave') || coreWound.includes('want') ||
+    underlyingFear.includes('love') || underlyingFear.includes('alon');
+  const isFailure =
+    coreWound.includes('fail') || coreWound.includes('enough') ||
+    underlyingFear.includes('fail') || underlyingFear.includes('enough');
+  const isWorth =
+    coreWound.includes('worth') || coreWound.includes('value') ||
+    underlyingFear.includes('worth') || underlyingFear.includes('value');
 
   if (!r) {
-    // ✅ NO TEMPLATE LEAKAGE: Use varied, contextual fallbacks
     if (effectiveLayer === 'CORE_WOUND') {
       if (isAbandonment) {
-        return `That feeling of being unloved is real - but it doesn't mean you're unlovable. One moment (or person) doesn't get to write your whole story.`;
+        return `That feeling is real — but it doesn’t mean you’re unlovable. One moment doesn’t get to define you.`;
       }
       if (isFailure) {
-        return `Not meeting expectations doesn't make you a disappointment. It makes you human.`;
+        return `Not meeting expectations isn’t proof you’re a disappointment — it’s proof you’re human under pressure.`;
       }
-      return `A painful event can shake your confidence - but it still doesn't get to decide your worth.`;
+      return `A painful moment can shake your confidence — but it still doesn’t get to decide your worth.`;
     }
-    // Non-core wound fallbacks
-    if (isAbandonment) {
-      return `The fear of being alone is real - but it's speaking louder than the facts right now.`;
-    }
-    if (isFailure) {
-      return `That interpretation makes sense emotionally - but it's still an interpretation, not a verdict.`;
-    }
-    return `The feeling is real - but the conclusion might be harsher than the facts support.`;
+    if (isAbandonment) return `That fear is loud right now, but it isn’t the whole truth about you.`;
+    if (isFailure) return `This feels like a verdict, but it’s still a thought under stress — not a final fact.`;
+    return `The feeling is real — but the conclusion might be harsher than the facts support.`;
   }
 
   const cur = normalizeForCompare(r);
   const prev = previousReframes.map(normalizeForCompare);
 
-  // ✅ BLOCK: Never echo the raw interpretation in quotes
   const interpretationPattern = /trigger doesn't automatically mean|another possibility.*trigger/i;
   if (interpretationPattern.test(r)) {
     if (effectiveLayer === 'CORE_WOUND') {
-      return `It feels true right now - but feelings under pressure often exaggerate the story.`;
+      return `It feels true right now — but pressure can make the story feel bigger than it is.`;
     }
-    return `That interpretation makes sense emotionally - but it's still an interpretation, not a verdict.`;
+    return `It makes emotional sense, but it’s still an interpretation — not a verdict.`;
   }
 
-  // Block repeated "What if..." openings - use context-aware fallback
   const startsWhatIf = cur.startsWith('what if');
   const alreadyUsedWhatIf = prev.some(x => x.startsWith('what if'));
   if (startsWhatIf && alreadyUsedWhatIf) {
     if (isAbandonment || effectiveLayer === 'CORE_WOUND') {
-      return `That feeling of being unloved is real - but it doesn't mean you're unlovable. One moment (or person) doesn't get to write your whole story.`;
+      return `That fear is real — but it doesn’t mean you’re unlovable or alone forever.`;
     }
-    return `The feeling is real, but the conclusion might be harsher than the facts support.`;
+    return `The feeling is real, but the conclusion may be harsher than the facts.`;
   }
 
-  // Block repeated metaphor clusters
   const metaphorCluster = /(chapter|ending|just a story|black and white|spectrum|math problem|fixed point)/i;
   const prevHasCluster = prev.some(x => metaphorCluster.test(x));
   if (metaphorCluster.test(r) && prevHasCluster) {
-    return `Let's keep this simple: the feeling is real, but the label you're putting on yourself might be harsher than the facts.`;
+    return `Let’s keep this simple: the feeling is real, but the label you’re putting on yourself may be harsher than the facts.`;
   }
 
-  // CORE_WOUND specific
   if (effectiveLayer === 'CORE_WOUND') {
     const lower = r.toLowerCase();
     if (lower.includes('chapter') || lower.includes('ending') || lower.includes('just a story')) {
-      return `What happened matters - and it can hurt - but it still doesn't define who you are. A mistake or setback is information, not identity.`;
+      return `What happened matters — and it can hurt — but it still doesn’t define who you are.`;
     }
 
     const bannedPhrases = [
@@ -391,7 +430,7 @@ function sanitizeReframeAllLayers(
       'black and white photo', 'spectrum of experiences', 'math problem', 'fixed point on a scale',
     ];
     if (bannedPhrases.some(b => lower.includes(b))) {
-      return `This belief is your brain trying to protect you from getting hurt again - but it's not a verdict. You can be shaken and still be capable.`;
+      return `This belief is your brain trying to protect you from getting hurt again — but it isn’t a verdict on you.`;
     }
   }
 
@@ -429,10 +468,10 @@ function hydrateMemoryFromHistory(
   const recentAssistant = conversationHistory
     .filter(m => m.role === 'assistant')
     .slice(-10);
-    
+
   for (const msg of recentAssistant) {
     if (!msg.content) continue;
-    
+
     const parsedPrev = parseAIJSON(msg.content);
     if (!parsedPrev) continue;
 
@@ -492,7 +531,6 @@ function buildResponsePrompt(
 
   const triggerReminder = originalTrigger ? `\n\n🎯 ORIGINAL TRIGGER: "${originalTrigger}"` : '';
 
-  // ✅ GROUNDING MODE: Skip cognitive analysis, focus on comfort/sensory
   if (groundingMode) {
     return `You are a deeply emotionally intelligent FRIEND. The user asked for something grounding or comforting.
 
@@ -564,7 +602,7 @@ Return ONLY valid JSON:
 
 {
   "acknowledgment": "Specific, grounded, human. Avoid canned empathy. NO 'I hear you' or 'I understand' openers.",
-  "thoughtPattern": "CORE WOUND: Must be 'Core Belief'. Other layers: any pattern name.",
+  "thoughtPattern": "CORE WOUND: Must be 'Core Belief'. Other layers: any pattern name or empty string if none fits.",
   "patternNote": "Brief, conversational. CORE WOUND: one sentence max.",
   "reframe": "Fresh angle. CORE WOUND: core reflection, not 'story/chapter/ending'.",
   "question": "ONE question max. CORE WOUND may be empty string \"\".",
@@ -624,50 +662,57 @@ function ensureAllLayers(
 
   const snippet = userText.trim().slice(0, 90);
 
-  // ✅ ACKNOWLEDGMENT VARIETY: Don't overuse "that lands" - ALL include snippet for uniqueness
+  // ✅ ACKNOWLEDGMENT VARIETY (NO "I hear you")
   const acknowledgmentOptions = effectiveLayer === 'CORE_WOUND'
     ? [
-        `Ouch. "${snippet}" - that's a heavy thing to carry.`,
-        `"${snippet}" cuts deep. I'm sitting with you in that.`,
-        `That's a painful place to be - "${snippet}" - and you're naming it.`,
+        `Ouch. "${snippet}" — that’s heavy to carry.`,
+        `"${snippet}" cuts deep. I’m with you in it.`,
+        `That’s a painful place to be — "${snippet}" — and you’re naming it.`,
       ]
     : [
-        `Yeah... "${snippet}" - that lands.`,
-        `"${snippet}" - I hear you.`,
-        `Mmm. "${snippet}" - let's sit with that.`,
-        `"${snippet}" - thank you for sharing that.`,
+        `Yeah… "${snippet}" — that lands.`,
+        `"${snippet}" — thank you for saying it out loud.`,
+        `Mmm. "${snippet}" — let’s slow down with it.`,
+        `"${snippet}" — I’m here with you.`,
       ];
-  const fallbackAcknowledgment = acknowledgmentOptions[Math.floor(Math.random() * acknowledgmentOptions.length)];
+  const fallbackAcknowledgment =
+    acknowledgmentOptions[Math.floor(Math.random() * acknowledgmentOptions.length)];
 
-  // ✅ GROUNDING MODE: Simpler, non-cognitive language
-  const fallbackThoughtPattern = groundingMode 
-    ? ''  // No distortion labels in grounding mode
-    : effectiveLayer === 'CORE_WOUND' ? 'Core Belief' : 'All-or-nothing thinking';
-    
-  // ✅ PATTERN NOTE VARIETY: Detect exhaustion / repeated effort
   const isRepeatedEffort = detectRepeatedEffort(userText);
+
+  // ✅ PATTERN NOTE VARIETY + DEDUPE
   const patternNoteOptions = groundingMode
     ? ['']
     : effectiveLayer === 'CORE_WOUND'
       ? [
           `That belief shows up fast when the pressure hits.`,
-          `This is where the wound lives - underneath all the effort.`,
-          `There's a deep fear driving this.`,
+          `This is where the wound lives — underneath all the effort.`,
+          `There’s a deep fear driving this.`,
         ]
       : isRepeatedEffort
         ? [
-            `This sounds less like distortion and more like exhaustion.`,
-            `That's not just a thought pattern - that's fatigue talking.`,
-            `When effort keeps hitting walls, the mind looks for a reason. Even a harsh one.`,
-            `Repeated effort + no results = a brain searching for meaning. Even painful meaning.`,
+            `This sounds less like a distortion and more like exhaustion.`,
+            `That’s not just a thought pattern — that’s fatigue talking.`,
+            `When effort keeps hitting walls, the mind reaches for a harsh explanation.`,
+            `Repeated effort with no relief can make the mind turn on itself.`,
           ]
         : [
-            `Your brain is trying to protect you, but it might be working overtime.`,
-            `That's a common pattern when the stakes feel high.`,
-            `The mind jumps to conclusions when it feels unsafe.`,
-            `This kind of thinking tends to show up when we're most vulnerable.`,
+            `When the stakes feel high, the mind tries to “solve” it by predicting the worst.`,
+            `This kind of thinking tends to show up when we feel unsafe.`,
+            `Your brain is trying to protect you, but it may be working overtime.`,
+            `When you’re depleted, thoughts get more absolute.`,
           ];
-  const fallbackPatternNote = patternNoteOptions[Math.floor(Math.random() * patternNoteOptions.length)];
+
+  // Dedupe pattern notes against prior ones (we don't store them, so dedupe against previousQuestions/reframes too)
+  const priorNotesPool = [...previousQuestions, ...previousReframes];
+  let fallbackPatternNote = patternNoteOptions[Math.floor(Math.random() * patternNoteOptions.length)];
+  if (fallbackPatternNote && isDuplicatePatternNote(fallbackPatternNote, priorNotesPool)) {
+    const alt = patternNoteOptions.find(n => n && !isDuplicatePatternNote(n, priorNotesPool));
+    if (alt) fallbackPatternNote = alt;
+  }
+
+  // ✅ Better fallback pattern label: infer, not default AON
+  const inferredFallbackPattern = groundingMode ? '' : inferFallbackThoughtPattern(userText, effectiveLayer);
 
   // ✅ NO TEMPLATE LEAKAGE: Context-aware reframe fallbacks
   const coreWound = (analysis.core_wound || '').toLowerCase();
@@ -677,27 +722,27 @@ function ensureAllLayers(
   const isFailure = coreWound.includes('fail') || coreWound.includes('enough') ||
                     underlyingFear.includes('fail') || underlyingFear.includes('enough');
 
-  // ✅ REFRACT VARIETY: Different angles for different emotional states
   const fallbackReframeOptions = effectiveLayer === 'CORE_WOUND'
     ? isAbandonment
-      ? [`That feeling of being unloved is real - but it doesn't mean you're unlovable.`]
+      ? [`That fear is real — but it doesn’t mean you’re unlovable.`]
       : isFailure
-        ? [`Not meeting expectations doesn't make you a disappointment. It makes you human.`]
+        ? [`Not meeting expectations isn’t proof you’re a disappointment — it’s pressure talking.`]
         : [
-            `A painful moment can shake your confidence - but it still doesn't get to decide your worth.`,
-            `It feels true right now - but feelings under pressure often exaggerate the story.`,
+            `A painful moment can shake your confidence — but it still doesn’t get to decide your worth.`,
+            `It feels true right now — but pressure can make the story feel bigger than it is.`,
           ]
     : isRepeatedEffort
       ? [
-          `Effort without results doesn't mean no effort was worth anything. Timing and luck are real factors.`,
-          `You've been carrying a lot. Maybe the issue isn't you - maybe it's a system that hasn't caught up yet.`,
-          `Sometimes the right door hasn't opened yet. That doesn't mean you're knocking wrong.`,
-          `The outcome isn't here yet. That's not the same as impossible.`,
+          `Effort without results doesn’t erase the effort. Sometimes timing and constraints are real.`,
+          `You’ve been carrying a lot. The harsh conclusion isn’t the only explanation.`,
+          `The outcome isn’t here yet. That’s not the same as “never.”`,
+          `This might be uncertainty — not proof you’re failing.`,
         ]
       : [
-          `The feeling is real - but the conclusion might be harsher than the facts support.`,
-          `That interpretation makes sense emotionally - but it's still an interpretation, not a verdict.`,
+          `The feeling is real — but the conclusion might be harsher than the facts support.`,
+          `It makes emotional sense, but it’s still an interpretation — not a verdict.`,
         ];
+
   const fallbackReframe = groundingMode
     ? `Sometimes a small moment of comfort is exactly what you need.`
     : fallbackReframeOptions[Math.floor(Math.random() * fallbackReframeOptions.length)];
@@ -706,37 +751,30 @@ function ensureAllLayers(
   const fallbackQuestionOptions = groundingMode
     ? ['']
     : effectiveLayer === 'CORE_WOUND'
-      ? ['']  // Silence in core wound
+      ? ['']
       : [
-          `What part of this feels most personal - what happened, or what it *seems to say* about you?`,
-          `What's the hardest part to sit with right now?`,
-          `What does this bring up for you?`,
-          `Where does this hit you the hardest?`,
+          `What part of this feels most personal — what happened, or what it seems to say about you?`,
+          `What’s the hardest part to sit with right now?`,
           `What feels heaviest about this?`,
-          `What's the story you're telling yourself about this?`,
+          `What’s the story your mind keeps replaying?`,
           `What would you want someone to understand about how this feels?`,
         ];
-  
-  // ✅ CORRECT LOGIC: Filter first, then pick random from available
+
   const availableQuestions = fallbackQuestionOptions.filter(q => !isDuplicateQuestion(q, previousQuestions));
-  const fallbackQuestion = availableQuestions.length > 0 
+  const fallbackQuestion = availableQuestions.length > 0
     ? availableQuestions[Math.floor(Math.random() * availableQuestions.length)]
-    : '';  // Silence if all questions used
+    : '';
 
   const fallbackEncouragementOptions = effectiveLayer === 'CORE_WOUND'
     ? [
-        `Even saying this out loud is you refusing to drown alone in it.`,
-        `You're still here, still engaging. That matters.`,
-        `Naming this is its own kind of courage.`,
+        `Even naming this is you refusing to drown alone in it.`,
+        `You’re still here and still engaging — that matters.`,
         `Being honest about this takes real strength.`,
       ]
     : [
-        `The fact that you can name this at all means you're not avoiding it.`,
-        `You're engaging with this. That takes real effort.`,
-        `Staying curious about this is its own form of strength.`,
-        `It matters that you're showing up for yourself here.`,
-        `Just talking about this is a step.`,
-        `Being with this feeling instead of running from it - that's something.`,
+        `You’re engaging with this. That takes real effort.`,
+        `It matters that you’re showing up for yourself here.`,
+        `Just talking about it is a step.`,
       ];
   const fallbackEncouragement = groundingMode
     ? `Taking care of yourself is valid.`
@@ -746,40 +784,45 @@ function ensureAllLayers(
     ? parsed.acknowledgment
     : fallbackAcknowledgment;
 
-  // ✅ DISTORTION STABILITY: Reuse previous distortion if emotional content is similar
+  // ✅ DISTORTION STABILITY (narrowed so "can't" doesn't force AON)
   let thoughtPattern: string;
-  const rawPattern = normalizeThoughtPattern((parsed.thoughtPattern as string) || (parsed.distortionType as string)) || fallbackThoughtPattern;
+  const rawPatternCandidate =
+    normalizeThoughtPattern((parsed.thoughtPattern as string) || (parsed.distortionType as string)) ||
+    inferredFallbackPattern;
 
   if (groundingMode) {
-    thoughtPattern = '';  // No distortion labels in grounding mode
+    thoughtPattern = '';
   } else if (effectiveLayer === 'CORE_WOUND') {
     thoughtPattern = frozenThoughtPattern ? normalizeThoughtPattern(frozenThoughtPattern) : 'Core Belief';
   } else {
-    // ✅ STABILITY: If we have a previous distortion and it's not a big shift, keep it
     if (previousDistortion && previousDistortion !== 'Core Belief') {
-      const previousIsSimilar = 
-        (previousDistortion === 'Labeling' && /i am|i'm|i feel like i'm/i.test(userText)) ||
-        (previousDistortion === 'Catastrophizing' && /never|always|worst|end/i.test(userText)) ||
-        (previousDistortion === 'All-or-nothing thinking' && /can't|don't|not enough/i.test(userText));
-      
+      const previousIsSimilar =
+        (previousDistortion === 'Labeling' && /(i am|i'm|i feel like i'm)/i.test(userText)) ||
+        (previousDistortion === 'Catastrophizing' && /\b(worst|ruin|disaster|end|fired)\b/i.test(userText)) ||
+        (previousDistortion === 'All-or-nothing thinking' && /\b(always|never|everything|nothing|either|only|completely|totally)\b/i.test(userText));
+
       if (previousIsSimilar) {
         thoughtPattern = previousDistortion;
       } else {
         thoughtPattern = frozenThoughtPattern
           ? normalizeThoughtPattern(frozenThoughtPattern)
-          : coerceThoughtPatternByLayer(rawPattern, effectiveLayer);
+          : coerceThoughtPatternByLayer(rawPatternCandidate, effectiveLayer);
         thoughtPattern = adjustDistortionForIdentityStatement(userText, effectiveLayer, thoughtPattern);
       }
     } else {
       thoughtPattern = frozenThoughtPattern
         ? normalizeThoughtPattern(frozenThoughtPattern)
-        : coerceThoughtPatternByLayer(rawPattern, effectiveLayer);
+        : coerceThoughtPatternByLayer(rawPatternCandidate, effectiveLayer);
       thoughtPattern = adjustDistortionForIdentityStatement(userText, effectiveLayer, thoughtPattern);
     }
   }
 
   // Pattern-note compacting
-  let patternNote = (parsed.patternNote as string) || (parsed.distortionExplanation as string) || fallbackPatternNote;
+  let patternNote =
+    (parsed.patternNote as string) ||
+    (parsed.distortionExplanation as string) ||
+    fallbackPatternNote;
+
   if (!groundingMode) {
     patternNote = effectiveLayer === 'CORE_WOUND'
       ? compactOneSentence(patternNote) || fallbackPatternNote
@@ -790,9 +833,21 @@ function ensureAllLayers(
   let reframe = (parsed.reframe as string) || fallbackReframe;
   reframe = sanitizeReframeAllLayers(reframe, previousReframes, analysis, effectiveLayer);
 
-  // Hard block exact reframe repetition
+  // ✅ Hard block exact reframe repetition + rotate fallback (no infinite loop phrase)
   if (isDuplicateReframe(reframe, previousReframes)) {
-    reframe = `Let's slow this down. The feeling is intense - but intensity doesn't equal truth.`;
+    const dupeBreakers = groundingMode
+      ? [
+          `Let’s take one small breath here.`,
+          `For a second, let’s just come back to this moment.`,
+          `You don’t have to solve everything right now.`,
+        ]
+      : [
+          `Let’s slow it down for a second — pressure makes everything feel final.`,
+          `The feeling is intense, but it doesn’t have to decide the outcome.`,
+          `This is a lot to carry on low sleep — it makes sense it feels huge.`,
+        ];
+    const available = dupeBreakers.filter(x => !isDuplicateReframe(x, previousReframes));
+    reframe = (available[0] || dupeBreakers[0]);
   }
 
   // Question handling
@@ -906,7 +961,6 @@ export async function POST(request: NextRequest) {
       /i will never (be|find|get|have|become|amount)/i,
       /i'?ll never (be|find|get|have|become|amount)/i,
       /nothing i (do|try) (matters|works|is enough|ever)/i,
-      // Abandonment patterns
       /no one('s| is| will| would| can| going to| gonna) (love|want|care|stay|be there)/i,
       /no-?one('s| is| will| would| can| going to| gonna) (love|want|care|stay|be there)/i,
       /nobody('s| is| will| would| can| going to| gonna) (love|want|care|stay|be there)/i,
@@ -944,30 +998,40 @@ export async function POST(request: NextRequest) {
     const previousReframes: string[] = [...(sessionContext?.previousReframes ?? [])];
     hydrateMemoryFromHistory(conversationHistory, previousQuestions, previousReframes);
 
-    const originalTrigger = sessionContext?.originalTrigger ?? conversationHistory.find(m => m.role === 'user')?.content ?? '';
+    const originalTrigger =
+      sessionContext?.originalTrigger ??
+      conversationHistory.find(m => m.role === 'user')?.content ??
+      '';
+
     const coreBeliefJustDetected = userRevealedCoreBelief && !sessionContext?.coreBeliefAlreadyDetected;
 
-    // ✅ GROUNDING MODE: Detect if user chose grounding
     const { groundingMode, groundingTurns } = isInGroundingMode(sessionContext, sanitizedMessage);
 
-    // ✅ DISTORTION STABILITY: Get previous distortion for stability check
     const previousDistortion = sessionContext?.previousDistortions?.[0];
 
-    // ✅ LAST QUESTION TYPE: Detect if last question was a choice question
+    // ✅ Fix: lastQuestionType detects actual choice prompt too
     const lastQuestion = sessionContext?.previousQuestions?.[0] || '';
-    const lastQuestionType: 'choice' | 'open' | '' = 
-      lastQuestion.toLowerCase().includes('explore') && lastQuestion.toLowerCase().includes('grounding')
-        ? 'choice'
-        : lastQuestion
-          ? 'open'
-          : '';
+    const lastQuestionType: 'choice' | 'open' | '' =
+      isChoiceQuestionText(lastQuestion) ? 'choice' : lastQuestion ? 'open' : '';
 
     const frozenThoughtPattern = effectiveLayer === 'CORE_WOUND'
       ? normalizeThoughtPattern(sessionContext?.previousDistortions?.[0] ?? 'Core Belief')
       : undefined;
 
     const responseMessages: AIMessage[] = [
-      { role: 'system', content: buildResponsePrompt(analysis, previousQuestions, previousReframes, originalTrigger, turnCount, userRevealedCoreBelief, coreBeliefJustDetected, groundingMode) },
+      {
+        role: 'system',
+        content: buildResponsePrompt(
+          analysis,
+          previousQuestions,
+          previousReframes,
+          originalTrigger,
+          turnCount,
+          userRevealedCoreBelief,
+          coreBeliefJustDetected,
+          groundingMode
+        ),
+      },
     ];
 
     if (conversationHistory.length > 0) {
@@ -982,8 +1046,16 @@ export async function POST(request: NextRequest) {
 
     if (!responseResult?.content) {
       const fallbackResponse = ensureAllLayers(
-        {}, analysis, effectiveLayer, sanitizedMessage, previousReframes, previousQuestions, 
-        frozenThoughtPattern, previousDistortion, groundingMode, lastQuestionType
+        {},
+        analysis,
+        effectiveLayer,
+        sanitizedMessage,
+        previousReframes,
+        previousQuestions,
+        frozenThoughtPattern,
+        previousDistortion,
+        groundingMode,
+        lastQuestionType
       );
       const effectiveTurnForProgress = userRevealedCoreBelief ? Math.max(turnCount, 7) : turnCount;
       return NextResponse.json({
@@ -1003,8 +1075,16 @@ export async function POST(request: NextRequest) {
 
     const parsed = parseAIJSON(responseResult.content);
     const completeResponse = ensureAllLayers(
-      parsed || {}, analysis, effectiveLayer, sanitizedMessage, previousReframes, previousQuestions,
-      frozenThoughtPattern, previousDistortion, groundingMode, lastQuestionType
+      parsed || {},
+      analysis,
+      effectiveLayer,
+      sanitizedMessage,
+      previousReframes,
+      previousQuestions,
+      frozenThoughtPattern,
+      previousDistortion,
+      groundingMode,
+      lastQuestionType
     );
 
     const effectiveTurnForProgress = userRevealedCoreBelief ? Math.max(turnCount, 7) : turnCount;
