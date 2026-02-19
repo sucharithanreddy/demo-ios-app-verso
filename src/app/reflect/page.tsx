@@ -268,6 +268,7 @@ export default function ReflectPage() {
         groundingMode,
         groundingTurns,
         lastQuestionType,
+        userIntent,
       };
 
       const response = await fetch('/api/reframe', {
@@ -499,6 +500,7 @@ export default function ReflectPage() {
         groundingMode,
         groundingTurns,
         lastQuestionType,
+        userIntent,
       };
 
       const response = await fetch('/api/reframe', {
@@ -992,17 +994,35 @@ export default function ReflectPage() {
             )}
 
             {/* Input Area */}
-            <div className="mt-4">
-              <ThoughtInput
-                onSubmit={handleSubmit}
-                isLoading={isLoading || isSaving}
-                placeholder={
-                  messages.length === 0
-                    ? "What's on your mind? Share a thought that's been troubling you..."
-                    : 'Continue your reflection...'
-                }
-              />
-            </div>
+                <div className="mt-4 space-y-2">
+                  {/* Reflect-only Intent Selector */}
+                  <div className="flex items-center justify-end gap-2">
+                    <span className="text-xs text-gray-500">Mode</span>
+                    <select
+                      value={userIntent}
+                      onChange={(e) => setUserIntent(e.target.value as UserIntent)}
+                      className="text-xs border border-gray-200 bg-white/80 rounded-lg px-2 py-1 shadow-sm"
+                    >
+                      <option value="AUTO">AUTO</option>
+                      <option value="CALM">CALM</option>
+                      <option value="CLARITY">CLARITY</option>
+                      <option value="NEXT_STEP">NEXT_STEP</option>
+                      <option value="MEANING">MEANING</option>
+                      <option value="LISTEN">LISTEN</option>
+                    </select>
+                  </div>
+                
+                  <ThoughtInput
+                    onSubmit={handleSubmit}
+                    isLoading={isLoading || isSaving}
+                    placeholder={
+                      messages.length === 0
+                        ? "What's on your mind? Share a thought that's been troubling you..."
+                        : 'Continue your reflection...'
+                    }
+                  />
+                </div>
+
 
             {/* Export Button */}
             {sessionStarted && messages.length > 0 && (
