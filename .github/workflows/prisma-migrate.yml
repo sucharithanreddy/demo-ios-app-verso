@@ -1,10 +1,15 @@
-name: Prisma Migrate (Neon)
+name: Prisma Generate Migration (Neon)
 
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      name:
+        description: "Migration name (e.g. add_structured_engine_fields)"
+        required: true
+        default: "add_structured_engine_fields"
 
 jobs:
-  migrate:
+  gen_migration:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -19,17 +24,28 @@ jobs:
       - name: Prisma generate
         run: npx prisma generate
 
-      # Creates migration files in the repo (does NOT require local DB)
-      - name: Create migration (create-only)
+      - name: Create migration SQL from diff
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          DIRECT_DATABASE_URL: ${{ secrets.DIRECT_DATABASE_URL }}
-        run: npx prisma migrate dev --name add_structured_engine_fields --create-only
+          DATABASE_URL: ${{ secrets.DIRECT_DATABASE_URL }}
+        run: |
+          MIG_NAME="${{ github.event.inputs.name }}"
+          TS=$(date +%Y%m%d%H%M%S)
+          DIR="prisma/migrations/${TS}_${MIG_NAME}"
+          mkdir -p "$DIR"
+
+          npx prisma migrate diff \
+            --from-url "$DATABASE_URL" \
+            --to-schema-datamodel prisma/schema.prisma \
+            --script > "$DIR/migration.sql"
+
+          # Safety: show what we generated
+          echo "---- migration.sql ----"
+          cat "$DIR/migration.sql"
 
       - name: Commit migration files
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           git add prisma/migrations prisma/schema.prisma
-          git commit -m "Add structured engine fields"
+          git commit -m "Migration: ${{ github.event.inputs.name }}"
           git push
