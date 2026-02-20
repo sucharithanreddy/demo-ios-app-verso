@@ -11,6 +11,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: prisma-migrate
+  cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -27,8 +31,14 @@ jobs:
       - name: Prisma generate
         run: npx prisma generate
 
-      - name: Resolve failed migration
+      - name: Resolve failed migration (if any)
         env:
-            DATABASE_URL: ${{ secrets.DIRECT_DATABASE_URL }}
-            DIRECT_DATABASE_URL: ${{ secrets.DIRECT_DATABASE_URL }}
-        run: npx prisma migrate resolve --rolled-back 20260220134851_add_structured_engine_fields
+          DATABASE_URL: ${{ secrets.DIRECT_DATABASE_URL }}
+          DIRECT_DATABASE_URL: ${{ secrets.DIRECT_DATABASE_URL }}
+        run: npx prisma migrate resolve --rolled-back 20260220134851_add_structured_engine_fields || true
+
+      - name: Deploy migrations
+        env:
+          DATABASE_URL: ${{ secrets.DIRECT_DATABASE_URL }}
+          DIRECT_DATABASE_URL: ${{ secrets.DIRECT_DATABASE_URL }}
+        run: npx prisma migrate deploy
