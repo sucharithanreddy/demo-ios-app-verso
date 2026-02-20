@@ -31,7 +31,11 @@ interface ReframeResponse {
   emotion?: string;
   coreBelief?: string;
   question?: string;
+
   // Legacy fields (kept for backward compatibility)
+  thoughtPattern?: string;
+  patternNote?: string;
+
   distortionType?: string;
   distortionExplanation?: string;
   reframe?: string;
@@ -47,6 +51,11 @@ interface ReframeResponse {
     coreBelief: number;
   };
   progressNote?: string;
+
+  groundingMode?: boolean;
+  groundingTurns?: number;
+
+  _meta?: Record<string, unknown>;
 }
 
 interface SessionData {
@@ -60,14 +69,69 @@ interface SessionData {
   messages: Message[];
 }
 
+// ------------------------------
+// Helpers: parse assistant JSON content saved in DB
+// ------------------------------
+function safeParseJSON(maybeJson: unknown): any | null {
+  if (typeof maybeJson !== 'string') return null;
+  try {
+    return JSON.parse(maybeJson);
+  } catch {
+    return null;
+  }
+}
+
+function normalizeLoadedMessages(raw: Message[]): Message[] {
+  return raw.map((m) => {
+    if (m.role !== 'assistant') return m;
+
+    const parsed = safeParseJSON(m.content);
+    if (!parsed || typeof parsed !== 'object') return m;
+
+    const acknowledgment = (parsed.acknowledgment ?? parsed.content ?? m.content ?? '').toString();
+
+    return {
+      ...m,
+      // ✅ show human text in UI
+      content: acknowledgment,
+
+      // ✅ hydrate structured fields
+      question: ((parsed.question ?? parsed.probingQuestion ?? m.question ?? m.probingQuestion ?? '') as string).trim(),
+      thoughtPattern: (parsed.thoughtPattern ?? parsed.distortionType ?? m.thoughtPattern ?? m.distortionType) as any,
+      patternNote: (parsed.patternNote ?? parsed.distortionExplanation ?? m.patternNote ?? m.distortionExplanation) as any,
+      reframe: ((parsed.reframe ?? m.reframe ?? '') as string).trim(),
+      encouragement: ((parsed.encouragement ?? m.encouragement ?? '') as string).trim(),
+      icebergLayer: (parsed.icebergLayer ?? m.icebergLayer) as any,
+      layerInsight: (parsed.layerInsight ?? m.layerInsight) as any,
+
+      // back-compat
+      distortionType: (parsed.distortionType ?? m.distortionType) as any,
+      distortionExplanation: (parsed.distortionExplanation ?? m.distortionExplanation) as any,
+      probingQuestion: (parsed.probingQuestion ?? m.probingQuestion) as any,
+    } as Message;
+  });
+}
+
+function assistantHistoryContent(m: Message) {
+  // ✅ Ensure assistant history content is JSON parseable (reframe/route.ts hydrates memory from JSON)
+  return JSON.stringify({
+    acknowledgment: (m.content || '').trim(),
+    thoughtPattern: (m.thoughtPattern || m.distortionType || '').toString().trim(),
+    patternNote: (m.patternNote || m.distortionExplanation || '').toString().trim(),
+    reframe: (m.reframe || '').toString().trim(),
+    question: (m.question || m.probingQuestion || '').toString().trim(),
+    encouragement: (m.encouragement || '').toString().trim(),
+    icebergLayer: (m.icebergLayer || '').toString(),
+    layerInsight: (m.layerInsight || '').toString(),
+  });
+}
+
 export default function ReflectPage() {
   const { isSignedIn, isLoaded } = useUser();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [currentLayer, setCurrentLayer] = useState<IcebergLayer>('surface');
-  const [discoveredInsights, setDiscoveredInsights] = useState<
-    Record<IcebergLayer, string | null>
-  >({
+  const [discoveredInsights, setDiscoveredInsights] = useState<Record<IcebergLayer, string | null>>({
     surface: null,
     trigger: null,
     emotion: null,
@@ -93,10 +157,12 @@ export default function ReflectPage() {
   const [groundingTurns, setGroundingTurns] = useState(0);
   const [userIntent, setUserIntent] = useState<UserIntent>('AUTO');
   const [lastQuestionType, setLastQuestionType] = useState<'choice' | 'open' | ''>('');
+  const [coreBeliefAlreadyDetected, setCoreBeliefAlreadyDetected] = useState(false);
+
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  
+
   // ✅ Hard guard refs: prevent double-submit + abort stale requests
   const inFlightRef = useRef(false);
   const abortRef = useRef<AbortController | null>(null);
@@ -116,13 +182,19 @@ export default function ReflectPage() {
     if (currentLayer === 'coreBelief' && discoveredInsights.coreBelief && currentSessionId) {
       updateSessionComplete();
     }
-  }, [currentLayer, discoveredInsights.coreBelief]);
+  }, [currentLayer, discoveredInsights.coreBelief, currentSessionId]);
 
   const loadSessions = async () => {
     try {
       const res = await fetch('/api/sessions');
       const data = await res.json();
-      setSessions(data.sessions || []);
+
+      const normalized: SessionData[] = (data.sessions || []).map((s: any) => ({
+        ...s,
+        messages: normalizeLoadedMessages(s.messages || []),
+      }));
+
+      setSessions(normalized);
     } catch (error) {
       console.error('Error loading sessions:', error);
     }
@@ -166,6 +238,13 @@ export default function ReflectPage() {
           currentLayer: 'coreBelief',
           coreBelief: discoveredInsights.coreBelief,
           isCompleted: true,
+          // ✅ session-state memory
+          coreBeliefAlreadyDetected: true,
+          lastQuestionType,
+          groundingMode,
+          groundingTurns,
+          lastIntentUsed: userIntent,
+          lastUpdatedAt: new Date().toISOString(),
         }),
       });
     } catch (error) {
@@ -218,22 +297,10 @@ export default function ReflectPage() {
     setIsLoading(true);
 
     try {
-      // ✅ Build conversationHistory from nextMessages (not stale `messages`)
+      // ✅ Build conversationHistory from nextMessages (assistant content MUST be JSON)
       const conversationHistory = nextMessages.map((m) => ({
         role: m.role,
-        content:
-          m.role === 'user'
-            ? m.content
-            : [
-                m.content,
-                (m.thoughtPattern || m.distortionType) ? `Pattern: ${m.thoughtPattern || m.distortionType}` : '',
-                (m.patternNote || m.distortionExplanation) ? `Note: ${m.patternNote || m.distortionExplanation}` : '',
-                m.reframe ? `Reframe: ${m.reframe}` : '',
-                (m.question || m.probingQuestion) ? `Question: ${m.question || m.probingQuestion}` : '',
-                m.encouragement ? `Encouragement: ${m.encouragement}` : '',
-              ]
-                .filter(Boolean)
-                .join('\n'),
+        content: m.role === 'user' ? m.content : assistantHistoryContent(m),
       }));
 
       const previousTopics = sessions
@@ -246,7 +313,7 @@ export default function ReflectPage() {
         .flatMap((s) => (s.messages?.map((m) => m.distortionType).filter(Boolean) as string[]) || [])
         .filter(Boolean);
 
-      // ✅ Pull previous questions/reframes from nextMessages (not stale `messages`)
+      // ✅ Pull previous questions/reframes/ack/enc from nextMessages
       const previousQuestions = nextMessages
         .filter((m) => m.role === 'assistant')
         .map((m) => (m.question || m.probingQuestion || '').trim())
@@ -256,12 +323,12 @@ export default function ReflectPage() {
         .filter((m) => m.role === 'assistant')
         .map((m) => (m.reframe || '').trim())
         .filter(Boolean) as string[];
-      
+
       const previousAcknowledgments = nextMessages
         .filter((m) => m.role === 'assistant')
         .map((m) => (m.content || '').trim())
         .filter(Boolean) as string[];
-      
+
       const previousEncouragements = nextMessages
         .filter((m) => m.role === 'assistant')
         .map((m) => (m.encouragement || '').trim())
@@ -282,6 +349,8 @@ export default function ReflectPage() {
         groundingTurns,
         lastQuestionType,
         userIntent,
+        // ✅ NEW
+        coreBeliefAlreadyDetected,
       };
 
       const response = await fetch('/api/reframe', {
@@ -310,13 +379,18 @@ export default function ReflectPage() {
       // ✅ If another request started after this one, don't append anything
       if (requestSeqRef.current !== reqId) return;
 
+      // ✅ If core belief detected, latch flag
+      if ((data as any)?._meta?.coreBeliefDetected === true) {
+        setCoreBeliefAlreadyDetected(true);
+      }
+
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
         content: data.acknowledgment || 'Thank you for sharing.',
         question: (data.question || data.probingQuestion || '').trim(),
-        thoughtPattern: data.thoughtPattern || data.distortionType,
-        patternNote: data.patternNote || data.distortionExplanation,
+        thoughtPattern: (data.thoughtPattern || data.distortionType) as any,
+        patternNote: (data.patternNote || data.distortionExplanation) as any,
         reframe: (data.reframe || '').trim(),
         encouragement: (data.encouragement || '').trim(),
         icebergLayer: data.icebergLayer,
@@ -334,16 +408,33 @@ export default function ReflectPage() {
         setGroundingTurns(data.groundingTurns || 0);
       }
 
-      // ✅ Track last question type
+      // ✅ Track last question type (use existing heuristic)
       const currentQ = (data.question || data.probingQuestion || '').trim();
       if (currentQ) {
-        const isChoiceQ = currentQ.toLowerCase().includes('explore') && currentQ.toLowerCase().includes('grounding');
+        const isChoiceQ =
+          currentQ.toLowerCase().includes('explore') && currentQ.toLowerCase().includes('grounding');
         setLastQuestionType(isChoiceQ ? 'choice' : 'open');
       }
 
       if (isSignedIn && currentSessionId) {
         await saveMessage(userMessage);
         await saveMessage(assistantMessage);
+
+        // ✅ persist session engine state every turn (cheap + keeps engine “product-grade”)
+        await fetch(`/api/sessions/${currentSessionId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            currentLayer: data.icebergLayer || 'surface',
+            coreBelief: (data.icebergLayer === 'coreBelief' ? data.layerInsight : undefined) ?? undefined,
+            coreBeliefAlreadyDetected: coreBeliefAlreadyDetected || (data as any)?._meta?.coreBeliefDetected === true,
+            lastQuestionType: currentQ ? (currentQ.toLowerCase().includes('explore') && currentQ.toLowerCase().includes('grounding') ? 'choice' : 'open') : lastQuestionType,
+            groundingMode: typeof data.groundingMode === 'boolean' ? data.groundingMode : groundingMode,
+            groundingTurns: typeof data.groundingTurns === 'number' ? data.groundingTurns : groundingTurns,
+            lastIntentUsed: userIntent,
+            lastUpdatedAt: new Date().toISOString(),
+          }),
+        });
       }
 
       setCurrentLayer(data.icebergLayer || 'surface');
@@ -403,6 +494,7 @@ export default function ReflectPage() {
     setGroundingMode(false);
     setGroundingTurns(0);
     setLastQuestionType('');
+    setCoreBeliefAlreadyDetected(false);
     setEditingMessageId(null);
     setEditContent('');
     if (isSignedIn) {
@@ -429,7 +521,7 @@ export default function ReflectPage() {
     const newContent = editContent.trim();
 
     // Find the message index
-    const messageIndex = messages.findIndex(m => m.id === editingMessageId);
+    const messageIndex = messages.findIndex((m) => m.id === editingMessageId);
     if (messageIndex === -1) return;
 
     // Cancel any in-flight request
@@ -446,7 +538,7 @@ export default function ReflectPage() {
     });
 
     // Remove the assistant response that followed the edited user message
-    const userMessageIndex = truncatedMessages.findIndex(m => m.id === editingMessageId);
+    const userMessageIndex = truncatedMessages.findIndex((m) => m.id === editingMessageId);
     const messagesAfterEdit = truncatedMessages.slice(0, userMessageIndex + 1);
 
     // Clear edit state
@@ -464,22 +556,10 @@ export default function ReflectPage() {
     inFlightRef.current = true;
 
     try {
-      // Build conversation history from truncated messages
+      // ✅ Build conversationHistory (assistant content MUST be JSON)
       const conversationHistory = messagesAfterEdit.map((m) => ({
         role: m.role,
-        content:
-          m.role === 'user'
-            ? m.content
-            : [
-                m.content,
-                (m.thoughtPattern || m.distortionType) ? `Pattern: ${m.thoughtPattern || m.distortionType}` : '',
-                (m.patternNote || m.distortionExplanation) ? `Note: ${m.patternNote || m.distortionExplanation}` : '',
-                m.reframe ? `Reframe: ${m.reframe}` : '',
-                (m.question || m.probingQuestion) ? `Question: ${m.question || m.probingQuestion}` : '',
-                m.encouragement ? `Encouragement: ${m.encouragement}` : '',
-              ]
-                .filter(Boolean)
-                .join('\n'),
+        content: m.role === 'user' ? m.content : assistantHistoryContent(m),
       }));
 
       const previousTopics = sessions
@@ -501,17 +581,16 @@ export default function ReflectPage() {
         .filter((m) => m.role === 'assistant')
         .map((m) => (m.reframe || '').trim())
         .filter(Boolean) as string[];
-      
+
       const previousAcknowledgments = messagesAfterEdit
-          .filter((m) => m.role === 'assistant')
-          .map((m) => (m.content || '').trim())
-          .filter(Boolean) as string[];
+        .filter((m) => m.role === 'assistant')
+        .map((m) => (m.content || '').trim())
+        .filter(Boolean) as string[];
 
       const previousEncouragements = messagesAfterEdit
-          .filter((m) => m.role === 'assistant')
-          .map((m) => (m.encouragement || '').trim())
-          .filter(Boolean) as string[];
-
+        .filter((m) => m.role === 'assistant')
+        .map((m) => (m.encouragement || '').trim())
+        .filter(Boolean) as string[];
 
       const originalTrigger = messagesAfterEdit.find((m) => m.role === 'user')?.content || '';
 
@@ -528,6 +607,8 @@ export default function ReflectPage() {
         groundingTurns,
         lastQuestionType,
         userIntent,
+        // ✅ NEW
+        coreBeliefAlreadyDetected,
       };
 
       const response = await fetch('/api/reframe', {
@@ -551,13 +632,17 @@ export default function ReflectPage() {
       // Check if this request is still the latest
       if (requestSeqRef.current !== reqId) return;
 
+      if ((data as any)?._meta?.coreBeliefDetected === true) {
+        setCoreBeliefAlreadyDetected(true);
+      }
+
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
         content: data.acknowledgment || 'Thank you for sharing.',
         question: (data.question || data.probingQuestion || '').trim(),
-        thoughtPattern: data.thoughtPattern || data.distortionType,
-        patternNote: data.patternNote || data.distortionExplanation,
+        thoughtPattern: (data.thoughtPattern || data.distortionType) as any,
+        patternNote: (data.patternNote || data.distortionExplanation) as any,
         reframe: (data.reframe || '').trim(),
         encouragement: (data.encouragement || '').trim(),
         icebergLayer: data.icebergLayer,
@@ -576,7 +661,8 @@ export default function ReflectPage() {
 
       const currentQ = (data.question || data.probingQuestion || '').trim();
       if (currentQ) {
-        const isChoiceQ = currentQ.toLowerCase().includes('explore') && currentQ.toLowerCase().includes('grounding');
+        const isChoiceQ =
+          currentQ.toLowerCase().includes('explore') && currentQ.toLowerCase().includes('grounding');
         setLastQuestionType(isChoiceQ ? 'choice' : 'open');
       }
 
@@ -588,6 +674,23 @@ export default function ReflectPage() {
 
       if (typeof data.progressScore === 'number') setProgressScore(data.progressScore);
       if (data.layerProgress) setLayerProgress(data.layerProgress);
+
+      // ✅ persist session state on edit replay too
+      if (isSignedIn && currentSessionId) {
+        await fetch(`/api/sessions/${currentSessionId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            currentLayer: data.icebergLayer || 'surface',
+            coreBeliefAlreadyDetected: coreBeliefAlreadyDetected || (data as any)?._meta?.coreBeliefDetected === true,
+            lastQuestionType: currentQ ? (currentQ.toLowerCase().includes('explore') && currentQ.toLowerCase().includes('grounding') ? 'choice' : 'open') : lastQuestionType,
+            groundingMode: typeof data.groundingMode === 'boolean' ? data.groundingMode : groundingMode,
+            groundingTurns: typeof data.groundingTurns === 'number' ? data.groundingTurns : groundingTurns,
+            lastIntentUsed: userIntent,
+            lastUpdatedAt: new Date().toISOString(),
+          }),
+        });
+      }
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') return;
       console.error('Error:', error);
@@ -611,11 +714,24 @@ export default function ReflectPage() {
       const res = await fetch(`/api/sessions/${sessionId}`);
       const data = await res.json();
       if (data.session) {
-        setMessages(data.session.messages);
+        const normalizedMessages = normalizeLoadedMessages(data.session.messages || []);
+
+        setMessages(normalizedMessages);
         setCurrentLayer(data.session.currentLayer as IcebergLayer);
         setCurrentSessionId(sessionId);
         setSessionStarted(true);
         setShowHistory(false);
+
+        // ✅ hydrate session state if your sessions/[id] endpoint returns these fields
+        if (typeof data.session.coreBeliefAlreadyDetected === 'boolean') {
+          setCoreBeliefAlreadyDetected(data.session.coreBeliefAlreadyDetected);
+        } else if (data.session.coreBelief) {
+          setCoreBeliefAlreadyDetected(true);
+        }
+
+        if (typeof data.session.groundingMode === 'boolean') setGroundingMode(data.session.groundingMode);
+        if (typeof data.session.groundingTurns === 'number') setGroundingTurns(data.session.groundingTurns);
+        if (typeof data.session.lastQuestionType === 'string') setLastQuestionType(data.session.lastQuestionType);
 
         const insights: Record<IcebergLayer, string | null> = {
           surface: null,
@@ -623,7 +739,8 @@ export default function ReflectPage() {
           emotion: null,
           coreBelief: data.session.coreBelief,
         };
-        data.session.messages.forEach((msg: Message) => {
+
+        normalizedMessages.forEach((msg: Message) => {
           if (msg.icebergLayer && msg.layerInsight) {
             insights[msg.icebergLayer as IcebergLayer] = msg.layerInsight;
           }
@@ -638,10 +755,10 @@ export default function ReflectPage() {
   const deleteSession = async (sessionId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!confirm('Delete this session? This cannot be undone.')) return;
-    
+
     try {
       await fetch(`/api/sessions/${sessionId}`, { method: 'DELETE' });
-      setSessions(sessions.filter(s => s.id !== sessionId));
+      setSessions(sessions.filter((s) => s.id !== sessionId));
       if (currentSessionId === sessionId) {
         handleReset();
       }
@@ -652,7 +769,7 @@ export default function ReflectPage() {
 
   const toggleSelect = (sessionId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setSelectedIds(prev => {
+    setSelectedIds((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(sessionId)) {
         newSet.delete(sessionId);
@@ -664,7 +781,7 @@ export default function ReflectPage() {
   };
 
   const selectAll = () => {
-    setSelectedIds(new Set(sessions.map(s => s.id)));
+    setSelectedIds(new Set(sessions.map((s) => s.id)));
   };
 
   const clearSelection = () => {
@@ -674,15 +791,16 @@ export default function ReflectPage() {
 
   const deleteSelected = async () => {
     if (selectedIds.size === 0) return;
-    if (!confirm(`Delete ${selectedIds.size} session${selectedIds.size > 1 ? 's' : ''}? This cannot be undone.`)) return;
-    
+    if (
+      !confirm(
+        `Delete ${selectedIds.size} session${selectedIds.size > 1 ? 's' : ''}? This cannot be undone.`
+      )
+    )
+      return;
+
     try {
-      await Promise.all(
-        Array.from(selectedIds).map(id => 
-          fetch(`/api/sessions/${id}`, { method: 'DELETE' })
-        )
-      );
-      setSessions(sessions.filter(s => !selectedIds.has(s.id)));
+      await Promise.all(Array.from(selectedIds).map((id) => fetch(`/api/sessions/${id}`, { method: 'DELETE' })));
+      setSessions(sessions.filter((s) => !selectedIds.has(s.id)));
       if (currentSessionId && selectedIds.has(currentSessionId)) {
         handleReset();
       }
@@ -736,15 +854,14 @@ export default function ReflectPage() {
         <div className="max-w-6xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Link href="/" className="flex items-center gap-2 text-gray-500 hover:text-gray-700 transition-colors">
+              <Link
+                href="/"
+                className="flex items-center gap-2 text-gray-500 hover:text-gray-700 transition-colors"
+              >
                 <ArrowLeft className="w-4 h-4" />
               </Link>
               <div className="w-10 h-10 relative">
-                <img 
-                  src="/logo.svg" 
-                  alt="Optimism Engine Logo" 
-                  className="w-full h-full rounded-xl shadow-lg"
-                />
+                <img src="/logo.svg" alt="Optimism Engine Logo" className="w-full h-full rounded-xl shadow-lg" />
               </div>
               <div>
                 <h1 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-teal-600 bg-clip-text text-transparent">
@@ -757,15 +874,14 @@ export default function ReflectPage() {
             <div className="flex items-center gap-2">
               {isSignedIn ? (
                 <>
-                  <Link href="/assist" className="text-sm text-teal-600 hover:text-teal-700 transition-colors mr-2">
+                  <Link
+                    href="/assist"
+                    className="text-sm text-teal-600 hover:text-teal-700 transition-colors mr-2"
+                  >
                     Switch to Assist →
                   </Link>
                   <Link href="/progress">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-gray-500 hover:text-gray-700"
-                    >
+                    <Button variant="ghost" size="sm" className="text-gray-500 hover:text-gray-700">
                       <TrendingUp className="w-4 h-4 mr-1" />
                       Progress
                     </Button>
@@ -802,7 +918,10 @@ export default function ReflectPage() {
                     </Button>
                   </SignInButton>
                   <SignInButton mode="modal">
-                    <Button size="sm" className="bg-gradient-to-r from-blue-500 to-teal-500 hover:from-blue-600 hover:to-teal-600">
+                    <Button
+                      size="sm"
+                      className="bg-gradient-to-r from-blue-500 to-teal-500 hover:from-blue-600 hover:to-teal-600"
+                    >
                       Save Progress
                     </Button>
                   </SignInButton>
@@ -836,22 +955,16 @@ export default function ReflectPage() {
                 )}
                 {selectMode && (
                   <div className="flex items-center gap-2">
-                    <button
-                      onClick={selectAll}
-                      className="text-xs text-blue-600 hover:text-blue-700"
-                    >
+                    <button onClick={selectAll} className="text-xs text-blue-600 hover:text-blue-700">
                       All
                     </button>
-                    <button
-                      onClick={clearSelection}
-                      className="text-xs text-gray-500 hover:text-gray-700"
-                    >
+                    <button onClick={clearSelection} className="text-xs text-gray-500 hover:text-gray-700">
                       <X className="w-4 h-4" />
                     </button>
                   </div>
                 )}
               </div>
-              
+
               {selectMode && selectedIds.size > 0 && (
                 <button
                   onClick={deleteSelected}
@@ -861,7 +974,7 @@ export default function ReflectPage() {
                   Delete Selected ({selectedIds.size})
                 </button>
               )}
-              
+
               <div className="space-y-2">
                 {sessions.map((session) => (
                   <div
@@ -876,10 +989,7 @@ export default function ReflectPage() {
                     }`}
                   >
                     {selectMode ? (
-                      <button
-                        onClick={(e) => toggleSelect(session.id, e)}
-                        className="absolute top-3 right-3 text-blue-600"
-                      >
+                      <button onClick={(e) => toggleSelect(session.id, e)} className="absolute top-3 right-3 text-blue-600">
                         {selectedIds.has(session.id) ? (
                           <CheckSquare className="w-5 h-5" />
                         ) : (
@@ -895,16 +1005,12 @@ export default function ReflectPage() {
                         <Trash2 className="w-4 h-4" />
                       </button>
                     )}
-                    <p className="text-sm font-medium text-gray-800 truncate pr-8">
-                      {session.title || 'Untitled Session'}
-                    </p>
+                    <p className="text-sm font-medium text-gray-800 truncate pr-8">{session.title || 'Untitled Session'}</p>
                     <p className="text-xs text-gray-500 mt-1">
                       {new Date(session.createdAt).toLocaleDateString()} • {session.messages.length} messages
                     </p>
                     {session.coreBelief && (
-                      <p className="text-xs text-blue-600 mt-1 truncate">
-                        Core belief: {session.coreBelief}
-                      </p>
+                      <p className="text-xs text-blue-600 mt-1 truncate">Core belief: {session.coreBelief}</p>
                     )}
                   </div>
                 ))}
@@ -921,29 +1027,14 @@ export default function ReflectPage() {
           <div className="flex-1 flex flex-col min-h-0">
             {/* Welcome State */}
             {!sessionStarted && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex-1 flex flex-col items-center justify-center py-12"
-              >
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex-1 flex flex-col items-center justify-center py-12">
                 <motion.div
-                  animate={{
-                    scale: [1, 1.05, 1],
-                    rotate: [0, 5, -5, 0],
-                  }}
-                  transition={{
-                    duration: 4,
-                    repeat: Infinity,
-                    repeatType: 'loop',
-                  }}
+                  animate={{ scale: [1, 1.05, 1], rotate: [0, 5, -5, 0] }}
+                  transition={{ duration: 4, repeat: Infinity, repeatType: 'loop' }}
                   className="mb-8"
                 >
                   <div className="w-24 h-24 relative">
-                    <img 
-                      src="/logo.svg" 
-                      alt="Optimism Engine" 
-                      className="w-full h-full rounded-3xl shadow-2xl"
-                    />
+                    <img src="/logo.svg" alt="Optimism Engine" className="w-full h-full rounded-3xl shadow-2xl" />
                   </div>
                 </motion.div>
 
@@ -987,17 +1078,9 @@ export default function ReflectPage() {
 
                 {/* Loading indicator */}
                 {isLoading && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="flex items-center gap-3 pl-4"
-                  >
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-3 pl-4">
                     <div className="w-10 h-10">
-                      <img 
-                        src="/logo.svg" 
-                        alt="" 
-                        className="w-full h-full rounded-full animate-pulse"
-                      />
+                      <img src="/logo.svg" alt="" className="w-full h-full rounded-full animate-pulse" />
                     </div>
                     <div className="flex gap-1">
                       {[0, 1, 2].map((i) => (
@@ -1005,11 +1088,7 @@ export default function ReflectPage() {
                           key={i}
                           className="w-2 h-2 rounded-full bg-blue-400"
                           animate={{ y: [0, -6, 0] }}
-                          transition={{
-                            duration: 0.6,
-                            repeat: Infinity,
-                            delay: i * 0.1,
-                          }}
+                          transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.1 }}
                         />
                       ))}
                     </div>
@@ -1021,46 +1100,40 @@ export default function ReflectPage() {
             )}
 
             {/* Input Area */}
-                <div className="mt-4 space-y-2">
-                  {/* Reflect-only Intent Selector */}
-                  <div className="flex items-center justify-end gap-2">
-                    <span className="text-xs text-gray-500">Mode</span>
-                    <select
-                      value={userIntent}
-                      onChange={(e) => setUserIntent(e.target.value as UserIntent)}
-                      disabled={isLoading || isSaving}
-                      className="text-xs border border-gray-200 bg-white/80 rounded-lg px-2 py-1 shadow-sm"
-                    >
-                      <option value="AUTO">AUTO</option>
-                      <option value="CALM">CALM</option>
-                      <option value="CLARITY">CLARITY</option>
-                      <option value="NEXT_STEP">NEXT_STEP</option>
-                      <option value="MEANING">MEANING</option>
-                      <option value="LISTEN">LISTEN</option>
-                    </select>
-                  </div>
-                
-                  <ThoughtInput
-                    onSubmit={handleSubmit}
-                    isLoading={isLoading || isSaving}
-                    placeholder={
-                      messages.length === 0
-                        ? "What's on your mind? Share a thought that's been troubling you..."
-                        : 'Continue your reflection...'
-                    }
-                  />
-                </div>
+            <div className="mt-4 space-y-2">
+              {/* Reflect-only Intent Selector */}
+              <div className="flex items-center justify-end gap-2">
+                <span className="text-xs text-gray-500">Mode</span>
+                <select
+                  value={userIntent}
+                  onChange={(e) => setUserIntent(e.target.value as UserIntent)}
+                  disabled={isLoading || isSaving}
+                  className="text-xs border border-gray-200 bg-white/80 rounded-lg px-2 py-1 shadow-sm"
+                >
+                  <option value="AUTO">AUTO</option>
+                  <option value="CALM">CALM</option>
+                  <option value="CLARITY">CLARITY</option>
+                  <option value="NEXT_STEP">NEXT_STEP</option>
+                  <option value="MEANING">MEANING</option>
+                  <option value="LISTEN">LISTEN</option>
+                </select>
+              </div>
 
+              <ThoughtInput
+                onSubmit={handleSubmit}
+                isLoading={isLoading || isSaving}
+                placeholder={
+                  messages.length === 0
+                    ? "What's on your mind? Share a thought that's been troubling you..."
+                    : 'Continue your reflection...'
+                }
+              />
+            </div>
 
             {/* Export Button */}
             {sessionStarted && messages.length > 0 && (
               <div className="mt-4 flex justify-center">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={exportSession}
-                  className="text-gray-500 hover:text-gray-700"
-                >
+                <Button variant="ghost" size="sm" onClick={exportSession} className="text-gray-500 hover:text-gray-700">
                   <Download className="w-4 h-4 mr-1" />
                   Export Session
                 </Button>
@@ -1073,10 +1146,7 @@ export default function ReflectPage() {
             <div className="hidden lg:block w-80 flex-shrink-0">
               <div className="sticky top-24">
                 <div className="bg-white/80 backdrop-blur-lg rounded-2xl border border-blue-100 shadow-lg p-4">
-                  <IcebergVisualization
-                    currentLayer={currentLayer}
-                    discoveredInsights={discoveredInsights}
-                  />
+                  <IcebergVisualization currentLayer={currentLayer} discoveredInsights={discoveredInsights} />
                 </div>
               </div>
             </div>
@@ -1084,10 +1154,7 @@ export default function ReflectPage() {
 
           {/* Draggable Journey Bubble - Mobile */}
           {sessionStarted && (
-            <DraggableBubble
-              currentLayer={currentLayer}
-              discoveredInsights={discoveredInsights}
-            />
+            <DraggableBubble currentLayer={currentLayer} discoveredInsights={discoveredInsights} />
           )}
         </div>
       </main>
@@ -1097,9 +1164,7 @@ export default function ReflectPage() {
 
       {/* Disclaimer */}
       <div className="fixed bottom-2 left-0 right-0 text-center pointer-events-none">
-        <p className="text-xs text-gray-400">
-          Not a replacement for professional help. If in crisis, call 988 (US) or your local helpline.
-        </p>
+        <p className="text-xs text-gray-400">Not a replacement for professional help. If in crisis, call 988 (US) or your local helpline.</p>
       </div>
     </div>
   );
