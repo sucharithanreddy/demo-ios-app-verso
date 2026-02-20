@@ -3,6 +3,9 @@ name: Prisma Baseline (Neon)
 on:
   workflow_dispatch: {}
 
+permissions:
+  contents: write
+
 jobs:
   baseline:
     runs-on: ubuntu-latest
