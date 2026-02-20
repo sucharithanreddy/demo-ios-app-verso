@@ -1,0 +1,35 @@
+name: Prisma Migrate (Neon)
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install
+        run: npm ci
+
+      - name: Prisma generate
+        run: npx prisma generate
+
+      # Creates migration files in the repo (does NOT require local DB)
+      - name: Create migration (create-only)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_DATABASE_URL: ${{ secrets.DIRECT_DATABASE_URL }}
+        run: npx prisma migrate dev --name add_structured_engine_fields --create-only
+
+      - name: Commit migration files
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add prisma/migrations prisma/schema.prisma
+          git commit -m "Add structured engine fields"
+          git push
