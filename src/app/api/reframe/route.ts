@@ -13,7 +13,7 @@ import { callAI, type AIMessage } from '@/lib/ai-service';
 // ============================================================================
 // TWO-PHASE AI ARCHITECTURE
 // Phase 1: Deep emotional analysis
-// Phase 2: Response generation (CBT + iceberg model)
+// Phase 2: Response generation (CBT + iceberg model) + deterministic router
 // ============================================================================
 
 interface ChatMessage {
@@ -52,6 +52,204 @@ interface AnalysisResult {
 }
 
 type EffectiveLayer = 'SURFACE' | 'TRANSITION' | 'EMOTION' | 'CORE_WOUND';
+
+// ============================================================================
+// HYBRID ENGINE (Deterministic cognitive router)
+// ============================================================================
+
+type CognitiveState = 'REGULATE' | 'CLARIFY' | 'MAP' | 'RESTRUCTURE' | 'PLAN' | 'PRESENCE';
+type Intervention =
+  | 'GROUND'
+  | 'SEPARATE_FACTS'
+  | 'REFLECT_MAP'
+  | 'CBT_REFRAME'
+  | 'TINY_PLAN'
+  | 'VALIDATE_ONLY';
+
+interface EngineDecision {
+  state: CognitiveState;
+  intervention: Intervention;
+  confidence: number; // 0..1
+  reasons: string[];
+  askQuestion: boolean;
+}
+
+function clamp01(n: number) {
+  return Math.max(0, Math.min(1, n));
+}
+
+function detectThanksOrResolution(text: string): boolean {
+  const s = (text || '').toLowerCase();
+  return (
+    s.includes('thanks') ||
+    s.includes('thank you') ||
+    s.includes('i feel better') ||
+    s.includes('feeling better') ||
+    s.includes('a little better') ||
+    s.includes('ok now') ||
+    s.includes("i’m okay") ||
+    s.includes("i'm okay") ||
+    s.includes('that helped') ||
+    s.includes('this helped')
+  );
+}
+
+function detectActionRequest(text: string): boolean {
+  const s = (text || '').toLowerCase();
+  return (
+    s.includes('what should i do') ||
+    s.includes('what do i do') ||
+    s.includes('next step') ||
+    s.includes('how do i') ||
+    s.includes('help me') ||
+    s.includes('plan') ||
+    s.includes('steps') ||
+    s.includes('what now')
+  );
+}
+
+function detectHighArousal(text: string): number {
+  const s = (text || '').toLowerCase();
+  const markers = [
+    'panic',
+    'panicking',
+    'super anxious',
+    'very anxious',
+    'anxious',
+    "can't breathe",
+    'cant breathe',
+    'heart racing',
+    'overwhelmed',
+    'all-consuming',
+    'spiraling',
+    "i can't handle",
+    'i cant handle',
+    'i feel sick',
+    'terrified',
+    'scared',
+    'shaking',
+  ];
+  let score = 0;
+  for (const m of markers) if (s.includes(m)) score += 1;
+  if ((text.match(/!/g) || []).length >= 2) score += 0.5;
+  if (text.length > 180 && (s.includes('everything') || s.includes('nothing'))) score += 0.5;
+  return clamp01(score / 3);
+}
+
+function detectDistortionLikelihood(text: string): number {
+  let score = 0;
+  if (/\b(always|never|everyone|no one|nothing|everything)\b/i.test(text)) score += 0.4;
+  if (/\b(worst|ruin|disaster|fired|hopeless|pointless)\b/i.test(text)) score += 0.4;
+  if (/\b(should|must|have to)\b/i.test(text)) score += 0.25;
+  if (/\b(they think|they’ll think|they will think)\b/i.test(text)) score += 0.25;
+  return clamp01(score);
+}
+
+function decideEngineState(
+  userText: string,
+  analysis: AnalysisResult,
+  intent: UserIntent,
+  groundingMode: boolean
+): EngineDecision {
+  const reasons: string[] = [];
+
+  // intent overrides (but groundingMode still wins)
+  if (groundingMode || intent === 'CALM') {
+    return {
+      state: 'REGULATE',
+      intervention: 'GROUND',
+      confidence: 0.85,
+      reasons: ['groundingMode or intent=CALM'],
+      askQuestion: false,
+    };
+  }
+
+  if (intent === 'LISTEN') {
+    return {
+      state: 'PRESENCE',
+      intervention: 'VALIDATE_ONLY',
+      confidence: 0.85,
+      reasons: ['intent=LISTEN'],
+      askQuestion: false,
+    };
+  }
+
+  if (detectThanksOrResolution(userText)) {
+    return {
+      state: 'PRESENCE',
+      intervention: 'VALIDATE_ONLY',
+      confidence: 0.75,
+      reasons: ['user signaled relief/resolution'],
+      askQuestion: false,
+    };
+  }
+
+  const highArousal = detectHighArousal(userText);
+  const flooded = userSeemsFlooded(userText);
+
+  if (highArousal >= 0.6 || flooded) {
+    reasons.push(`highArousal=${highArousal.toFixed(2)}`, `flooded=${String(flooded)}`);
+    return {
+      state: 'REGULATE',
+      intervention: 'GROUND',
+      confidence: 0.8,
+      reasons,
+      askQuestion: false,
+    };
+  }
+
+  const actionReq = detectActionRequest(userText);
+  if (intent === 'NEXT_STEP' || actionReq) {
+    return {
+      state: 'PLAN',
+      intervention: 'TINY_PLAN',
+      confidence: 0.75,
+      reasons: ['intent=NEXT_STEP or action request'],
+      askQuestion: true,
+    };
+  }
+
+  if (intent === 'CLARITY') {
+    return {
+      state: 'CLARIFY',
+      intervention: 'SEPARATE_FACTS',
+      confidence: 0.8,
+      reasons: ['intent=CLARITY'],
+      askQuestion: true,
+    };
+  }
+
+  if (intent === 'MEANING') {
+    return {
+      state: 'MAP',
+      intervention: 'REFLECT_MAP',
+      confidence: 0.75,
+      reasons: ['intent=MEANING'],
+      askQuestion: true,
+    };
+  }
+
+  // AUTO
+  const distortionLikely = detectDistortionLikelihood(userText);
+  if (distortionLikely >= 0.6) {
+    return {
+      state: 'RESTRUCTURE',
+      intervention: 'CBT_REFRAME',
+      confidence: 0.7,
+      reasons: [`distortionLikely=${distortionLikely.toFixed(2)}`],
+      askQuestion: true,
+    };
+  }
+
+  // default MAP
+  return {
+    state: 'MAP',
+    intervention: 'REFLECT_MAP',
+    confidence: 0.65,
+    reasons: [`distortionLikely=${distortionLikely.toFixed(2)} -> MAP`],
+    askQuestion: true,
+  };
+}
 
 // ============================================================================
 // Normalize for comparison
@@ -205,13 +403,30 @@ function adjustDistortionForIdentityStatement(
 function detectRepeatedEffort(text: string): boolean {
   const s = (text || '').toLowerCase().trim();
   const effortPatterns = [
-    'no matter how much', 'no matter what', 'no matter how hard',
-    'over and over', 'again and again', 'keep trying', 'keeps happening',
-    'nothing works', 'nothing i do', 'always fails', 'never works',
-    'every time', 'each time', 'repeatedly', 'keep failing',
-    'tired of trying', 'sick of trying', 'gave up', 'given up',
-    'nothing ever goes', 'nothing ever works', 'can never',
-    "doesn't matter what", 'does not matter what',
+    'no matter how much',
+    'no matter what',
+    'no matter how hard',
+    'over and over',
+    'again and again',
+    'keep trying',
+    'keeps happening',
+    'nothing works',
+    'nothing i do',
+    'always fails',
+    'never works',
+    'every time',
+    'each time',
+    'repeatedly',
+    'keep failing',
+    'tired of trying',
+    'sick of trying',
+    'gave up',
+    'given up',
+    'nothing ever goes',
+    'nothing ever works',
+    'can never',
+    "doesn't matter what",
+    'does not matter what',
   ];
   return effortPatterns.some(p => s.includes(p));
 }
@@ -223,10 +438,21 @@ function detectRepeatedEffort(text: string): boolean {
 function userSeemsFlooded(text: string): boolean {
   const s = (text || '').toLowerCase().trim();
   const floodIndicators = [
-    "i don't know", "dont know", "can't recall", "cant recall",
-    "can't pinpoint", "cant pinpoint", "not sure", "idk",
-    "whatever", "nothing", "blank", "mind is blank",
-    "i can't think", "too much", "overwhelmed",
+    "i don't know",
+    'dont know',
+    "can't recall",
+    'cant recall',
+    "can't pinpoint",
+    'cant pinpoint',
+    'not sure',
+    'idk',
+    'whatever',
+    'nothing',
+    'blank',
+    'mind is blank',
+    "i can't think",
+    'too much',
+    'overwhelmed',
   ];
   return floodIndicators.some(p => s.includes(p));
 }
@@ -238,11 +464,24 @@ function userSeemsFlooded(text: string): boolean {
 function userChoseGrounding(text: string): boolean {
   const s = (text || '').toLowerCase().trim();
   const groundingIndicators = [
-    'grounding', 'something grounding', 'shift toward',
-    'take a break', 'step back', 'pause', 'reset',
-    'comfort', 'something calming', 'gentle',
-    'ice cream', 'coffee', 'walk', 'tea', 'breathe',
-    'small thing', 'tiny step', 'practical step',
+    'grounding',
+    'something grounding',
+    'shift toward',
+    'take a break',
+    'step back',
+    'pause',
+    'reset',
+    'comfort',
+    'something calming',
+    'gentle',
+    'ice cream',
+    'coffee',
+    'walk',
+    'tea',
+    'breathe',
+    'small thing',
+    'tiny step',
+    'practical step',
   ];
   return groundingIndicators.some(p => s.includes(p));
 }
@@ -276,13 +515,27 @@ function isTherapistProbe(q: string): boolean {
   const s = q.toLowerCase().trim();
 
   const triggers = [
-    'earliest memory', 'when did you first', 'how long have you',
-    'when did this start', 'childhood', 'growing up', 'in your past',
-    'timeline', 'first started feeling', 'memory you have of',
-    'where did you learn', 'what happened when you were',
-    'where in your body', 'where do you feel it', 'where in your head',
-    'pin point', 'pinpoint', 'describe where',
-    'chapter', 'ending', 'story',
+    'earliest memory',
+    'when did you first',
+    'how long have you',
+    'when did this start',
+    'childhood',
+    'growing up',
+    'in your past',
+    'timeline',
+    'first started feeling',
+    'memory you have of',
+    'where did you learn',
+    'what happened when you were',
+    'where in your body',
+    'where do you feel it',
+    'where in your head',
+    'pin point',
+    'pinpoint',
+    'describe where',
+    'chapter',
+    'ending',
+    'story',
   ];
 
   if (triggers.some(t => s.includes(t))) return true;
@@ -374,14 +627,14 @@ function normalizeThoughtPattern(p?: string): string {
     'black and white': 'All-or-nothing thinking',
     'all-or-nothing': 'All-or-nothing thinking',
     'all or nothing': 'All-or-nothing thinking',
-    'catastrophizing': 'Catastrophizing',
-    'catastrophe': 'Catastrophizing',
+    catastrophizing: 'Catastrophizing',
+    catastrophe: 'Catastrophizing',
     'mind reading': 'Mind reading',
-    'mindreading': 'Mind reading',
-    'overgeneralization': 'Overgeneralization',
+    mindreading: 'Mind reading',
+    overgeneralization: 'Overgeneralization',
     'over-generalization': 'Overgeneralization',
-    'personalization': 'Personalization',
-    'labeling': 'Labeling',
+    personalization: 'Personalization',
+    labeling: 'Labeling',
     'emotional reasoning': 'Emotional reasoning',
     'should statements': 'Should statements',
     'fortune telling': 'Fortune telling',
@@ -407,7 +660,11 @@ function normalizeThoughtPattern(p?: string): string {
 function inferFallbackThoughtPattern(userText: string, effectiveLayer: EffectiveLayer): string {
   if (effectiveLayer === 'CORE_WOUND') return 'Core Belief';
 
-  if (/(i am|i'm)\s+(a\s+)?(failure|loser|mess|burden|worthless|broken|unlovable|undesirable)/i.test(userText)) {
+  if (
+    /(i am|i'm)\s+(a\s+)?(failure|loser|mess|burden|worthless|broken|unlovable|undesirable)/i.test(
+      userText
+    )
+  ) {
     return 'Labeling';
   }
 
@@ -454,17 +711,23 @@ function sanitizeReframeAllLayers(
   const coreWound = (analysis.core_wound || '').toLowerCase();
   const underlyingFear = (analysis.underlying_fear || '').toLowerCase();
   const isAbandonment =
-    coreWound.includes('love') || coreWound.includes('alon') ||
-    coreWound.includes('leave') || coreWound.includes('want') ||
-    underlyingFear.includes('love') || underlyingFear.includes('alon');
+    coreWound.includes('love') ||
+    coreWound.includes('alon') ||
+    coreWound.includes('leave') ||
+    coreWound.includes('want') ||
+    underlyingFear.includes('love') ||
+    underlyingFear.includes('alon');
   const isFailure =
-    coreWound.includes('fail') || coreWound.includes('enough') ||
-    underlyingFear.includes('fail') || underlyingFear.includes('enough');
+    coreWound.includes('fail') ||
+    coreWound.includes('enough') ||
+    underlyingFear.includes('fail') ||
+    underlyingFear.includes('enough');
 
   if (!r) {
     if (effectiveLayer === 'CORE_WOUND') {
       if (isAbandonment) return `That fear is real — but it doesn’t mean you’re unlovable.`;
-      if (isFailure) return `Not meeting expectations isn’t proof you’re a disappointment — it’s pressure talking.`;
+      if (isFailure)
+        return `Not meeting expectations isn’t proof you’re a disappointment — it’s pressure talking.`;
       return `A painful moment can shake your confidence — but it still doesn’t get to decide your worth.`;
     }
     if (isAbandonment) return `That fear is loud right now, but it isn’t the whole truth about you.`;
@@ -493,8 +756,14 @@ function sanitizeReframeAllLayers(
   if (effectiveLayer === 'CORE_WOUND') {
     const lower = r.toLowerCase();
     const bannedPhrases = [
-      'just a story', 'one chapter', 'not the ending', 'whole truth',
-      'black and white photo', 'spectrum of experiences', 'math problem', 'fixed point on a scale',
+      'just a story',
+      'one chapter',
+      'not the ending',
+      'whole truth',
+      'black and white photo',
+      'spectrum of experiences',
+      'math problem',
+      'fixed point on a scale',
     ];
     if (bannedPhrases.some(b => lower.includes(b))) {
       return `This belief is your brain trying to protect you from getting hurt again — but it isn’t a verdict on you.`;
@@ -552,9 +821,7 @@ function hydrateMemoryFromHistory(
   previousAcknowledgments: string[],
   previousEncouragements: string[]
 ): void {
-  const recentAssistant = conversationHistory
-    .filter(m => m.role === 'assistant')
-    .slice(-12);
+  const recentAssistant = conversationHistory.filter(m => m.role === 'assistant').slice(-12);
 
   for (const msg of recentAssistant) {
     if (!msg.content) continue;
@@ -562,9 +829,9 @@ function hydrateMemoryFromHistory(
     if (!parsedPrev) continue;
 
     const q = (parsedPrev.question as string) || (parsedPrev.probingQuestion as string);
-    const r = (parsedPrev.reframe as string);
+    const r = parsedPrev.reframe as string;
     const a = (parsedPrev.acknowledgment as string) || (parsedPrev.content as string);
-    const e = (parsedPrev.encouragement as string);
+    const e = parsedPrev.encouragement as string;
 
     if (q && q.trim() && previousQuestions.length < 35) previousQuestions.push(q.trim());
     if (r && r.trim() && previousReframes.length < 35) previousReframes.push(r.trim());
@@ -581,11 +848,9 @@ function isGenericLine(s: string): boolean {
   const t = normalizeForCompare(s);
   if (!t) return true;
 
-  // If it's super short, it often reads canned
   if (t.length < 10) return true;
 
   const generic = [
-    // classic posters / repeated
     "you're not alone",
     'storm inside',
     'weather this storm',
@@ -593,7 +858,6 @@ function isGenericLine(s: string): boolean {
     'you got this',
     'you are stronger than you think',
     'stay strong',
-    // your observed repeats
     'you’re engaging with this',
     'that takes real effort',
     'just talking about it is a step',
@@ -604,7 +868,6 @@ function isGenericLine(s: string): boolean {
     'not a verdict',
     'i’m with you',
     'that makes sense',
-    // overly therapist-y
     'i hear you',
     'i understand',
     'that sounds',
@@ -664,7 +927,6 @@ function needsRegeneration(
     if (isNearDuplicateText(e, previousEncouragements)) return true;
   }
 
-  // Optional: avoid repeating acknowledgments too
   if (a) {
     if (isDuplicateAck(a, previousAcknowledgments)) return true;
     if (isNearDuplicateText(a, previousAcknowledgments)) return true;
@@ -683,6 +945,7 @@ async function regeneratePackFresh(args: {
   intent: UserIntent;
   groundingMode: boolean;
   effectiveLayer: EffectiveLayer;
+  decision: EngineDecision;
   previousQuestions: string[];
   previousReframes: string[];
   previousAcknowledgments: string[];
@@ -694,6 +957,7 @@ async function regeneratePackFresh(args: {
     intent,
     groundingMode,
     effectiveLayer,
+    decision,
     previousQuestions,
     previousReframes,
     previousAcknowledgments,
@@ -701,13 +965,18 @@ async function regeneratePackFresh(args: {
   } = args;
 
   const regenPrompt = `
-You are writing as a deeply emotionally intelligent FRIEND.
+You are writing as a premium CBT-based product: a Cognitive Reflection Engine.
+Sound human, specific, and non-templated.
 
 User message: "${userText}"
 
 Intent: ${intent}
 Layer: ${effectiveLayer}
 Grounding mode: ${groundingMode ? 'true' : 'false'}
+
+ENGINE STATE: ${decision.state}
+INTERVENTION: ${decision.intervention}
+Ask a question this turn: ${decision.askQuestion ? 'true' : 'false'}
 
 What happened: ${analysis.trigger_event}
 Interpretation: ${analysis.likely_interpretation}
@@ -730,10 +999,11 @@ ${previousReframes.slice(0, 25).map(r => `- ${r}`).join('\n') || '- (none)'}
 Hard rules:
 - Acknowledgment MUST be non-empty and specific (no "you're not alone", no "storm", no "I hear you").
 - Encouragement optional, but if present it must be natural, not poster-y.
-- Questions must be specific to the user's last message (use at least one concrete detail). Avoid generic templates.
-- Ask at most ONE question (but you may provide up to 3 candidates in "questions").
-- Distortion labels ONLY if clearly present and actually helpful; otherwise set thoughtPattern to "".
-- If intent is NEXT_STEP, put a tiny plan (1–3 steps) inside the reframe.
+- If AskQuestion=false, return "questions": [].
+- If AskQuestion=true, questions must be specific to the user's last message (use a concrete detail). Avoid generic templates.
+- Ask at most ONE question will be used, but you may provide up to 3 candidates in "questions".
+- Distortion labels ONLY if clearly present and helpful; otherwise set thoughtPattern to "".
+- If intent is NEXT_STEP / intervention is TINY_PLAN, put a tiny plan (1–3 steps) inside the reframe.
 - Return ONLY valid JSON.
 
 JSON:
@@ -776,7 +1046,7 @@ Be precise. Go deep.`;
 }
 
 // ============================================================================
-// Phase 2 Prompt
+// Phase 2 Prompt (state-driven, still CBT-based)
 // ============================================================================
 
 function buildResponsePrompt(
@@ -788,47 +1058,105 @@ function buildResponsePrompt(
   originalTrigger: string = '',
   turnCount: number = 1,
   userRevealedCoreBelief: boolean = false,
-  coreBeliefJustDetected: boolean = false,
+  coreBeliefJustDetected: boolean = false, // kept for future, not required
   groundingMode: boolean = false,
-  intent: UserIntent = 'AUTO'
+  intent: UserIntent = 'AUTO',
+  decision?: EngineDecision
 ): string {
-  const questionsWarning = previousQuestions.length > 0
-    ? `\n\n⚠️ QUESTIONS YOU'VE ALREADY ASKED - NEVER REPEAT OR PARAPHRASE:\n${previousQuestions
-        .slice(0, 10)
-        .map(q => `- "${q}"`)
-        .join('\n')}`
-    : '';
+  const d =
+    decision ??
+    ({
+      state: 'MAP',
+      intervention: 'REFLECT_MAP',
+      confidence: 0.5,
+      reasons: [],
+      askQuestion: true,
+    } satisfies EngineDecision);
 
-  const reframesWarning = previousReframes.length > 0
-    ? `\n\n⚠️ REFRAMES YOU'VE ALREADY USED - NEVER REPEAT OR PARAPHRASE:\n${previousReframes
-        .slice(0, 8)
-        .map(r => `- "${r}"`)
-        .join('\n')}`
-    : '';
+  const questionsWarning =
+    previousQuestions.length > 0
+      ? `\n\n⚠️ QUESTIONS YOU'VE ALREADY ASKED - NEVER REPEAT OR PARAPHRASE:\n${previousQuestions
+          .slice(0, 10)
+          .map(q => `- "${q}"`)
+          .join('\n')}`
+      : '';
 
-  const ackWarning = previousAcknowledgments.length > 0
-    ? `\n\n⚠️ ACKNOWLEDGMENTS YOU'VE ALREADY USED - NEVER REPEAT OR PARAPHRASE:\n${previousAcknowledgments
-        .slice(0, 8)
-        .map(a => `- "${a}"`)
-        .join('\n')}`
-    : '';
+  const reframesWarning =
+    previousReframes.length > 0
+      ? `\n\n⚠️ REFRAMES YOU'VE ALREADY USED - NEVER REPEAT OR PARAPHRASE:\n${previousReframes
+          .slice(0, 8)
+          .map(r => `- "${r}"`)
+          .join('\n')}`
+      : '';
 
-  const encWarning = previousEncouragements.length > 0
-    ? `\n\n⚠️ ENCOURAGEMENTS YOU'VE ALREADY USED - NEVER REPEAT OR PARAPHRASE:\n${previousEncouragements
-        .slice(0, 8)
-        .map(e => `- "${e}"`)
-        .join('\n')}`
-    : '';
+  const ackWarning =
+    previousAcknowledgments.length > 0
+      ? `\n\n⚠️ ACKNOWLEDGMENTS YOU'VE ALREADY USED - NEVER REPEAT OR PARAPHRASE:\n${previousAcknowledgments
+          .slice(0, 8)
+          .map(a => `- "${a}"`)
+          .join('\n')}`
+      : '';
+
+  const encWarning =
+    previousEncouragements.length > 0
+      ? `\n\n⚠️ ENCOURAGEMENTS YOU'VE ALREADY USED - NEVER REPEAT OR PARAPHRASE:\n${previousEncouragements
+          .slice(0, 8)
+          .map(e => `- "${e}"`)
+          .join('\n')}`
+      : '';
 
   const triggerReminder = originalTrigger ? `\n\n🎯 ORIGINAL TRIGGER: "${originalTrigger}"` : '';
   const intentBlock = intentGuidance(intent);
 
-  if (groundingMode) {
-    return `You are a deeply emotionally intelligent FRIEND. The user asked for something grounding or comforting.
+  // compute effectiveLayer inside prompt for guidance purposes
+  const effectiveLayer: EffectiveLayer = userRevealedCoreBelief
+    ? 'CORE_WOUND'
+    : turnCount <= 2
+      ? 'SURFACE'
+      : turnCount <= 4
+        ? 'TRANSITION'
+        : turnCount <= 6
+          ? 'EMOTION'
+          : 'CORE_WOUND';
+
+  const engineBlock = `ENGINE STATE: ${d.state}
+INTERVENTION: ${d.intervention}
+AskQuestion: ${d.askQuestion ? 'true' : 'false'}`;
+
+  let stateObjective = '';
+  switch (d.state) {
+    case 'REGULATE':
+      stateObjective = `Objective: reduce arousal and stabilize. Avoid labels. Prefer no questions.`;
+      break;
+    case 'CLARIFY':
+      stateObjective = `Objective: separate facts vs story. If you ask a question, it must be concrete.`;
+      break;
+    case 'PLAN':
+      stateObjective = `Objective: produce a tiny plan (1–3 steps) that fits their situation. Optional 1 narrowing question.`;
+      break;
+    case 'RESTRUCTURE':
+      stateObjective = `Objective: if a distortion is clearly present, name it (otherwise leave blank) and provide a clean reframe.`;
+      break;
+    case 'PRESENCE':
+      stateObjective = `Objective: validate + mirror with specificity. No advice. No questions unless user asked one.`;
+      break;
+    default:
+      stateObjective = `Objective: map interpretation → fear → need in plain language. Optional one question max.`;
+      break;
+  }
+
+  // Grounding mode prompt
+  if (groundingMode || d.state === 'REGULATE') {
+    return `You are a premium CBT-based product voice: human, specific, non-templated.
+You are NOT a therapy bot.
+
+${engineBlock}
+${stateObjective}
 
 ${intentBlock}
+${triggerReminder}
 
-${ackWarning}${encWarning}${questionsWarning}
+${ackWarning}${encWarning}${questionsWarning}${reframesWarning}
 
 Return ONLY valid JSON:
 
@@ -840,10 +1168,8 @@ Return ONLY valid JSON:
   "acknowledgment": "choose your best",
   "thoughtPattern": "",
   "patternNote": "",
-  "reframe": "Gentle, practical. Present-moment. Sensory if helpful.",
-  "questions": [
-    "Optional: one simple present-moment question (specific), OR return []"
-  ],
+  "reframe": "Grounding or calming instruction. Present-moment. Sensory if helpful.",
+  "questions": [],
   "encouragements": [
     "Optional: one natural supportive line (NOT poster-y), OR return []"
   ],
@@ -853,19 +1179,8 @@ Return ONLY valid JSON:
 STYLE RULES:
 - NO distortion labels
 - NO deep probing
-- Keep it human and specific, not templated
 - Avoid: "you're not alone", "storm", "weather this", "I hear you".`;
   }
-
-  const effectiveLayer: EffectiveLayer = userRevealedCoreBelief
-    ? 'CORE_WOUND'
-    : turnCount <= 2
-      ? 'SURFACE'
-      : turnCount <= 4
-        ? 'TRANSITION'
-        : turnCount <= 6
-          ? 'EMOTION'
-          : 'CORE_WOUND';
 
   let layerGuidance = '';
   if (effectiveLayer === 'SURFACE') {
@@ -887,11 +1202,19 @@ STYLE RULES:
 - thoughtPattern MUST be exactly "Core Belief".
 - No timelines. No "when did this start".
 - patternNote: ONE sentence max.
-- question is OPTIONAL (prefer "" if unsure).
+- questions OPTIONAL (prefer [] if unsure).
 - Avoid clichés and motivational poster language.`;
   }
 
-  return `You are a deeply emotionally intelligent FRIEND. Not a therapist. Not a coach.
+  const askQuestionRule = d.askQuestion
+    ? `- Questions: you MAY generate 0..3 candidates, but at most one will be used.`
+    : `- Questions: return [] (do not ask a question this turn).`;
+
+  return `You are a premium CBT-based product voice: human, specific, non-templated.
+You are NOT a therapy bot.
+
+${engineBlock}
+${stateObjective}
 
 ${triggerReminder}
 
@@ -917,10 +1240,10 @@ Return ONLY valid JSON:
   "acknowledgment": "pick your best one here too",
   "thoughtPattern": "CORE WOUND: must be 'Core Belief'. Otherwise: pattern name OR empty string.",
   "patternNote": "Brief. CORE WOUND: one sentence max.",
-  "reframe": "Fresh angle, specific to their situation. If intent=NEXT_STEP, include a tiny plan (1–3 steps) inside reframe.",
+  "reframe": "State-appropriate. If intervention=TINY_PLAN, include a tiny plan (1–3 steps) inside reframe.",
   "questions": [
-    "Candidate #1 question: MUST use at least one concrete detail from the user's last message",
-    "Candidate #2 question: different angle, also concrete and specific",
+    "Candidate #1 question (if allowed)",
+    "Candidate #2 question (if allowed)",
     "Candidate #3 optional"
   ],
   "encouragements": [
@@ -933,8 +1256,9 @@ Return ONLY valid JSON:
 RULES:
 - Acknowledgment must be non-empty and specific (no 'you're not alone', no 'storm', no 'I hear you').
 - Avoid repeating or lightly paraphrasing warnings.
-- Questions: at most one will be used; keep candidates specific, avoid generic templates:
-  banned: "hardest part", "heaviest", "most personal", "story your mind keeps replaying", "tell me more".
+${askQuestionRule}
+- If you output questions, they MUST use at least one concrete detail from the user's last message.
+- Avoid generic templates (banned: "hardest part", "heaviest", "most personal", "story your mind keeps replaying", "tell me more").
 - Avoid therapy-probing (no childhood/timeline/body-location interrogation).
 - If user is stabilizing / saying thanks / feeling better, return "questions": [].
 - Encouragement optional; if present, must not be motivational poster language.`;
@@ -950,10 +1274,7 @@ function coerceQuestionMark(s: string): string {
   return t.endsWith('?') ? t : `${t}?`;
 }
 
-function pickBestQuestionCandidate(
-  candidates: string[],
-  previousQuestions: string[]
-): string {
+function pickBestQuestionCandidate(candidates: string[], previousQuestions: string[]): string {
   for (const raw of candidates) {
     const q = coerceQuestionMark(raw);
     if (!q) continue;
@@ -966,10 +1287,7 @@ function pickBestQuestionCandidate(
   return '';
 }
 
-function pickBestAckCandidate(
-  candidates: string[],
-  previousAcknowledgments: string[]
-): string {
+function pickBestAckCandidate(candidates: string[], previousAcknowledgments: string[]): string {
   for (const raw of candidates) {
     const a = (raw || '').trim();
     if (!a) continue;
@@ -981,10 +1299,7 @@ function pickBestAckCandidate(
   return '';
 }
 
-function pickBestEncCandidate(
-  candidates: string[],
-  previousEncouragements: string[]
-): string {
+function pickBestEncCandidate(candidates: string[], previousEncouragements: string[]): string {
   for (const raw of candidates) {
     const e = (raw || '').trim();
     if (!e) continue;
@@ -1009,6 +1324,7 @@ function ensureAllLayers(
   previousQuestions: string[],
   previousAcknowledgments: string[],
   previousEncouragements: string[],
+  decision: EngineDecision,
   frozenThoughtPattern?: string,
   previousDistortion?: string,
   groundingMode: boolean = false,
@@ -1028,19 +1344,20 @@ function ensureAllLayers(
   const snippetIsShort = snippet.length < 25;
 
   // Acknowledgment fallback pool (non-empty, but not huge template bank)
-  const acknowledgmentOptions = effectiveLayer === 'CORE_WOUND'
-    ? [
-        `Ouch. That’s heavy to carry.`,
-        `That cuts deep.`,
-        `That’s a painful place to be — and you’re naming it.`,
-        snippetIsShort ? `"${snippet}" — yeah. That hurts.` : `I get why this feels so sharp.`,
-      ]
-    : [
-        `Okay.`,
-        `Got it.`,
-        `Yeah — that makes sense.`,
-        snippetIsShort ? `"${snippet}" — noted.` : `Thanks for putting words to it.`,
-      ];
+  const acknowledgmentOptions =
+    effectiveLayer === 'CORE_WOUND'
+      ? [
+          `Ouch. That’s heavy to carry.`,
+          `That cuts deep.`,
+          `That’s a painful place to be — and you’re naming it.`,
+          snippetIsShort ? `"${snippet}" — yeah. That hurts.` : `I get why this feels so sharp.`,
+        ]
+      : [
+          `Okay — got it.`,
+          `Yeah.`,
+          `Got it.`,
+          snippetIsShort ? `"${snippet}" — noted.` : `Thanks for putting words to it.`,
+        ];
 
   const fallbackAcknowledgment =
     acknowledgmentOptions[Math.floor(Math.random() * acknowledgmentOptions.length)];
@@ -1065,7 +1382,12 @@ function ensureAllLayers(
             `When you’re depleted, thoughts get more absolute.`,
           ];
 
-  const priorNotesPool = [...previousQuestions, ...previousReframes, ...previousAcknowledgments, ...previousEncouragements];
+  const priorNotesPool = [
+    ...previousQuestions,
+    ...previousReframes,
+    ...previousAcknowledgments,
+    ...previousEncouragements,
+  ];
   let fallbackPatternNote = patternNoteOptions[Math.floor(Math.random() * patternNoteOptions.length)];
   if (fallbackPatternNote && isDuplicatePatternNote(fallbackPatternNote, priorNotesPool)) {
     const alt = patternNoteOptions.find(n => n && !isDuplicatePatternNote(n, priorNotesPool));
@@ -1076,29 +1398,30 @@ function ensureAllLayers(
 
   const coreWound = (analysis.core_wound || '').toLowerCase();
   const underlyingFear = (analysis.underlying_fear || '').toLowerCase();
-  const isAbandonment = coreWound.includes('love') || coreWound.includes('alon') ||
-                        underlyingFear.includes('love') || underlyingFear.includes('alon');
-  const isFailure = coreWound.includes('fail') || coreWound.includes('enough') ||
-                    underlyingFear.includes('fail') || underlyingFear.includes('enough');
+  const isAbandonment =
+    coreWound.includes('love') || coreWound.includes('alon') || underlyingFear.includes('love') || underlyingFear.includes('alon');
+  const isFailure =
+    coreWound.includes('fail') || coreWound.includes('enough') || underlyingFear.includes('fail') || underlyingFear.includes('enough');
 
-  const fallbackReframeOptions = effectiveLayer === 'CORE_WOUND'
-    ? isAbandonment
-      ? [`That fear is real — but it doesn’t mean you’re unlovable.`]
-      : isFailure
-        ? [`Not meeting expectations isn’t proof you’re a disappointment — it’s pressure talking.`]
-        : [
-            `A painful moment can shake your confidence — but it still doesn’t get to decide your worth.`,
-            `It feels true right now — but pressure can make it feel bigger than it is.`,
+  const fallbackReframeOptions =
+    effectiveLayer === 'CORE_WOUND'
+      ? isAbandonment
+        ? [`That fear is real — but it doesn’t mean you’re unlovable.`]
+        : isFailure
+          ? [`Not meeting expectations isn’t proof you’re a disappointment — it’s pressure talking.`]
+          : [
+              `A painful moment can shake your confidence — but it still doesn’t get to decide your worth.`,
+              `It feels true right now — but pressure can make it feel bigger than it is.`,
+            ]
+      : isRepeatedEffort
+        ? [
+            `Effort without results doesn’t erase the effort. Timing and constraints are real.`,
+            `The harsh conclusion isn’t the only explanation here.`,
           ]
-    : isRepeatedEffort
-      ? [
-          `Effort without results doesn’t erase the effort. Timing and constraints are real.`,
-          `The harsh conclusion isn’t the only explanation here.`,
-        ]
-      : [
-          `The feeling is real — but the conclusion might be harsher than the facts support.`,
-          `It can make emotional sense and still not be the full picture.`,
-        ];
+        : [
+            `The feeling is real — but the conclusion might be harsher than the facts support.`,
+            `It can make emotional sense and still not be the full picture.`,
+          ];
 
   const fallbackReframe = groundingMode
     ? `You don’t have to solve everything right now — just take the next breath.`
@@ -1117,11 +1440,12 @@ function ensureAllLayers(
 
   const ackFromList = pickBestAckCandidate(ackCandidates, previousAcknowledgments);
 
-  const singleAck = typeof (parsed as any).acknowledgment === 'string'
-    ? String((parsed as any).acknowledgment).trim()
-    : typeof (parsed as any).content === 'string'
-      ? String((parsed as any).content).trim()
-      : '';
+  const singleAck =
+    typeof (parsed as any).acknowledgment === 'string'
+      ? String((parsed as any).acknowledgment).trim()
+      : typeof (parsed as any).content === 'string'
+        ? String((parsed as any).content).trim()
+        : '';
 
   const singleAckOk =
     !!singleAck &&
@@ -1129,7 +1453,7 @@ function ensureAllLayers(
     !isDuplicateAck(singleAck, previousAcknowledgments) &&
     !isNearDuplicateText(singleAck, previousAcknowledgments);
 
-  // ACK MUST BE NON-EMPTY (your preference)
+  // ACK MUST BE NON-EMPTY
   const acknowledgment = ackFromList || (singleAckOk ? singleAck : fallbackAcknowledgment);
 
   // --- Thought pattern behavior: allow blank when it doesn’t fit (esp CALM/LISTEN) ---
@@ -1139,7 +1463,7 @@ function ensureAllLayers(
     normalizeThoughtPattern((parsed.thoughtPattern as string) || (parsed.distortionType as string)) ||
     inferredFallbackPattern;
 
-  if (groundingMode) {
+  if (groundingMode || decision.state === 'REGULATE') {
     thoughtPattern = '';
   } else if (effectiveLayer === 'CORE_WOUND') {
     thoughtPattern = frozenThoughtPattern ? normalizeThoughtPattern(frozenThoughtPattern) : 'Core Belief';
@@ -1157,7 +1481,8 @@ function ensureAllLayers(
       const previousIsSimilar =
         (previousDistortion === 'Labeling' && /(i am|i'm|i feel like i'm)/i.test(userText)) ||
         (previousDistortion === 'Catastrophizing' && /\b(worst|ruin|disaster|end|fired)\b/i.test(userText)) ||
-        (previousDistortion === 'All-or-nothing thinking' && /\b(always|never|everything|nothing|either|only|completely|totally)\b/i.test(userText));
+        (previousDistortion === 'All-or-nothing thinking' &&
+          /\b(always|never|everything|nothing|either|only|completely|totally)\b/i.test(userText));
 
       if (previousIsSimilar) {
         thoughtPattern = previousDistortion;
@@ -1176,12 +1501,9 @@ function ensureAllLayers(
   }
 
   // Pattern note compacting
-  let patternNote =
-    (parsed.patternNote as string) ||
-    (parsed.distortionExplanation as string) ||
-    fallbackPatternNote;
+  let patternNote = (parsed.patternNote as string) || (parsed.distortionExplanation as string) || fallbackPatternNote;
 
-  if (!groundingMode) {
+  if (!groundingMode && decision.state !== 'REGULATE') {
     patternNote =
       effectiveLayer === 'CORE_WOUND'
         ? compactOneSentence(patternNote) || fallbackPatternNote
@@ -1194,43 +1516,36 @@ function ensureAllLayers(
   let reframe = (parsed.reframe as string) || fallbackReframe;
   reframe = sanitizeReframeAllLayers(reframe, previousReframes, analysis, effectiveLayer);
 
-  // If duplicate reframe, keep it short and non-cliché
   if (isDuplicateReframe(reframe, previousReframes) || isNearDuplicateText(reframe, previousReframes)) {
-    reframe = groundingMode
-      ? `Let’s take one small breath here.`
-      : `Let’s pause for a second — this is feeling more final than it actually is.`;
+    reframe = groundingMode ? `Let’s take one small breath here.` : `Let’s pause — this is feeling more final than it actually is.`;
   }
 
   // --- Question handling (candidate list + filters; silence by default) ---
-  const qCandidatesRaw = Array.isArray((parsed as any).questions) ? (parsed as any).questions : [];
-  const qCandidates: string[] = qCandidatesRaw
-    .filter((x: any) => typeof x === 'string')
-    .map((x: string) => x.trim())
-    .filter(Boolean);
+  let question = '';
 
-  const qFromList = pickBestQuestionCandidate(qCandidates, previousQuestions);
+  if (decision.askQuestion && decision.state !== 'REGULATE' && intent !== 'CALM' && intent !== 'LISTEN') {
+    const qCandidatesRaw = Array.isArray((parsed as any).questions) ? (parsed as any).questions : [];
+    const qCandidates: string[] = qCandidatesRaw
+      .filter((x: any) => typeof x === 'string')
+      .map((x: string) => x.trim())
+      .filter(Boolean);
 
-  const singleQ = typeof (parsed as any).question === 'string' ? String((parsed as any).question).trim() : '';
-  const singleQOk =
-    !!singleQ &&
-    !isTherapistProbe(singleQ) &&
-    !isGenericQuestion(singleQ) &&
-    !isDuplicateQuestion(singleQ, previousQuestions) &&
-    !isNearDuplicateText(singleQ, previousQuestions);
+    const qFromList = pickBestQuestionCandidate(qCandidates, previousQuestions);
 
-  const rawChosenQ =
-    (intent === 'LISTEN' || intent === 'CALM') && !qFromList && !singleQOk
-      ? ''
-      : qFromList || (singleQOk ? coerceQuestionMark(singleQ) : '');
+    const singleQ = typeof (parsed as any).question === 'string' ? String((parsed as any).question).trim() : '';
+    const singleQOk =
+      !!singleQ &&
+      !isTherapistProbe(singleQ) &&
+      !isGenericQuestion(singleQ) &&
+      !isDuplicateQuestion(singleQ, previousQuestions) &&
+      !isNearDuplicateText(singleQ, previousQuestions);
 
-  const question = finalizeQuestion(
-    rawChosenQ,
-    effectiveLayer,
-    userText,
-    previousQuestions,
-    groundingMode,
-    lastQuestionType
-  );
+    const rawChosenQ = qFromList || (singleQOk ? coerceQuestionMark(singleQ) : fallbackQuestion);
+
+    question = finalizeQuestion(rawChosenQ, effectiveLayer, userText, previousQuestions, groundingMode, lastQuestionType);
+  } else {
+    question = ''; // enforced silence
+  }
 
   // --- Encouragement handling (candidate list + filter; optional; no poster lines) ---
   const encCandidatesRaw = Array.isArray((parsed as any).encouragements) ? (parsed as any).encouragements : [];
@@ -1241,9 +1556,7 @@ function ensureAllLayers(
 
   const encFromList = pickBestEncCandidate(encCandidates, previousEncouragements);
 
-  const singleEnc = typeof (parsed as any).encouragement === 'string'
-    ? String((parsed as any).encouragement).trim()
-    : '';
+  const singleEnc = typeof (parsed as any).encouragement === 'string' ? String((parsed as any).encouragement).trim() : '';
 
   const singleEncOk =
     !!singleEnc &&
@@ -1305,7 +1618,8 @@ export async function POST(request: NextRequest) {
     const crisisCheck = checkCrisisKeywords(sanitizedMessage);
     if (crisisCheck.level === SEVERITY_LEVELS.HIGH) {
       return NextResponse.json({
-        acknowledgment: "You're sharing something really serious, and I want to make sure you get the right support.",
+        acknowledgment:
+          "You're sharing something really serious, and I want to make sure you get the right support.",
         thoughtPattern: 'Crisis Response',
         patternNote: 'Right now your safety is the priority.',
         reframe: "This moment doesn't define you. There are people trained to help.",
@@ -1350,6 +1664,9 @@ export async function POST(request: NextRequest) {
       const parsedAnalysis = parseAIJSON(analysisResponse.content) as AnalysisResult | null;
       if (parsedAnalysis) analysis = parsedAnalysis;
     }
+
+    // Deterministic engine decision (hybrid)
+    const decision = decideEngineState(sanitizedMessage, analysis, intent, groundingMode);
 
     // Phase 2: Response
     const coreBeliefPatterns = [
@@ -1412,12 +1729,9 @@ export async function POST(request: NextRequest) {
     );
 
     const originalTrigger =
-      sessionContext?.originalTrigger ??
-      conversationHistory.find(m => m.role === 'user')?.content ??
-      '';
+      sessionContext?.originalTrigger ?? conversationHistory.find(m => m.role === 'user')?.content ?? '';
 
-    const coreBeliefJustDetected =
-      userRevealedCoreBelief && !sessionContext?.coreBeliefAlreadyDetected;
+    const coreBeliefJustDetected = userRevealedCoreBelief && !sessionContext?.coreBeliefAlreadyDetected;
 
     const previousDistortion = sessionContext?.previousDistortions?.[0];
 
@@ -1444,7 +1758,8 @@ export async function POST(request: NextRequest) {
           userRevealedCoreBelief,
           coreBeliefJustDetected,
           groundingMode,
-          intent
+          intent,
+          decision
         ),
       },
     ];
@@ -1467,6 +1782,7 @@ export async function POST(request: NextRequest) {
         intent,
         groundingMode,
         effectiveLayer,
+        decision,
         previousQuestions,
         previousReframes,
         previousAcknowledgments,
@@ -1482,6 +1798,7 @@ export async function POST(request: NextRequest) {
         previousQuestions,
         previousAcknowledgments,
         previousEncouragements,
+        decision,
         frozenThoughtPattern,
         previousDistortion,
         groundingMode,
@@ -1504,7 +1821,15 @@ export async function POST(request: NextRequest) {
         },
         groundingMode,
         groundingTurns,
-        _meta: { provider: 'fallback', turn: turnCount, effectiveLayer, intent },
+        _meta: {
+          provider: 'fallback',
+          turn: turnCount,
+          effectiveLayer,
+          intent,
+          state: decision.state,
+          intervention: decision.intervention,
+          confidence: decision.confidence,
+        },
       });
     }
 
@@ -1519,6 +1844,7 @@ export async function POST(request: NextRequest) {
       previousQuestions,
       previousAcknowledgments,
       previousEncouragements,
+      decision,
       frozenThoughtPattern,
       previousDistortion,
       groundingMode,
@@ -1547,6 +1873,7 @@ export async function POST(request: NextRequest) {
         intent,
         groundingMode,
         effectiveLayer,
+        decision,
         previousQuestions,
         previousReframes,
         previousAcknowledgments,
@@ -1563,6 +1890,7 @@ export async function POST(request: NextRequest) {
           previousQuestions,
           previousAcknowledgments,
           previousEncouragements,
+          decision,
           frozenThoughtPattern,
           previousDistortion,
           groundingMode,
@@ -1596,6 +1924,10 @@ export async function POST(request: NextRequest) {
         effectiveLayer,
         coreBeliefDetected: userRevealedCoreBelief,
         intent,
+        state: decision.state,
+        intervention: decision.intervention,
+        confidence: decision.confidence,
+        reasons: decision.reasons,
       },
     });
   } catch (error) {
