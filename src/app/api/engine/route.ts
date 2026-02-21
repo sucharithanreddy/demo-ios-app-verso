@@ -2,33 +2,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { validateThought } from '@/lib/input-validation';
 
-// ✅ You will create this file next (it contains the extracted logic from /api/reframe)
-import { runReframe } from '@/lib/engine/runReframe';
-
-type UserIntent = 'AUTO' | 'CALM' | 'CLARITY' | 'NEXT_STEP' | 'MEANING' | 'LISTEN';
+// ✅ This is the engine core you just added:
+import { runEngine, type UserIntent, type SessionContext } from '@/lib/engine/runEngine';
 
 interface EngineRequestBody {
   text: string;
-  session_context?: {
-    // optional: let buyers pass whatever they have
+  session_context?: SessionContext & {
+    // optional: buyers can pass extras without breaking
     sessionId?: string;
     turn?: number;
-
-    previousTopics?: string[];
-    previousDistortions?: string[];
-    previousQuestions?: string[];
-    previousReframes?: string[];
-    previousAcknowledgments?: string[];
-    previousEncouragements?: string[];
-
-    originalTrigger?: string;
-
-    groundingMode?: boolean;
-    groundingTurns?: number;
-    lastQuestionType?: 'choice' | 'open' | '';
-    userIntent?: UserIntent;
-
-    // room for vendor-specific metadata
     meta?: Record<string, unknown>;
   };
 }
@@ -48,9 +30,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: validation.error }, { status: 400 });
     }
 
-    // Call the “sellable engine” core (no auth, no rate-limit, no UI assumptions)
-    const out = await runReframe({
-      userText: validation.sanitized,
+    // Call the “sellable engine” core
+    const out = await runEngine({
+      userMessage: validation.sanitized,
+      conversationHistory: [], // external buyers can pass this later if you want; keep empty for now
       sessionContext: body.session_context ?? {},
     });
 
