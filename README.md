@@ -4,7 +4,7 @@ AI-Powered Cognitive Reflection Engine (Production-Ready SaaS)
 
 A full-stack SaaS application and structured cognitive engine that guides users through AI-powered CBT-style reflection conversations using deterministic state routing and multi-provider AI infrastructure.
 
-#🎯 What This Is
+### 🎯 What This Is
 
 The Optimism Engine is a production-ready cognitive reframing platform built on a structured “reflection engine” architecture.
 
@@ -33,7 +33,7 @@ Multi-provider AI failover
 
 Structured output contract
 
-🧠 Core Engine Architecture
+### 🧠 Core Engine Architecture
 
 At the center is:
 
@@ -72,7 +72,7 @@ PRESENCE (reflect-only listening)
 
 Routing is rule-based, not random.
 
-🧊 Iceberg Reflection Model
+### 🧊 Iceberg Reflection Model
 
 Progressive conversational layers:
 
@@ -86,7 +86,7 @@ Core Belief
 
 Layer progression is tracked per session and influences response style.
 
-🔁 Anti-Template Safeguards
+### 🔁 Anti-Template Safeguards
 
 The engine includes:
 
@@ -106,7 +106,7 @@ Question suppression in stabilization states
 
 This prevents repetitive or generic AI output across sessions.
 
-🤖 Multi-Provider AI Layer
+### 🤖 Multi-Provider AI Layer
 
 Supported providers:
 
@@ -138,7 +138,7 @@ Provider metadata returned in _meta
 
 No hardcoded API dependencies
 
-👤 User Features
+### 👤 User Features
 
 Clerk authentication (Google / Email)
 
@@ -154,7 +154,7 @@ Mobile-responsive UI
 
 Exportable conversation logs
 
-🛠 Tech Stack
+### 🛠 Tech Stack
 Layer	Technology
 Frontend	Next.js 16, React 19, TypeScript
 Styling	Tailwind CSS, Framer Motion
@@ -162,7 +162,7 @@ Backend	Next.js Route Handlers
 Database	PostgreSQL (Neon) + Prisma
 Auth	Clerk
 Deploy	Vercel
-📡 API Contract
+### 📡 API Contract
 POST /api/engine
 
 Request:
@@ -191,7 +191,7 @@ Response:
   }
 }
 
-This endpoint is designed for:
+### This endpoint is designed for:
 
 SaaS integration
 
@@ -201,7 +201,7 @@ White-label use
 
 API resale
 
-🗄 Database Schema
+### 🗄 Database Schema
 
 Core entities:
 
@@ -227,7 +227,7 @@ Structured metadata
 
 Designed for longitudinal tracking.
 
-🔒 Security & Data Handling
+### 🔒 Security & Data Handling
 
 Environment-based secret management
 
@@ -241,7 +241,7 @@ Structured server-side validation
 
 Clear separation between public UI and engine route
 
-📦 What’s Included in Sale
+### 📦 What’s Included in Sale
 
 Complete TypeScript source code
 
@@ -259,7 +259,7 @@ Documentation
 
 Optional post-sale support
 
-💼 Ideal Buyers
+### 💼 Ideal Buyers
 
 Mental wellness SaaS founders
 
@@ -271,7 +271,7 @@ AI infra builders wanting a structured cognitive engine
 
 Founders seeking a deploy-ready AI SaaS base
 
-💰 Monetization Pathways
+### 💰 Monetization Pathways
 
 Potential expansions:
 
@@ -287,7 +287,7 @@ API-based B2B licensing
 
 Revenue strategy is not embedded — the engine is infrastructure-ready.
 
-🚀 Deployment
+### 🚀 Deployment
 
 Clone repository
 
@@ -299,7 +299,7 @@ Deploy to Vercel
 
 Designed for production, not prototype demos.
 
-📄 License
+### 📄 License
 
 Proprietary.
 Available for acquisition or licensing.
