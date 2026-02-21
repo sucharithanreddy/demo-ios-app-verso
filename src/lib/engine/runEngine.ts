@@ -1880,6 +1880,22 @@ export async function runEngine(input: RunEngineInput) {
   };
   if (userRevealedCoreBelief) layerProgress.coreBelief = Math.max(layerProgress.coreBelief, 60);
 
+  // 🔥 Final output sanitization (remove any Candidate/Option labels if model slips)
+  completeResponse.acknowledgment = stripCandidatePrefixes(
+    completeResponse.acknowledgment
+  );
+  
+  completeResponse.reframe = stripCandidatePrefixes(
+    completeResponse.reframe
+  );
+  
+  completeResponse.question = stripCandidatePrefixes(
+    completeResponse.question
+  );
+  
+  completeResponse.encouragement = stripCandidatePrefixes(
+    completeResponse.encouragement
+  );
   return {
     ...completeResponse,
     progressScore,
