@@ -4,7 +4,7 @@ AI-Powered Cognitive Reflection Engine (Production-Ready SaaS)
 
 A full-stack SaaS application and structured cognitive engine that guides users through AI-powered CBT-style reflection conversations using deterministic state routing and multi-provider AI infrastructure.
 
-🎯 What This Is
+#🎯 What This Is
 
 The Optimism Engine is a production-ready cognitive reframing platform built on a structured “reflection engine” architecture.
 
