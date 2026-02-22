@@ -1226,7 +1226,7 @@ Return ONLY valid JSON:
   ],
   "acknowledgment": "Pick the best one from acknowledgments and paste it here exactly (no labels).",
   "thoughtPattern": "If clearly present, a pattern name. Otherwise empty string.",
-  "patternNote": "Short explanation (1–2 sentences). CORE WOUND: one sentence max.",
+  "patternNote": "Short explanation (1–2 sentences).",
   "reframe": "State-appropriate. If intervention=TINY_PLAN, include a tiny plan (1–3 steps).",
   "questions": [
     "One concrete question (optional)",
