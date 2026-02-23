@@ -271,16 +271,15 @@ export default function ReflectPage() {
     const reqId = ++requestSeqRef.current;
 
     // Start session if first message
-    if (!sessionStarted) {
-      setSessionStarted(true);
-
-      if (isSignedIn) {
+    if (!currentSessionId && isSignedIn) {
         setIsSaving(true);
         const sessionId = await createSession(trimmed);
-        if (sessionId) setCurrentSessionId(sessionId);
-        setIsSaving(false);
-      }
-    }
+        if (sessionId) {
+          setCurrentSessionId(sessionId);
+          setSessionStarted(true);
+        }
+      setIsSaving(false);
+   }
 
     // Build user message
     const userMessage: Message = {
