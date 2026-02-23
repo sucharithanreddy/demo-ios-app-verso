@@ -1156,7 +1156,12 @@ Return ONLY valid JSON:
   "thoughtPattern": "",
   "patternNote": "",
   "reframe": "Offer a compassionate reframe that challenges the distortion. Provide a new, healthier way to look at the situation.",
-  "questions": [],
+  "questions": [
+    "This is the most important part. You must ask 2-3 specific, open-ended questions to dig deeper.",
+    "Question A: Ask about the specific trigger (What started this?).",
+    "Question B: Ask about the underlying fear (What are they afraid will happen?).",
+    "Goal: To separate the facts from the story they are telling themselves."
+  ],
   "encouragements": [
     "Optional: one natural supportive line (NOT poster-y), OR return []"
   ],
@@ -1229,8 +1234,10 @@ Return ONLY valid JSON:
   "patternNote": "Short explanation (1–2 sentences).",
   "reframe": "Offer a compassionate reframe that challenges the distortion. Provide a new, healthier way to look at the situation.",
   "questions": [
-    "One concrete question (optional)",
-    "Alternative concrete question (optional)"
+    "This is the most important part. You must ask 2-3 specific, open-ended questions to dig deeper.",
+    "Question A: Ask about the specific trigger (What started this?).",
+    "Question B: Ask about the underlying fear (What are they afraid will happen?).",
+     Goal: To separate the facts from the story they are telling themselves."
   ],
   "encouragements": [
     "Optional supportive line (natural, specific)",
