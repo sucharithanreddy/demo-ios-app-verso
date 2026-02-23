@@ -1,5 +1,6 @@
-// ============================================================================
-// COGNITIVE DISTORTION DETECTOR (Optimized for Low False Positives)
+============================================================================
+// COGNITIVE DISTORTION DETECTOR
+// Identifies thinking patterns from text
 // ============================================================================
 
 export interface DistortionAnalysis {
@@ -9,85 +10,72 @@ export interface DistortionAnalysis {
   explanation: string;
 }
 
-// Weights help prioritize identity-based distortions (Labeling) over generic ones.
-const DISTORTION_WEIGHTS: Record<string, number> = {
-  'Labeling': 3.0,          // High priority: Identity/Core Belief
-  'Catastrophizing': 2.0,   // High priority: Panic
-  'All-or-Nothing Thinking': 1.5,
-  'Fortune Telling': 1.5,
-  'Mind Reading': 1.2,
-  'Emotional Reasoning': 1.2,
-  'Should Statements': 1.0,
-  'Personalization': 1.2,
-  'Mental Filtering': 1.0,
-  'Overgeneralization': 1.0,
-  'Rumination': 1.0,
-  'Disqualifying the Positive': 1.0,
-  'Self-Criticism': 1.5,
-};
-
-const COGNITIVE_DISTORTIONS: Record<string, {
-  patterns: RegExp[];
-  explanationTemplates: string[];
-}> = {
+const COGNITIVE_DISTORTIONS = {
   'Catastrophizing': {
     patterns: [
-      /\b(disaster|catastrophe|nightmare|end of the world)\b/i,
-      /\b(worst (thing|possible|case|mistake))\b/i,
-      /\b(can'?t (survive|handle|take|bear) (this|it|anything))\b/i,
-      /\b(going to (lose my job|ruin my life|end my life|die))\b/i,
-      /\b(everything is (ruined|destroyed|over|lost|hopeless))\b/i
+      /\b(disaster|catastrophe|nightmare|end of the world|ruined|destroyed|can't survive|won't survive|impossible to recover)\b/i,
+      /\b(worst thing|worst possible|terrible mistake|huge mistake|massive failure)\b/i,
+      /\b(everything is (ruined|destroyed|over|lost))\b/i,
+      /\b(can't (handle|take|bear|deal with) this)\b/i,
+      /\b(going to (lose|lose my|ruin my|destroy my|end my))\b/i
     ],
     explanationTemplates: [
-      "Your mind is jumping to the worst possible outcome, treating a difficult situation as a total disaster.",
-      "You're amplifying the negative consequences while minimizing your proven ability to cope.",
-      "The situation feels apocalyptic right now, but that is likely the fear talking, not the reality."
+      "Your mind is jumping to the worst possible outcome, treating this situation as catastrophic when there may be other possibilities.",
+      "You're amplifying the negative consequences while minimizing your ability to cope with them.",
+      "The situation feels apocalyptic, but your mind may be exaggerating the true impact."
     ]
   },
   'All-or-Nothing Thinking': {
     patterns: [
-      /\b(always|never)\s+(fail|mess up|screw up|wrong|bad)\b/i,
-      /\b(complete|total|utter|absolute)\s+(failure|disaster|mess|wreck)\b/i,
-      /\b(if (it|this) isn'?t (perfect|exact), then (it|i)?\s+(is|am)?\s+(useless|pointless|a waste))\b/i,
-      /\b(either (i|it) (succeeds|works) or (i|it) (fails|is ruined))\b/i
+      /\b(always|never|every single|each and every|all or nothing|completely|totally|absolutely)\b.*\b(fail|wrong|bad|terrible|horrible)\b/i,
+      /\b(if i can't .* (perfectly|completely|fully) then).*\b(why bother|what's the point|useless)\b/i,
+      /\b(either .* or|black and white|no middle ground|complete (success|failure))\b/i,
+      /\b(total|complete|absolute|utter) (failure|disaster|mess|wreck)\b/i,
+      /\b(i'm (completely|totally|absolutely) (useless|worthless|hopeless))\b/i
     ],
     explanationTemplates: [
       "You're viewing this situation in black-and-white terms, missing the gray areas and partial successes.",
-      "Your thinking is polarized - either perfect or terrible - without recognizing the middle ground.",
-      "You're discounting the nuance here. Reality rarely fits into absolute categories of success or failure."
+      "Your thinking is polarized - either perfect or terrible - without recognizing the middle ground where most of life happens.",
+      "You're discounting the nuance here. Reality rarely fits into absolute categories."
     ]
   },
   'Mind Reading': {
     patterns: [
-      /\b(they (think|believe|assume|probably think|must think|surely think))\s+(i'?m|i am|he|she|it is)\s+(bad|stupid|annoying|worthless|upset)\b/i,
-      /\b(everyone (thinks|knows|sees|judges))\s+(me|that)\s+(negatively|badly|as a failure)\b/i,
-      /\b(he|she|they) (must be|is probably) (laughing|judging|disappointed)\b/i
+      /\b(they (think|believe|assume|probably think|must think|surely think))\b/i,
+      /\b(everyone (thinks|knows|believes|sees))\b/i,
+      /\b(people (think|are thinking|probably))\b/i,
+      /\b(he thinks|she thinks|they're thinking)\b/i,
+      /\b(can tell (they|he|she) (think|thinks|is thinking))\b/i,
+      /\b(know what they're thinking|can see it in their eyes)\b/i
     ],
     explanationTemplates: [
       "You're assuming you know what others are thinking without having direct evidence of their thoughts.",
-      "Your mind is filling in the gaps about others' perspectives, likely projecting your own fears onto them.",
-      "You're predicting their judgment, but they might actually be focused on their own day."
+      "Your mind is filling in the gaps about others' perspectives, but these assumptions may not reflect reality.",
+      "You're projecting your fears onto others' minds. Their actual thoughts might be quite different."
     ]
   },
   'Fortune Telling': {
     patterns: [
-      /\b(i (know|can tell) (it|this) (will|is going to) (fail|go wrong|be a disaster))\b/i,
+      /\b(going to (fail|lose|mess up|screw up|ruin|be terrible|be awful|be a disaster))\b/i,
+      /\b(will (never|not|fail|lose|be able to))\b/i,
+      /\b(can already (see|tell|know) (it|this|that) (will|won't|is going to))\b/i,
       /\b(destined to|doomed to|bound to fail|certain to fail)\b/i,
-      /\b(never going to|won'?t ever|will never be able to)\s+(work|succeed|get better)\b/i,
-      /\b(i will (always|forever) be)\s+(alone|stuck|like this)\b/i
+      /\b(i just know (it|this|that))\b.*\b(will|won't|going to)\b/i,
+      /\b(never going to|won't ever|will never be able to)\b/i
     ],
     explanationTemplates: [
-      "You're predicting a negative future as if it's a guaranteed fact, but the future hasn't been written yet.",
+      "You're predicting a negative future as if you can see it with certainty, but the future hasn't been written yet.",
       "Your mind is creating a self-fulfilling prophecy by assuming failure before you've even tried.",
       "You're treating your anxious predictions as facts rather than possibilities."
     ]
   },
   'Emotional Reasoning': {
-    // CHANGED: Added negative keywords to prevent flagging "I feel like pizza"
     patterns: [
-      /\b(i (feel|felt) (like|as if|that) .*(i'?m|i am|it is)\s+(wrong|bad|stupid|unlovable|a failure|hopeless))\b/i,
-      /\b(because i feel (anxious|scared|bad), (it means|i must be))\b/i,
-      /\b(my (gut|instincts) tell me (i'?m|it is)\s+(wrong|bad|doomed))\b/i
+      /\b(i feel (like|as if|that) .*)\b/i,
+      /\b(it feels (like|as if|that) .*)\b/i,
+      /\b(because i feel|since i feel)\b/i,
+      /\b(feel so (sure|certain|convinced))\b/i,
+      /\b(my (gut|heart|feelings) (tells|tell) me)\b/i
     ],
     explanationTemplates: [
       "You're using your feelings as evidence for what's true, but emotions are reactions, not facts.",
@@ -96,38 +84,38 @@ const COGNITIVE_DISTORTIONS: Record<string, {
     ]
   },
   'Should Statements': {
-    // CHANGED: Added context of failure/guilt to avoid flagging "I should go to the gym"
     patterns: [
-      /\b(i (should|must|have to|ought to))\s+(have (been|done)|be able to|know better)\b/i,
-      /\b(i (shouldn'?t|mustn'?t))\s+(feel|think|be)\s+(this way|like this)\b/i,
-      /\b(i (should|must) have)\s+(known|done|seen)\s+(it|that)\b/i
+      /\b(i should|you should|they should|he should|she should|we should)\b/i,
+      /\b(i must|you must|they must|have to|need to|ought to)\b/i,
+      /\b(i'm supposed to|shouldn't have|should have|must have)\b/i,
+      /\b(i deserve to be|don't deserve to)\b/i
     ],
     explanationTemplates: [
       "You're using rigid rules about how things 'should' be, creating unnecessary pressure and guilt.",
-      "These 'should' statements act like a harsh internal critic that never lets you off the hook.",
+      "These 'should' statements are like a harsh internal critic that never lets you off the hook.",
       "You're holding yourself to unrealistic standards that set you up for feeling inadequate."
     ]
   },
   'Labeling': {
-    // CHANGED: High priority patterns for Identity statements
     patterns: [
-      /\b(i (am|'?m) a\s+(loser|failure|idiot|stupid|worthless|pathetic|waste|mess|fraud|burden|disappointment))\b/i,
-      /\b(i'?m such a\s+(loser|failure|idiot|mess))\b/i,
-      /\b(i am (totally|completely|absolutely)\s+(worthless|useless|hopeless|broken))\b/i,
-      /\b(that'?s just (who|what) i am)\b/i,
-      /\b(i (am|'?m) (the type of|that kind of) person who)\s*(always|never)\s*(fails|messes up|ruins)\b/i
+      /\b(i am a|i'm a|i'm such a)\s*(loser|failure|idiot|stupid|worthless|pathetic|waste|mess)\b/i,
+      /\b(i'm (totally|completely|absolutely) (worthless|useless|hopeless))\b/i,
+      /\b(that's just (who|what) i am)\b/i,
+      /\b(i'm (the type of|that kind of) person who)\b.*\b(fails|messes up|can't)\b/i
     ],
     explanationTemplates: [
-      "You're applying a harsh, permanent label to yourself instead of describing a specific behavior or situation.",
-      "This label reduces your complex humanity to a single negative judgment - you are more than this moment.",
+      "You're applying a harsh label to yourself instead of describing a specific behavior or situation.",
+      "This label reduces your complex humanity to a single negative judgment - you're more than this.",
       "Labels stick, but they're rarely accurate. You're describing what happened, not who you are."
     ]
   },
   'Personalization': {
     patterns: [
-      /\b((it|this) is (all|totally|completely)\s+(my fault))\b/i,
-      /\b(i (caused|ruined|messed up|screwed up))\s+(everything|it|this|the day|night))\b/i,
-      /\b(if only i (had|hadn'?t|did|didn'?t))\b.*(this wouldn'?t have happened)\b/i
+      /\b(my fault|because of me|i caused|i'm to blame|i ruined|i messed up everything)\b/i,
+      /\b(this (is|was|happened) because of me)\b/i,
+      /\b(everything is my fault|all my fault)\b/i,
+      /\b(if only i (had|hadn't|did|didn't))\b/i,
+      /\b(i (take|accept) (full|all|complete) responsibility)\b/i
     ],
     explanationTemplates: [
       "You're taking more responsibility than is warranted, blaming yourself for things outside your control.",
@@ -137,9 +125,10 @@ const COGNITIVE_DISTORTIONS: Record<string, {
   },
   'Mental Filtering': {
     patterns: [
-      /\b(but (it|this) was (bad|wrong|terrible|awful|failed|a disaster))\b/i,
-      /\b(the only thing that matters is)\s+(what went wrong|the bad part|the failure)\b/i,
-      /\b(ignoring|dismissing)\s+(the good|the success|what worked)\b/i
+      /\b(but .* (bad|wrong|terrible|awful|failed))\b/i,
+      /\b(only .* (bad|negative|wrong))\b/i,
+      /\b(ignoring|dismissing|didn't notice) .* (good|positive|success)\b/i,
+      /\b(focus(ing)? on .* (bad|wrong|failed|negative))\b/i
     ],
     explanationTemplates: [
       "You're filtering out the positive aspects of the situation and focusing exclusively on the negative.",
@@ -149,10 +138,11 @@ const COGNITIVE_DISTORTIONS: Record<string, {
   },
   'Overgeneralization': {
     patterns: [
-      /\b(this (always|never) happens)\b/i,
-      /\b((i|it|things) (always|never) (work|go right|succeed))\b/i,
-      /\b(another (failure|mistake|disaster))\b/i,
-      /\b(just my (luck|typical))\b/i
+      /\b(this always|it always|things always|everything always)\b/i,
+      /\b(this never|it never|things never|nothing ever)\b/i,
+      /\b(another (failure|mistake|disappointment))\b/i,
+      /\b( (typical|just my luck|my whole life))\b/i,
+      /\b(again and again|over and over|time after time)\b/i
     ],
     explanationTemplates: [
       "You're taking one situation and generalizing it to a universal pattern that may not exist.",
@@ -162,21 +152,25 @@ const COGNITIVE_DISTORTIONS: Record<string, {
   },
   'Rumination': {
     patterns: [
-      /\b(i can'?t stop (thinking about|replaying|overthinking))\b/i,
-      /\b(stuck in my head|on (a loop|repeat)|circling back)\b/i,
-      /\b(keep (thinking|going back) to)\s+(what (i said|did|happened))\b/i
+      /\b(thinking about (the past|past events|what happened))\b/i,
+      /\b(keep thinking about|can't stop thinking about|replaying)\b/i,
+      /\b(going over and over|stuck in my head|circling back)\b/i,
+      /\b(resurfaced|coming back to|keeps coming up)\b/i,
+      /\b(over and over in my mind|on repeat|loop)\b/i,
+      /\b(what i (should|could) have (said|done))\b/i
     ],
     explanationTemplates: [
       "Your mind is replaying past events on a loop, which can feel draining but often means there's something unresolved seeking attention.",
-      "You're stuck in a thought cycle about the past - your brain is trying to process something.",
+      "You're stuck in a thought cycle about the past - your brain is trying to process something, even if it feels exhausting.",
       "Rumination often happens when we're trying to solve something that can't be solved by thinking alone."
     ]
   },
   'Disqualifying the Positive': {
     patterns: [
-      /\b(that (doesn'?t count|wasn'?t real|was just luck|isn'?t a big deal))\b/i,
-      /\b(anyone (could have|would have) done (that|it))\b/i,
-      /\b(but (that)?\s+(doesn'?t count|isn'?t enough|isn'?t special))\b/i
+      /\b(that doesn't count|doesn't matter|not a big deal)\b/i,
+      /\b(anyone could|anyone would|that was just luck)\b/i,
+      /\b(but that's|but it's only|just because)\b/i,
+      /\b(it wasn't really|doesn't really count)\b/i
     ],
     explanationTemplates: [
       "You're dismissing positive experiences as if they don't count, which keeps the negative narrative intact.",
@@ -186,12 +180,15 @@ const COGNITIVE_DISTORTIONS: Record<string, {
   },
   'Self-Criticism': {
     patterns: [
-      /\b(i (am|'?m being)\s+(so|totally|completely)\s+(stupid|dumb|idiotic|pathetic|useless))\b/i,
-      /\b(i (hate|loathe|can'?t stand))\s+(myself)\b/i,
-      /\b(beating myself up|so hard on myself)\b/i
+      /\b(i (was|am being|acted) (fake|phony|fake|pretending))\b/i,
+      /\b(i messed up|i screwed up|i ruined)\b/i,
+      /\b(i'm so (stupid|dumb|idiotic|pathetic))\b/i,
+      /\b(being (too|so) (hard on myself|critical|judgmental))\b/i,
+      /\b(beating myself up|hard on myself)\b/i,
+      /\b(i (should|could) have (done|said|acted) (better|differently))\b/i
     ],
     explanationTemplates: [
-      "You're being much harsher with yourself than you would be with anyone else.",
+      "You're being much harsher with yourself than you would be with anyone else. The inner critic is loud right now.",
       "There's a lot of self-judgment here. Would you speak to a friend this way?",
       "Your inner critic is working overtime. It might think it's helping, but it's actually adding to your pain."
     ]
@@ -201,6 +198,7 @@ const COGNITIVE_DISTORTIONS: Record<string, {
 export function detectDistortions(text: string): DistortionAnalysis {
   const lowerText = text.toLowerCase();
   
+  // Default with more varied options
   let bestMatch: DistortionAnalysis = {
     type: 'Exploring Patterns',
     confidence: 0,
@@ -208,36 +206,26 @@ export function detectDistortions(text: string): DistortionAnalysis {
     explanation: 'Something in what you shared caught my attention. Let\'s explore what might be underneath it.'
   };
   
-  let highestWeightedScore = 0;
-  
   for (const [distortion, data] of Object.entries(COGNITIVE_DISTORTIONS)) {
-    let matchCount = 0;
+    let matches = 0;
     const evidence: string[] = [];
     
     for (const pattern of data.patterns) {
       const match = text.match(pattern);
       if (match) {
-        matchCount++;
+        matches++;
         evidence.push(match[0]);
       }
     }
     
-    if (matchCount > 0) {
-      // Get the weight for this distortion (default to 1 if not found)
-      const weight = DISTORTION_WEIGHTS[distortion] || 1.0;
-      const weightedScore = matchCount * weight;
-      
-      // Compare using weighted score to prioritize Identity/Labeling
-      if (weightedScore > highestWeightedScore) {
-        const explanation = data.explanationTemplates[Math.floor(Math.random() * data.explanationTemplates.length)];
-        bestMatch = {
-          type: distortion,
-          confidence: weightedScore, // Using weighted score as confidence proxy
-          evidence,
-          explanation
-        };
-        highestWeightedScore = weightedScore;
-      }
+    if (matches > bestMatch.confidence) {
+      const explanation = data.explanationTemplates[Math.floor(Math.random() * data.explanationTemplates.length)];
+      bestMatch = {
+        type: distortion,
+        confidence: matches,
+        evidence,
+        explanation
+      };
     }
   }
   
