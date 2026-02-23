@@ -972,16 +972,27 @@ Need: ${analysis.emotional_need}
 Core wound (if any): ${analysis.core_wound || ''}
 
 DO NOT reuse or lightly paraphrase any of these acknowledgments:
-${previousAcknowledgments.slice(0, 25).map(x => `- ${x}`).join('\n') || '- (none)'}
+ ${previousAcknowledgments.slice(0, 25).map(x => `- ${x}`).join('\n') || '- (none)'}
 
 DO NOT reuse or lightly paraphrase any of these encouragements:
-${previousEncouragements.slice(0, 25).map(x => `- ${x}`).join('\n') || '- (none)'}
+ ${previousEncouragements.slice(0, 25).map(x => `- ${x}`).join('\n') || '- (none)'}
 
 DO NOT reuse or lightly paraphrase any of these questions:
-${previousQuestions.slice(0, 25).map(q => `- ${q}`).join('\n') || '- (none)'}
+ ${previousQuestions.slice(0, 25).map(q => `- ${q}`).join('\n') || '- (none)'}
 
 DO NOT reuse or lightly paraphrase any of these reframes:
-${previousReframes.slice(0, 25).map(r => `- ${r}`).join('\n') || '- (none)'}
+ ${previousReframes.slice(0, 25).map(r => `- ${r}`).join('\n') || '- (none)'}
+
+----------------------------------------------------------------
+CRITICAL RESPONSE STRUCTURE (Follow this 4-step logic):
+
+1. VALIDATION: Mirror the user's emotion.
+2. DISTORTION LABEL: Identify the cognitive distortion (e.g., All-or-nothing thinking, Emotional Reasoning).
+3. REFRAME: Challenge the distortion. Provide a new perspective.
+4. ROOT CAUSE INVESTIGATION:
+   - Question A: Ask about the specific TRIGGER (What started this?).
+   - Question B: Ask about the FEAR (What are they afraid will happen?).
+----------------------------------------------------------------
 
 Hard rules:
 - Acknowledgment MUST be non-empty and specific (no "you're not alone", no "storm", no "I hear you").
@@ -1000,7 +1011,10 @@ JSON:
   "thoughtPattern": "",
   "patternNote": "",
   "reframe": "<plain paragraph>",
-  "questions": ["<plain question?>", "<plain question?>"],
+  "questions": [
+    "Question A: Ask about the specific trigger (What started this?).",
+    "Question B: Ask about the underlying fear (What are they afraid will happen?)."
+  ],
   "encouragements": ["<plain sentence>", "<plain sentence>"],
   "encouragement": "<one plain sentence from encouragements or empty>"
 }
@@ -1033,7 +1047,7 @@ Be precise. Go deep.`;
 }
 
 // ============================================================================
-// Phase 2 Prompt (state-driven, still CBT-based)
+// Phase 2 Prompt (state-driven, now with STRICT 4-STEP CBT LOGIC)
 // ============================================================================
 
 function buildResponsePrompt(
@@ -1045,7 +1059,7 @@ function buildResponsePrompt(
   originalTrigger: string = '',
   turnCount: number = 1,
   userRevealedCoreBelief: boolean = false,
-  coreBeliefJustDetected: boolean = false, // kept for future, not required
+  coreBeliefJustDetected: boolean = false,
   groundingMode: boolean = false,
   intent: UserIntent = 'AUTO',
   decision?: EngineDecision
@@ -1137,13 +1151,13 @@ AskQuestion: ${d.askQuestion ? 'true' : 'false'}`;
     return `You are a premium CBT-based product voice: human, specific, non-templated.
 You are NOT a therapy bot.
 
-${engineBlock}
-${stateObjective}
+ ${engineBlock}
+ ${stateObjective}
 
-${intentBlock}
-${triggerReminder}
+ ${intentBlock}
+ ${triggerReminder}
 
-${ackWarning}${encWarning}${questionsWarning}${reframesWarning}
+ ${ackWarning}${encWarning}${questionsWarning}${reframesWarning}
 
 Return ONLY valid JSON:
 
@@ -1174,28 +1188,26 @@ STYLE RULES:
 - Avoid: "you're not alone", "storm", "weather this", "I hear you".`;
   }
 
+  // ============================================================
+  // 🧠 THE SMART STRATEGY: 4-STEP CBT & ROOT CAUSE LOGIC
+  // ============================================================
+  
   let layerGuidance = '';
   if (effectiveLayer === 'SURFACE') {
     layerGuidance = `📍 CURRENT LAYER: SURFACE
 - Be curious, not clinical.
-- Track what happened + what it means.
-- At most ONE question, and only if it helps.`;
+- Track what happened + what it means.`;
   } else if (effectiveLayer === 'TRANSITION') {
     layerGuidance = `📍 CURRENT LAYER: TRANSITION
-- Connect the trigger to what it MEANS to them.
-- At most ONE question, and only if it helps.`;
+- Connect the trigger to what it MEANS to them.`;
   } else if (effectiveLayer === 'EMOTION') {
     layerGuidance = `📍 CURRENT LAYER: EMOTION
-- Sit with the feeling. Slow down.
-- No timeline probing.
-- At most ONE question, and only if it helps.`;
+- Sit with the feeling. Slow down.`;
   } else {
     layerGuidance = `📍 CURRENT LAYER: CORE WOUND (PRESENCE MODE)
 - thoughtPattern MUST be exactly "Core Belief".
 - No timelines. No "when did this start".
-- patternNote: ONE sentence max.
-- questions OPTIONAL (prefer [] if unsure).
-- Avoid clichés and motivational poster language.`;
+- patternNote: ONE sentence max.`;
   }
 
   const askQuestionRule = d.askQuestion
@@ -1205,12 +1217,12 @@ STYLE RULES:
   return `You are a premium CBT-based product voice: human, specific, non-templated.
 You are NOT a therapy bot.
 
-${engineBlock}
-${stateObjective}
+ ${engineBlock}
+ ${stateObjective}
 
-${triggerReminder}
+ ${triggerReminder}
 
-${intentBlock}
+ ${intentBlock}
 
 YOUR ANALYSIS (beneath the words):
 - What happened: ${analysis.trigger_event}
@@ -1219,8 +1231,24 @@ YOUR ANALYSIS (beneath the words):
 - What they need: ${analysis.emotional_need}
 - The wound this touches: ${analysis.core_wound}
 
-${questionsWarning}${reframesWarning}${ackWarning}${encWarning}
-${layerGuidance}
+ ${questionsWarning}${reframesWarning}${ackWarning}${encWarning}
+ ${layerGuidance}
+
+----------------------------------------------------------------
+CRITICAL RESPONSE STRUCTURE (Follow this 4-step logic):
+
+1. VALIDATION & REFLECTION: Mirror the user's emotion to show understanding. (e.g., "It sounds like you're feeling [Emotion] because [Situation].")
+
+2. IDENTIFY THE DISTORTION: Label the specific cognitive distortion (e.g., All-or-nothing thinking, Catastrophizing, Emotional Reasoning). Briefly explain why this thought process is unhelpful.
+
+3. THE REFRAME: Offer a compassionate reframe that challenges the distortion. Provide a new, healthier way to look at the situation.
+
+4. ROOT CAUSE INVESTIGATION (CRITICAL):
+   - You MUST generate specific, open-ended questions to dig deeper.
+   - Question A: Ask about the specific TRIGGER (What specific event started this?).
+   - Question B: Ask about the FEAR (What are they afraid will happen?).
+   - Goal: To separate the facts from the story they are telling themselves.
+----------------------------------------------------------------
 
 Return ONLY valid JSON:
 
@@ -1234,10 +1262,8 @@ Return ONLY valid JSON:
   "patternNote": "Short explanation (1–2 sentences).",
   "reframe": "Offer a compassionate reframe that challenges the distortion. Provide a new, healthier way to look at the situation.",
   "questions": [
-    "This is the most important part. You must ask 2-3 specific, open-ended questions to dig deeper.",
     "Question A: Ask about the specific trigger (What started this?).",
-    "Question B: Ask about the underlying fear (What are they afraid will happen?).",
-     Goal: To separate the facts from the story they are telling themselves."
+    "Question B: Ask about the underlying fear (What are they afraid will happen?)."
   ],
   "encouragements": [
     "Optional supportive line (natural, specific)",
@@ -1249,15 +1275,16 @@ Return ONLY valid JSON:
 RULES:
 - Acknowledgment must be non-empty and specific (no 'you're not alone', no 'storm', no 'I hear you').
 - Avoid repeating or lightly paraphrasing warnings.
-${askQuestionRule}
+ ${askQuestionRule}
 - If you output questions, they MUST use at least one concrete detail from the user's last message.
 - Avoid generic templates (banned: "hardest part", "heaviest", "most personal", "story your mind keeps replaying", "tell me more").
 - Avoid therapy-probing (no childhood/timeline/body-location interrogation).
 - If user is stabilizing / saying thanks / feeling better, return "questions": [].
 - Encouragement optional; if present, must not be motivational poster language.
 - ONLY reference core wounds if effectiveLayer is CORE_WOUND.
-- Do NOT mention "CORE WOUND" in patternNote unless thoughtPattern is exactly "Core Belief".;`
+- Do NOT mention "CORE WOUND" in patternNote unless thoughtPattern is exactly "Core Belief".;`;
 }
+
 
 // ============================================================================
 // Candidate pickers (anti-template selection)
