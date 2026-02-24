@@ -99,11 +99,13 @@ function computeSessionContext(session: any) {
 // GET a specific session (+ sessionContext)
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { id: string } } // ✅ FIXED (not a Promise)
+  { params }: { params: Promise<{ id: string }> } // ✅ FIXED: params is a Promise in Next.js 16
 ) {
   try {
     const { userId } = await auth();
-    const { id } = params;
+    const { id } = await params; // ✅ FIXED: await the params promise
+
+    console.log('📡 GET /api/sessions/[id] - Received ID:', id);
 
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
@@ -136,6 +138,8 @@ export async function GET(
       },
     });
 
+    console.log('📡 GET /api/sessions/[id] - Found session:', session?.id);
+
     if (!session) return NextResponse.json({ error: 'Session not found' }, { status: 404 });
 
     return NextResponse.json({
@@ -151,11 +155,13 @@ export async function GET(
 // PUT update a session (engine state)
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } } // ✅ FIXED
+  { params }: { params: Promise<{ id: string }> } // ✅ FIXED: params is a Promise in Next.js 16
 ) {
   try {
     const { userId } = await auth();
-    const { id } = params;
+    const { id } = await params; // ✅ FIXED: await the params promise
+
+    console.log('📡 PUT /api/sessions/[id] - Received ID:', id);
 
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
@@ -216,6 +222,8 @@ export async function PUT(
       },
     });
 
+    console.log('📡 PUT /api/sessions/[id] - Updated session:', updated.id);
+
     return NextResponse.json({ session: updated });
   } catch (error) {
     console.error('Error updating session:', error);
@@ -226,11 +234,13 @@ export async function PUT(
 // DELETE a session
 export async function DELETE(
   _request: NextRequest,
-  { params }: { params: { id: string } } // ✅ FIXED
+  { params }: { params: Promise<{ id: string }> } // ✅ FIXED: params is a Promise in Next.js 16
 ) {
   try {
     const { userId } = await auth();
-    const { id } = params;
+    const { id } = await params; // ✅ FIXED: await the params promise
+
+    console.log('📡 DELETE /api/sessions/[id] - Received ID:', id);
 
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
