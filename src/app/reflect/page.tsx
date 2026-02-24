@@ -208,20 +208,28 @@ export default function ReflectPage() {
     }
   };
 
-  const createSession = async (firstThought: string): Promise<string | null> => {
-    try {
-      const res = await fetch('/api/sessions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ firstThought }),
-      });
-      const data = await res.json();
-      return data.session?.id || null;
-    } catch (error) {
-      console.error('Error creating session:', error);
-      return null;
-    }
-  };
+   const createSession = async (firstThought: string): Promise<string | null> => {
+      try {
+        const res = await fetch('/api/sessions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ firstThought }),
+        });
+        
+        if (!res.ok) {
+          const errorData = await res.json();
+          console.error('Session creation failed:', res.status, errorData);
+          return null;
+        }
+        
+        const data = await res.json();
+        console.log('✅ Session created:', data.session?.id);
+        return data.session?.id || null;
+      } catch (error) {
+        console.error('Error creating session:', error);
+        return null;
+      }
+   };
 
   // ✅ IMPORTANT: take sessionId as param (prevents race condition)
   const saveMessage = async (sessionId: string, message: Omit<Message, 'id'>) => {
