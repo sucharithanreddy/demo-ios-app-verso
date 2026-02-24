@@ -10,6 +10,7 @@ function normalizeForCompare(s: string): string {
 }
 
 function uniqRecent(items: string[], limit = 25): string[] {
+  // keeps the first occurrence (so: if you pass newest-first, you keep newest)
   const seen = new Set<string>();
   const out: string[] = [];
   for (const x of items) {
@@ -36,7 +37,14 @@ function isChoiceQuestionText(q: string): boolean {
 
 function computeSessionContext(session: any) {
   const messages = (session?.messages ?? []) as any[];
-  const assistantMsgs = messages.filter(m => m.role === 'assistant').slice(-20);
+
+  // Messages are fetched ASC; we want newest-first for "recent memory"
+  const assistantMsgs = messages
+    .filter(m => m.role === 'assistant')
+    .slice(-30) // grab a bit more then reverse for recency
+    .reverse()
+    .slice(0, 20);
+
   const userMsgs = messages.filter(m => m.role === 'user');
 
   const previousQuestions: string[] = [];
@@ -59,10 +67,15 @@ function computeSessionContext(session: any) {
   const originalTrigger =
     typeof session?.originalTrigger === 'string' && session.originalTrigger.trim()
       ? session.originalTrigger.trim()
-      : (userMsgs?.[0]?.content as string) || '';
+      : (typeof userMsgs?.[0]?.content === 'string' ? userMsgs[0].content : '') || '';
 
+  // Since arrays are now newest-first, the "last question asked" is index 0
   const lastQuestion = previousQuestions[0] || '';
-  const lastQuestionType: QuestionType = isChoiceQuestionText(lastQuestion) ? 'choice' : lastQuestion ? 'open' : '';
+  const lastQuestionType: QuestionType = isChoiceQuestionText(lastQuestion)
+    ? 'choice'
+    : lastQuestion
+      ? 'open'
+      : '';
 
   return {
     previousQuestions: uniqRecent(previousQuestions, 25),
@@ -70,23 +83,27 @@ function computeSessionContext(session: any) {
     previousDistortions: uniqRecent(previousDistortions, 10),
     previousAcknowledgments: uniqRecent(previousAcknowledgments, 25),
     previousEncouragements: uniqRecent(previousEncouragements, 25),
+
     originalTrigger,
+
     groundingMode: !!session?.groundingMode,
     groundingTurns: Number.isFinite(session?.groundingTurns) ? session.groundingTurns : 0,
+
     lastQuestionType,
     coreBeliefAlreadyDetected: !!session?.coreBeliefAlreadyDetected,
+
     userIntent: (session?.lastIntentUsed as UserIntent) || 'AUTO',
   };
 }
 
 // GET a specific session (+ sessionContext)
 export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  _request: NextRequest,
+  { params }: { params: { id: string } } // ✅ FIXED (not a Promise)
 ) {
   try {
     const { userId } = await auth();
-    const { id } = await params;
+    const { id } = params;
 
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
@@ -134,11 +151,11 @@ export async function GET(
 // PUT update a session (engine state)
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } } // ✅ FIXED
 ) {
   try {
     const { userId } = await auth();
-    const { id } = await params;
+    const { id } = params;
 
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
@@ -147,14 +164,11 @@ export async function PUT(
 
     const body = await request.json();
 
-    // Back-compat accepts old fields, but we prioritize engine fields
     const {
-      // existing
       summary,
       distortions,
       isCompleted,
 
-      // ✅ engine state
       currentLayer,
       coreBelief,
       coreBeliefAlreadyDetected,
@@ -178,10 +192,13 @@ export async function PUT(
       originalTrigger?: string | null;
     };
 
+    // ✅ Ensure session belongs to this user
+    const existing = await db.session.findFirst({ where: { id, userId: user.id } });
+    if (!existing) return NextResponse.json({ error: 'Session not found' }, { status: 404 });
+
     const updated = await db.session.update({
       where: { id },
       data: {
-        // safe: only update if provided
         summary: summary === undefined ? undefined : summary,
         distortions: distortions === undefined ? undefined : distortions,
         isCompleted: isCompleted === undefined ? undefined : isCompleted,
@@ -209,12 +226,12 @@ export async function PUT(
 
 // DELETE a session
 export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  _request: NextRequest,
+  { params }: { params: { id: string } } // ✅ FIXED
 ) {
   try {
     const { userId } = await auth();
-    const { id } = await params;
+    const { id } = params;
 
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
