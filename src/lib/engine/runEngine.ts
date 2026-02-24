@@ -144,23 +144,41 @@ function detectDistortionLikelihood(text: string): number {
 
 function userSeemsFlooded(text: string): boolean {
   const s = (text || '').toLowerCase().trim();
-  const floodIndicators = [
-    'dont know',
-    "can't recall",
-    'cant recall',
-    "can't pinpoint",
-    'cant pinpoint',
-    'not sure',
-    'idk',
-    'whatever',
-    'nothing',
-    'blank',
-    'mind is blank',
-    "i can't think",
-    'too much',
-    'overwhelmed',
+
+  // 1. STRONG EMOTIONAL INDICATORS (Definite Flood)
+  // These words mean the user is in distress, regardless of context.
+  const strongFloodIndicators = [
+    "can't handle", "cant handle",
+    "too much",
+    "overwhelmed",
+    "shutting down",
+    "mind is blank",
+    "spiraling",
+    "losing it",
+    "freaking out",
+    "can't cope",
+    "drowning",
+    "paralyzed"
   ];
-  return floodIndicators.some(p => s.includes(p));
+
+  if (strongFloodIndicators.some(p => s.includes(p))) {
+    return true;
+  }
+
+  // 2. CONTEXTUAL UNCERTAINTY (Conditional Flood)
+  // "I don't know" is ONLY a flood indicator if paired with feelings/triggers.
+  // If paired with "tools" or "what to do", it's a SKILL GAP, not a FLOOD.
+  const uncertaintyPhrases = ["i don't know", "idk", "not sure"];
+  const emotionalContexts = ["feel", "trigger", "why", "emotion", "cause", "happened", "started"];
+
+  const hasUncertainty = uncertaintyPhrases.some(p => s.includes(p));
+  const hasEmotionalContext = emotionalContexts.some(c => s.includes(c));
+
+  if (hasUncertainty && hasEmotionalContext) {
+    return true;
+  }
+
+  return false;
 }
 
 function decideEngineState(
