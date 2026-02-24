@@ -418,26 +418,25 @@ export default function ReflectPage() {
       // ✅ Save messages + session state using activeSessionId (no race)
         if (isSignedIn && activeSessionId) {
           // Only save user message if session already existed (first message is saved during session creation)
-              if (!sessionStarted || messages.length > 0) {
+              if (messages.length > 0) {
                 await saveMessage(activeSessionId, userMessage);
               }
-          await saveMessage(activeSessionId, assistantMessage);
-        await fetch(`/api/sessions/${activeSessionId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            currentLayer: data.icebergLayer || 'surface',
-            coreBelief: data.icebergLayer === 'coreBelief' ? data.layerInsight : undefined,
-            coreBeliefAlreadyDetected: coreBeliefAlreadyDetected || (data as any)?._meta?.coreBeliefDetected === true,
-            lastQuestionType: currentQ
-              ? (currentQ.toLowerCase().includes('explore') && currentQ.toLowerCase().includes('grounding') ? 'choice' : 'open')
-              : lastQuestionType,
-            groundingMode: typeof data.groundingMode === 'boolean' ? data.groundingMode : groundingMode,
-            groundingTurns: typeof data.groundingTurns === 'number' ? data.groundingTurns : groundingTurns,
-            lastIntentUsed: userIntent,
-            // ❌ do NOT send lastUpdatedAt (not in prisma)
-          }),
-        });
+           await saveMessage(activeSessionId, assistantMessage);
+           await fetch(`/api/sessions/${activeSessionId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  currentLayer: data.icebergLayer || 'surface',
+                  coreBelief: data.icebergLayer === 'coreBelief' ? data.layerInsight : undefined,
+                  coreBeliefAlreadyDetected: coreBeliefAlreadyDetected || (data as any)?._meta?.coreBeliefDetected === true,
+                  lastQuestionType: currentQ
+                    ? (currentQ.toLowerCase().includes('explore') && currentQ.toLowerCase().includes('grounding') ? 'choice' : 'open')
+                    : lastQuestionType,
+                  groundingMode: typeof data.groundingMode === 'boolean' ? data.groundingMode : groundingMode,
+                  groundingTurns: typeof data.groundingTurns === 'number' ? data.groundingTurns : groundingTurns,
+                  lastIntentUsed: userIntent,
+                }),
+           });
 
         // ✅ refresh sidebar stats so it doesn’t look “stuck”
         await loadSessions();
