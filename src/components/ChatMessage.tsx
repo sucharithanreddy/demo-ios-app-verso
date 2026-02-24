@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, Sparkles, Pencil, X, Check } from 'lucide-react';
+import { User, Sparkles, Pencil, X, Check, Brain, Lightbulb, Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface Message {
@@ -43,6 +43,7 @@ export function ChatMessage({
   onEditCancel,
 }: ChatMessageProps) {
   const [showEditButton, setShowEditButton] = useState(false);
+  const [showReframe, setShowReframe] = useState(false);
   const isUser = message.role === 'user';
 
   // Check if this has structured CBT response fields
@@ -65,24 +66,24 @@ export function ChatMessage({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: 'easeOut' }}
       className={cn(
-        'flex w-full gap-3',
+        'flex w-full gap-3 group',
         isUser ? 'justify-end' : 'justify-start'
       )}
       onMouseEnter={() => isUser && onEdit && setShowEditButton(true)}
       onMouseLeave={() => setShowEditButton(false)}
     >
       {!isUser && (
-        <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-teal-500 flex items-center justify-center shadow-lg">
-          <Sparkles className="w-5 h-5 text-white" />
+        <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-premium">
+          <Sparkles className="w-5 h-5 text-primary-foreground" />
         </div>
       )}
 
       <div
         className={cn(
-          'max-w-[85%] md:max-w-[75%] rounded-2xl px-5 py-4 shadow-sm relative',
+          'max-w-[85%] md:max-w-[75%] rounded-2xl px-5 py-4 relative',
           isUser
-            ? 'bg-gradient-to-br from-blue-600 to-teal-600 text-white rounded-br-md'
-            : 'bg-white/80 backdrop-blur-sm border border-blue-100 text-gray-800 rounded-bl-md'
+            ? 'bg-gradient-to-br from-primary to-primary/80 text-primary-foreground rounded-br-md shadow-premium'
+            : 'glass border border-border/50 text-foreground rounded-bl-md shadow-premium'
         )}
       >
         {isUser ? (
@@ -93,21 +94,21 @@ export function ChatMessage({
                   value={editContent}
                   onChange={(e) => onEditChange?.(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  className="w-full bg-white/20 text-white placeholder-white/60 rounded-lg px-3 py-2 text-[15px] resize-none focus:outline-none focus:ring-2 focus:ring-white/30 min-h-[60px]"
+                  className="w-full bg-primary-foreground/10 text-primary-foreground placeholder:text-primary-foreground/60 rounded-xl px-3 py-2 text-[15px] resize-none focus:outline-none focus:ring-2 focus:ring-primary-foreground/30 min-h-[60px] border border-primary-foreground/20"
                   placeholder="Edit your message..."
                   autoFocus
                 />
                 <div className="flex justify-end gap-2">
                   <button
                     onClick={onEditCancel}
-                    className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 transition-colors"
+                    className="p-2 rounded-lg bg-primary-foreground/10 hover:bg-primary-foreground/20 transition-colors"
                     title="Cancel (Esc)"
                   >
                     <X className="w-4 h-4" />
                   </button>
                   <button
                     onClick={onEditSave}
-                    className="p-1.5 rounded-lg bg-white/30 hover:bg-white/40 transition-colors"
+                    className="p-2 rounded-lg bg-primary-foreground/20 hover:bg-primary-foreground/30 transition-colors"
                     title="Save (Enter)"
                   >
                     <Check className="w-4 h-4" />
@@ -125,7 +126,7 @@ export function ChatMessage({
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.8 }}
                       onClick={() => onEdit(message.id, message.content)}
-                      className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 transition-colors flex-shrink-0"
+                      className="p-2 rounded-lg bg-primary-foreground/10 hover:bg-primary-foreground/20 transition-colors flex-shrink-0"
                       title="Edit message"
                     >
                       <Pencil className="w-3.5 h-3.5" />
@@ -140,17 +141,21 @@ export function ChatMessage({
           <div className="space-y-4">
             {/* Acknowledgment */}
             {message.content && (
-              <p className="text-[15px] leading-relaxed text-gray-700">{message.content}</p>
+              <p className="text-[15px] leading-relaxed">{message.content}</p>
             )}
 
             {/* Thought Pattern + Note */}
             {(message.thoughtPattern || message.distortionType) && (
-              <div className="flex flex-col gap-1">
-                <span className="px-3 py-1.5 bg-gradient-to-r from-amber-100 to-orange-100 text-amber-700 text-xs font-medium rounded-full border border-amber-200 w-fit">
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-2">
+                  <Brain className="w-4 h-4 text-primary" />
+                  <span className="text-xs font-medium text-primary">Thought Pattern</span>
+                </div>
+                <span className="px-3 py-1.5 bg-primary/10 text-primary text-xs font-medium rounded-lg border border-primary/20 w-fit">
                   {message.thoughtPattern || message.distortionType}
                 </span>
                 {(message.patternNote || message.distortionExplanation) && (
-                  <p className="text-sm text-gray-600 pl-1">
+                  <p className="text-sm text-muted-foreground pl-1">
                     {message.patternNote || message.distortionExplanation}
                   </p>
                 )}
@@ -159,15 +164,36 @@ export function ChatMessage({
 
             {/* Reframe */}
             {message.reframe && message.reframe.trim() && (
-              <div className="bg-gradient-to-r from-teal-50 to-emerald-50 rounded-xl p-4 border border-teal-100">
-                <p className="text-[15px] text-gray-700">{message.reframe}</p>
+              <div>
+                <button
+                  onClick={() => setShowReframe(!showReframe)}
+                  className="flex items-center gap-2 text-sm font-medium text-accent hover:text-accent/80 transition-colors"
+                >
+                  <Lightbulb className="w-4 h-4" />
+                  <span>Reframe</span>
+                  <span className="text-xs text-muted-foreground">
+                    {showReframe ? '▲' : '▼'}
+                  </span>
+                </button>
+                <AnimatePresence>
+                  {showReframe && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="mt-2 p-4 rounded-xl bg-accent/10 border border-accent/20"
+                    >
+                      <p className="text-[15px] leading-relaxed">{message.reframe}</p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             )}
 
-            {/* Question (optional - presence mode) */}
+            {/* Question */}
             {((message.question && message.question.trim()) || (message.probingQuestion && message.probingQuestion.trim())) && (
-              <div className="bg-gradient-to-r from-blue-50 to-sky-50 rounded-xl p-4 border border-blue-100">
-                <p className="text-[15px] text-blue-700 font-medium">
+              <div className="bg-primary/5 rounded-xl p-4 border border-primary/10">
+                <p className="text-[15px] font-medium text-foreground">
                   {message.question || message.probingQuestion}
                 </p>
               </div>
@@ -175,18 +201,33 @@ export function ChatMessage({
 
             {/* Encouragement */}
             {message.encouragement && message.encouragement.trim() && (
-              <p className="text-sm text-blue-600 font-medium">✨ {message.encouragement}</p>
+              <div className="flex items-center gap-2">
+                <Heart className="w-4 h-4 text-accent" />
+                <p className="text-sm text-muted-foreground italic">{message.encouragement}</p>
+              </div>
+            )}
+
+            {/* Iceberg Layer Badge */}
+            {message.icebergLayer && (
+              <div className="pt-2 border-t border-border/50">
+                <span className="text-xs px-2 py-1 rounded-lg bg-primary/5 text-primary border border-primary/10">
+                  {message.icebergLayer === 'surface' && '🌊 Surface'}
+                  {message.icebergLayer === 'trigger' && '⚡ Trigger'}
+                  {message.icebergLayer === 'emotion' && '💜 Emotion'}
+                  {message.icebergLayer === 'coreBelief' && '💎 Core Belief'}
+                </span>
+              </div>
             )}
           </div>
         ) : (
           // Fallback: plain text only
-          <p className="text-[15px] leading-relaxed text-gray-700">{message.content}</p>
+          <p className="text-[15px] leading-relaxed">{message.content}</p>
         )}
       </div>
 
       {isUser && (
-        <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-teal-500 flex items-center justify-center shadow-lg">
-          <User className="w-5 h-5 text-white" />
+        <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-secondary to-secondary/80 flex items-center justify-center shadow-premium border border-border/50">
+          <User className="w-5 h-5 text-secondary-foreground" />
         </div>
       )}
     </motion.div>
