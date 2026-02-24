@@ -962,19 +962,25 @@ export default function ReflectPage() {
                 </button>
               )}
 
-              <div className="space-y-2">
-                {sessions.map((session) => (
+            <div className="space-y-2">
+              {sessions.map((session, index) => {
+                console.log(`📋 History item ${index}: ID=${session.id?.slice(0, 8)}..., Title="${session.title}"`);
+                
+                return (
                   <div
                     key={session.id}
-                    onClick={() => !selectMode && loadSession(session.id)}
+                    onClick={() => {
+                      console.log('🖱️ Clicked session:', session.id);
+                      if (!selectMode) loadSession(session.id);
+                    }}
                     className={`w-full text-left p-3 rounded-xl border transition-all cursor-pointer relative group ${
                       selectedIds.has(session.id)
                         ? 'border-blue-500 bg-blue-50'
                         : currentSessionId === session.id
                         ? 'border-blue-500 bg-blue-50'
                         : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
-                    }`}
-                  >
+               }`}
+              >
                     {selectMode ? (
                       <button
                         onClick={(e) => toggleSelect(session.id, e)}
@@ -991,14 +997,15 @@ export default function ReflectPage() {
                         <Trash2 className="w-4 h-4" />
                       </button>
                     )}
-                    <p className="text-sm font-medium text-gray-800 truncate pr-8">{session.title || 'Untitled Session'}</p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {new Date(session.createdAt).toLocaleDateString()} • {session.messages.length} messages
-                    </p>
-                    {session.coreBelief && <p className="text-xs text-blue-600 mt-1 truncate">Core belief: {session.coreBelief}</p>}
-                  </div>
-                ))}
-              </div>
+                            <p className="text-sm font-medium text-gray-800 truncate pr-8">{session.title || 'Untitled Session'}</p>
+                            <p className="text-xs text-gray-500 mt-1">
+                              {new Date(session.createdAt).toLocaleDateString()} • {session.messages.length} messages
+                            </p>
+                            {session.coreBelief && <p className="text-xs text-blue-600 mt-1 truncate">Core belief: {session.coreBelief}</p>}
+                          </div>
+                        );
+                      })}
+                    </div>
             </div>
           </motion.div>
         )}
