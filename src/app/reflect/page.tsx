@@ -422,12 +422,12 @@ export default function ReflectPage() {
 
       // ✅ Save messages + session state using activeSessionId (no race)
         if (isSignedIn && activeSessionId) {
-          // Only save user message if it wasn't already saved during session creation
-           if (sessionStarted && messages.length > 1) {
-            await saveMessage(activeSessionId, userMessage);
-           }
-        await saveMessage(activeSessionId, assistantMessage);
-
+          // Only save user message if session already existed (first message is saved during session creation)
+              if (!sessionStarted || messages.length > 0) {
+                await saveMessage(activeSessionId, userMessage);
+              }
+          await saveMessage(activeSessionId, assistantMessage);
+        }
         await fetch(`/api/sessions/${activeSessionId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
