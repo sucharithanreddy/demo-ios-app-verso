@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   TrendingUp,
   Calendar,
@@ -11,6 +11,8 @@ import {
   Sparkles,
   Award,
   ChevronLeft,
+  Moon,
+  Sun,
 } from 'lucide-react';
 import { UserButton } from '@clerk/nextjs';
 import Link from 'next/link';
@@ -45,24 +47,38 @@ export default function ProgressPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [moodHistory, setMoodHistory] = useState<MoodEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isDark, setIsDark] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    const stored = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const shouldBeDark = stored === 'dark' || (!stored && prefersDark);
+    setIsDark(shouldBeDark);
+    if (shouldBeDark) document.documentElement.classList.add('dark');
+  }, []);
 
   useEffect(() => {
     fetchStats();
   }, []);
 
   useEffect(() => {
-    const handleFocus = () => {
-      fetchStats();
-    };
-
+    const handleFocus = () => fetchStats();
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
   }, []);
 
+  const toggleDark = () => {
+    const newDark = !isDark;
+    setIsDark(newDark);
+    localStorage.setItem('theme', newDark ? 'dark' : 'light');
+    document.documentElement.classList.toggle('dark', newDark);
+  };
+
   const fetchStats = async () => {
     try {
       setLoading(true);
-
       const sessionsRes = await fetch('/api/sessions', { cache: 'no-store' });
       const sessionsData = await sessionsRes.json();
 
@@ -73,26 +89,21 @@ export default function ProgressPage() {
       const gratitudeRes = await fetch('/api/gratitude?limit=100', { cache: 'no-store' });
       const gratitudeData = await gratitudeRes.json();
 
-      // Calculate stats
       const sessions = sessionsData.sessions || [];
       const completedSessions = sessions.filter((s: { isCompleted: boolean }) => s.isCompleted);
       const totalMessages = sessions.flatMap((s: { messages: any[] }) => s.messages || []);
 
-      // ✅ FIXED: Count reframes (messages with reframe field populated)
-      const totalReframes = totalMessages.filter((m: { reframe: string | null }) => 
+      const totalReframes = totalMessages.filter((m: { reframe: string | null }) =>
         m.reframe && m.reframe.trim().length > 0
       ).length;
 
-      // ✅ FIXED: Count distortions using BOTH thoughtPattern (new) AND distortionType (legacy)
-      const totalDistortions = totalMessages.filter((m: { thoughtPattern: string | null; distortionType: string | null }) => 
+      const totalDistortions = totalMessages.filter((m: { thoughtPattern: string | null; distortionType: string | null }) =>
         (m.thoughtPattern && m.thoughtPattern.trim().length > 0) ||
         (m.distortionType && m.distortionType.trim().length > 0)
       ).length;
 
-      // Get distortions - check both new and legacy fields
       const distortionCounts: Record<string, number> = {};
       totalMessages.forEach((msg: { thoughtPattern: string | null; distortionType: string | null }) => {
-        // Prefer thoughtPattern (new field), fallback to distortionType (legacy)
         const distortion = msg.thoughtPattern || msg.distortionType;
         if (distortion && distortion.trim()) {
           distortionCounts[distortion] = (distortionCounts[distortion] || 0) + 1;
@@ -104,13 +115,10 @@ export default function ProgressPage() {
         .sort((a, b) => b.count - a.count)
         .slice(0, 5);
 
-      // Get iceberg layer progress
       const layerCounts: Record<string, number> = { surface: 0, trigger: 0, emotion: 0, coreBelief: 0 };
       sessions.forEach((s: { currentLayer: string }) => {
         const layer = s.currentLayer || 'surface';
-        if (layerCounts[layer] !== undefined) {
-          layerCounts[layer]++;
-        }
+        if (layerCounts[layer] !== undefined) layerCounts[layer]++;
       });
 
       const layerOrder = ['surface', 'trigger', 'emotion', 'coreBelief'];
@@ -120,39 +128,23 @@ export default function ProgressPage() {
         percentage: sessions.length > 0 ? Math.round((layerCounts[layer] / sessions.length) * 100) : 0,
       }));
 
-      // Calculate average session depth (0-3 scale)
       const layerDepth: Record<string, number> = { surface: 0, trigger: 1, emotion: 2, coreBelief: 3 };
       const averageSessionDepth =
         sessions.length > 0
-          ? sessions.reduce((sum: number, s: { currentLayer: string }) => sum + (layerDepth[s.currentLayer] || 0), 0) /
-            sessions.length
+          ? sessions.reduce((sum: number, s: { currentLayer: string }) => sum + (layerDepth[s.currentLayer] || 0), 0) / sessions.length
           : 0;
 
-      // Get core beliefs discovered
       const coreBeliefs: string[] = sessions
         .map((s: { coreBelief: string | null }) => s.coreBelief)
         .filter((b): b is string => b !== null && b.length > 0)
         .slice(0, 5);
 
-      // Get emotions from layer insights (extract emotion words)
-      const emotionPatterns = [
-        'anxious',
-        'sad',
-        'angry',
-        'ashamed',
-        'exhausted',
-        'confused',
-        'disappointed',
-        'inadequate',
-        'unsettled',
-      ];
+      const emotionPatterns = ['anxious', 'sad', 'angry', 'ashamed', 'exhausted', 'confused', 'disappointed', 'inadequate', 'unsettled'];
       const emotionCounts: Record<string, number> = {};
       totalMessages.forEach((msg: { content: string; layerInsight?: string }) => {
         const text = ((msg.content || '') + ' ' + (msg.layerInsight || '')).toLowerCase();
         emotionPatterns.forEach((emotion) => {
-          if (text.includes(emotion)) {
-            emotionCounts[emotion] = (emotionCounts[emotion] || 0) + 1;
-          }
+          if (text.includes(emotion)) emotionCounts[emotion] = (emotionCounts[emotion] || 0) + 1;
         });
       });
 
@@ -161,7 +153,6 @@ export default function ProgressPage() {
         .sort((a, b) => b.count - a.count)
         .slice(0, 5);
 
-      // Calculate mood trend
       const recentMoods = (moodData.entries || []).slice(0, 7);
       let moodTrend: 'up' | 'down' | 'stable' = 'stable';
       if (recentMoods.length >= 3) {
@@ -173,7 +164,6 @@ export default function ProgressPage() {
         else if (secondAvg < firstAvg - 0.5) moodTrend = 'down';
       }
 
-      // Calculate streak (simplified)
       const today = new Date();
       let streakDays = 0;
       for (let i = 0; i < 30; i++) {
@@ -209,10 +199,9 @@ export default function ProgressPage() {
     }
   };
 
-  // Simple mood chart (SVG-based)
+  // Premium mood chart
   const MoodChart = ({ data }: { data: MoodEntry[] }) => {
     if (data.length === 0) return null;
-
     const reversedData = [...data].reverse().slice(-14);
     const maxMood = 10;
     const chartWidth = 300;
@@ -233,117 +222,113 @@ export default function ProgressPage() {
       <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="w-full h-32">
         <defs>
           <linearGradient id="moodGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="rgb(59, 130, 246)" stopOpacity="0.3" />
-            <stop offset="100%" stopColor="rgb(59, 130, 246)" stopOpacity="0" />
+            <stop offset="0%" stopColor="oklch(0.45 0.2 270)" stopOpacity="0.3" />
+            <stop offset="100%" stopColor="oklch(0.45 0.2 270)" stopOpacity="0" />
           </linearGradient>
         </defs>
         <polygon points={areaPoints} fill="url(#moodGradient)" />
-        <polyline
-          points={points}
-          fill="none"
-          stroke="rgb(59, 130, 246)"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
+        <polyline points={points} fill="none" stroke="oklch(0.45 0.2 270)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         {reversedData.map((entry, index) => {
           const x = padding + (index / (reversedData.length - 1 || 1)) * (chartWidth - padding * 2);
           const y = chartHeight - padding - (entry.mood / maxMood) * (chartHeight - padding * 2);
-          return <circle key={entry.id} cx={x} cy={y} r="3" fill="rgb(59, 130, 246)" />;
+          return <circle key={entry.id} cx={x} cy={y} r="3" fill="oklch(0.45 0.2 270)" />;
         })}
       </svg>
     );
   };
 
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="relative w-16 h-16">
+          <div className="absolute inset-0 rounded-2xl bg-primary/20 animate-pulse" />
+          <div className="absolute inset-2 rounded-xl bg-primary/40 animate-pulse" style={{ animationDelay: '0.2s' }} />
+          <div className="absolute inset-4 rounded-lg bg-primary animate-pulse" style={{ animationDelay: '0.4s' }} />
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sky-50 via-blue-50 to-teal-50">
+    <div className="min-h-screen bg-background relative overflow-hidden noise">
+      {/* Ambient background */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute -top-[20%] -right-[10%] w-[50%] h-[50%] rounded-full opacity-20 blur-[120px]" style={{ background: 'linear-gradient(135deg, oklch(0.45 0.2 270), oklch(0.55 0.22 300))' }} />
+        <div className="absolute -bottom-[20%] -left-[10%] w-[40%] h-[40%] rounded-full opacity-15 blur-[100px]" style={{ background: 'linear-gradient(135deg, oklch(0.55 0.18 200), oklch(0.45 0.2 270))' }} />
+        <div className="absolute inset-0 dot-pattern opacity-30" />
+      </div>
+
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/70 backdrop-blur-lg border-b border-blue-100">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-teal-500 flex items-center justify-center shadow-lg">
-                <Sparkles className="w-5 h-5 text-white" />
+      <header className="sticky top-0 z-50">
+        <div className="glass border-b border-border/50">
+          <div className="max-w-6xl mx-auto px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <Link href="/" className="p-2 rounded-xl hover:bg-secondary/80 transition-colors">
+                  <ChevronLeft className="w-5 h-5 text-muted-foreground" />
+                </Link>
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-premium">
+                  <TrendingUp className="w-5 h-5 text-primary-foreground" />
+                </div>
+                <div>
+                  <h1 className="text-lg font-semibold text-foreground">Your Progress</h1>
+                  <p className="text-xs text-muted-foreground">Track your mental wellness journey</p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-teal-600 bg-clip-text text-transparent">
-                  Your Progress
-                </h1>
-                <p className="text-xs text-gray-500">Track your mental wellness journey</p>
+              <div className="flex items-center gap-2">
+                <button onClick={toggleDark} className="w-10 h-10 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary/80 transition-all">
+                  <AnimatePresence mode="wait" initial={false}>
+                    {isDark ? (
+                      <motion.div key="sun" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.2 }}>
+                        <Sun className="w-5 h-5" />
+                      </motion.div>
+                    ) : (
+                      <motion.div key="moon" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }} transition={{ duration: 0.2 }}>
+                        <Moon className="w-5 h-5" />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </button>
+                <UserButton afterSignOutUrl="/" />
               </div>
-            </Link>
-          </div>
-          <div className="flex items-center gap-3">
-            <Link href="/">
-              <Button variant="ghost" size="sm">
-                <ChevronLeft className="w-4 h-4 mr-1" />
-                Back
-              </Button>
-            </Link>
-            <UserButton afterSignOutUrl="/" />
+            </div>
           </div>
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 py-6">
+      <main className="relative z-10 max-w-6xl mx-auto px-6 py-6">
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full" />
+            <div className="relative w-16 h-16">
+              <div className="absolute inset-0 rounded-2xl bg-primary/20 animate-pulse" />
+              <div className="absolute inset-2 rounded-xl bg-primary/40 animate-pulse" style={{ animationDelay: '0.2s' }} />
+              <div className="absolute inset-4 rounded-lg bg-primary animate-pulse" style={{ animationDelay: '0.4s' }} />
+            </div>
           </div>
         ) : (
           <div className="space-y-6">
             {/* Stats Grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-white/80 backdrop-blur-lg rounded-2xl border border-blue-100 p-4"
-              >
-                <div className="flex items-center gap-2 text-blue-500 mb-2">
-                  <Target className="w-5 h-5" />
-                  <span className="text-sm font-medium">Sessions</span>
-                </div>
-                <p className="text-3xl font-bold text-gray-800">{stats?.totalSessions || 0}</p>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="bg-white/80 backdrop-blur-lg rounded-2xl border border-blue-100 p-4"
-              >
-                <div className="flex items-center gap-2 text-teal-500 mb-2">
-                  <Award className="w-5 h-5" />
-                  <span className="text-sm font-medium">Completed</span>
-                </div>
-                <p className="text-3xl font-bold text-gray-800">{stats?.completedSessions || 0}</p>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="bg-white/80 backdrop-blur-lg rounded-2xl border border-blue-100 p-4"
-              >
-                <div className="flex items-center gap-2 text-sky-500 mb-2">
-                  <Brain className="w-5 h-5" />
-                  <span className="text-sm font-medium">Reframes</span>
-                </div>
-                <p className="text-3xl font-bold text-gray-800">{stats?.totalReframes || 0}</p>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="bg-white/80 backdrop-blur-lg rounded-2xl border border-blue-100 p-4"
-              >
-                <div className="flex items-center gap-2 text-amber-500 mb-2">
-                  <Calendar className="w-5 h-5" />
-                  <span className="text-sm font-medium">Streak</span>
-                </div>
-                <p className="text-3xl font-bold text-gray-800">{stats?.streakDays || 0} days</p>
-              </motion.div>
+              {[
+                { icon: Target, label: 'Sessions', value: stats?.totalSessions || 0, color: 'text-primary' },
+                { icon: Award, label: 'Completed', value: stats?.completedSessions || 0, color: 'text-accent' },
+                { icon: Brain, label: 'Reframes', value: stats?.totalReframes || 0, color: 'text-primary' },
+                { icon: Calendar, label: 'Streak', value: `${stats?.streakDays || 0} days`, color: 'text-accent' },
+              ].map((stat, i) => (
+                <motion.div
+                  key={stat.label}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                  className="glass rounded-2xl border border-border/50 p-5 shadow-premium"
+                >
+                  <div className={cn('flex items-center gap-2 mb-3', stat.color)}>
+                    <stat.icon className="w-5 h-5" />
+                    <span className="text-sm font-medium">{stat.label}</span>
+                  </div>
+                  <p className="text-3xl font-bold text-foreground">{stat.value}</p>
+                </motion.div>
+              ))}
             </div>
 
             {/* Mood Chart */}
@@ -352,23 +337,16 @@ export default function ProgressPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
-                className="bg-white/80 backdrop-blur-lg rounded-2xl border border-blue-100 p-6"
+                className="glass rounded-2xl border border-border/50 p-6 shadow-premium"
               >
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
-                    <TrendingUp className="w-5 h-5 text-blue-500" />
-                    <h3 className="text-lg font-semibold text-gray-800">Mood Trend</h3>
+                    <TrendingUp className="w-5 h-5 text-primary" />
+                    <h3 className="text-lg font-semibold text-foreground">Mood Trend</h3>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-500">Avg: {stats?.averageMood}/10</span>
-                    <span
-                      className={cn(
-                        'text-sm font-medium',
-                        stats?.moodTrend === 'up' && 'text-teal-500',
-                        stats?.moodTrend === 'down' && 'text-rose-500',
-                        stats?.moodTrend === 'stable' && 'text-gray-500'
-                      )}
-                    >
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-muted-foreground">Avg: {stats?.averageMood}/10</span>
+                    <span className={cn('text-sm font-medium px-2 py-1 rounded-lg', stats?.moodTrend === 'up' && 'bg-accent/10 text-accent', stats?.moodTrend === 'down' && 'bg-destructive/10 text-destructive', stats?.moodTrend === 'stable' && 'bg-secondary text-muted-foreground')}>
                       {stats?.moodTrend === 'up' && '↑ Improving'}
                       {stats?.moodTrend === 'down' && '↓ Declining'}
                       {stats?.moodTrend === 'stable' && '→ Stable'}
@@ -385,30 +363,25 @@ export default function ProgressPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 }}
-                className="bg-white/80 backdrop-blur-lg rounded-2xl border border-blue-100 p-6"
+                className="glass rounded-2xl border border-border/50 p-6 shadow-premium"
               >
-                <div className="flex items-center gap-2 mb-4">
-                  <Brain className="w-5 h-5 text-amber-500" />
-                  <h3 className="text-lg font-semibold text-gray-800">Your Common Patterns</h3>
+                <div className="flex items-center gap-2 mb-6">
+                  <Brain className="w-5 h-5 text-accent" />
+                  <h3 className="text-lg font-semibold text-foreground">Your Common Patterns</h3>
                 </div>
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {stats.topDistortions.map((distortion, index) => (
-                    <div key={distortion.type} className="flex items-center gap-3">
-                      <span className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 text-sm flex items-center justify-center font-medium">
+                    <div key={distortion.type} className="flex items-center gap-4">
+                      <span className="w-7 h-7 rounded-xl bg-primary/10 text-primary text-sm flex items-center justify-center font-semibold">
                         {index + 1}
                       </span>
                       <div className="flex-1">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm text-gray-700">{distortion.type}</span>
-                          <span className="text-sm text-gray-500">{distortion.count}x</span>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium text-foreground">{distortion.type}</span>
+                          <span className="text-sm text-muted-foreground">{distortion.count}x</span>
                         </div>
-                        <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-gradient-to-r from-blue-500 to-teal-500 rounded-full"
-                            style={{
-                              width: `${(distortion.count / (stats.topDistortions[0]?.count || 1)) * 100}%`,
-                            }}
-                          />
+                        <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                          <div className="h-full bg-gradient-to-r from-primary to-primary/80 rounded-full transition-all" style={{ width: `${(distortion.count / (stats.topDistortions[0]?.count || 1)) * 100}%` }} />
                         </div>
                       </div>
                     </div>
@@ -423,48 +396,39 @@ export default function ProgressPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.55 }}
-                className="bg-white/80 backdrop-blur-lg rounded-2xl border border-blue-100 p-6"
+                className="glass rounded-2xl border border-border/50 p-6 shadow-premium"
               >
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-2">
-                    <Target className="w-5 h-5 text-teal-500" />
-                    <h3 className="text-lg font-semibold text-gray-800">Your Iceberg Depth</h3>
+                    <Target className="w-5 h-5 text-primary" />
+                    <h3 className="text-lg font-semibold text-foreground">Your Iceberg Depth</h3>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm text-gray-500">Avg Depth</p>
-                    <p className="text-lg font-bold text-teal-600">
-                      {((stats?.averageSessionDepth || 0) * 33.3).toFixed(0)}%
-                    </p>
+                    <p className="text-xs text-muted-foreground">Avg Depth</p>
+                    <p className="text-lg font-bold text-primary">{((stats?.averageSessionDepth || 0) * 33.3).toFixed(0)}%</p>
                   </div>
                 </div>
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {stats.layerProgress.map((layer, index) => {
-                    const layerColors = ['bg-sky-400', 'bg-blue-500', 'bg-indigo-500', 'bg-violet-500'];
+                    const layerColors = ['bg-blue-500', 'bg-amber-500', 'bg-rose-500', 'bg-primary'];
                     const layerLabels = ['Surface', 'Trigger', 'Emotion', 'Core Belief'];
                     return (
-                      <div key={layer.layer} className="flex items-center gap-3">
-                        <div className={`w-3 h-3 rounded-full ${layerColors[index]}`} />
+                      <div key={layer.layer} className="flex items-center gap-4">
+                        <div className={cn('w-3 h-3 rounded-full', layerColors[index])} />
                         <div className="flex-1">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-sm text-gray-700">{layerLabels[index]}</span>
-                            <span className="text-sm text-gray-500">
-                              {layer.count} sessions ({layer.percentage}%)
-                            </span>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-medium text-foreground">{layerLabels[index]}</span>
+                            <span className="text-sm text-muted-foreground">{layer.count} sessions ({layer.percentage}%)</span>
                           </div>
-                          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                            <div
-                              className={`h-full ${layerColors[index]} rounded-full transition-all`}
-                              style={{ width: `${layer.percentage}%` }}
-                            />
+                          <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                            <div className={cn('h-full rounded-full transition-all', layerColors[index])} style={{ width: `${layer.percentage}%` }} />
                           </div>
                         </div>
                       </div>
                     );
                   })}
                 </div>
-                <p className="text-xs text-gray-500 mt-4">
-                  💡 Sessions that reach Core Belief have the deepest therapeutic impact
-                </p>
+                <p className="text-xs text-muted-foreground mt-4">💡 Sessions that reach Core Belief have the deepest therapeutic impact</p>
               </motion.div>
             )}
 
@@ -474,19 +438,19 @@ export default function ProgressPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.58 }}
-                className="bg-gradient-to-r from-violet-50 to-indigo-50 rounded-2xl border border-violet-100 p-6"
+                className="glass rounded-2xl border border-primary/20 p-6 shadow-premium bg-gradient-to-br from-primary/5 to-transparent"
               >
-                <div className="flex items-center gap-2 mb-4">
-                  <Sparkles className="w-5 h-5 text-violet-500" />
-                  <h3 className="text-lg font-semibold text-gray-800">Core Beliefs You&apos;ve Discovered</h3>
+                <div className="flex items-center gap-2 mb-6">
+                  <Sparkles className="w-5 h-5 text-primary" />
+                  <h3 className="text-lg font-semibold text-foreground">Core Beliefs You&apos;ve Discovered</h3>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {stats.coreBeliefs.map((belief, index) => (
-                    <div key={index} className="flex items-start gap-2 bg-white/60 rounded-xl p-3">
-                      <span className="w-5 h-5 rounded-full bg-violet-100 text-violet-600 text-xs flex items-center justify-center font-medium flex-shrink-0 mt-0.5">
+                    <div key={index} className="flex items-start gap-3 bg-secondary/50 rounded-xl p-4 border border-border/50">
+                      <span className="w-6 h-6 rounded-lg bg-primary/10 text-primary text-xs flex items-center justify-center font-semibold flex-shrink-0 mt-0.5">
                         {index + 1}
                       </span>
-                      <p className="text-sm text-gray-700">{belief}</p>
+                      <p className="text-sm text-foreground leading-relaxed">{belief}</p>
                     </div>
                   ))}
                 </div>
@@ -498,7 +462,6 @@ export default function ProgressPage() {
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}>
                 <MoodTracker onMoodLogged={fetchStats} />
               </motion.div>
-
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}>
                 <GratitudeJournal />
               </motion.div>
