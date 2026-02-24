@@ -34,11 +34,30 @@ function isChoiceQuestionText(q: string): boolean {
   );
 }
 
-function computeSessionContext(session: any) {
-  const messages = (session?.messages ?? []) as any[];
+function computeSessionContext(session: {
+  messages?: Array<{
+    role: string;
+    content: string;
+    question?: string | null;
+    reframe?: string | null;
+    thoughtPattern?: string | null;
+    acknowledgment?: string | null;
+    encouragement?: string | null;
+  }>;
+  groundingMode?: boolean;
+  groundingTurns?: number;
+  coreBeliefAlreadyDetected?: boolean;
+  lastIntentUsed?: string | null;
+}) {
+  const messages = session?.messages ?? [];
 
-  // Pull from structured columns first (best), fall back to parsing JSON content only if needed.
-  const assistantMsgs = messages.filter(m => m.role === 'assistant').slice(-20);
+  // Messages are fetched ASC, so take last N and reverse to get newest-first for memory
+  const assistantMsgs = messages
+    .filter(m => m.role === 'assistant')
+    .slice(-30)
+    .reverse()
+    .slice(0, 20);
+
   const userMsgs = messages.filter(m => m.role === 'user');
 
   const previousQuestions: string[] = [];
@@ -48,23 +67,22 @@ function computeSessionContext(session: any) {
   const previousEncouragements: string[] = [];
 
   for (const m of assistantMsgs) {
-    if (typeof m.question === 'string' && m.question.trim()) previousQuestions.push(m.question.trim());
-    if (typeof m.reframe === 'string' && m.reframe.trim()) previousReframes.push(m.reframe.trim());
-    if (typeof m.thoughtPattern === 'string' && m.thoughtPattern.trim())
-      previousDistortions.push(m.thoughtPattern.trim());
-    if (typeof m.acknowledgment === 'string' && m.acknowledgment.trim())
-      previousAcknowledgments.push(m.acknowledgment.trim());
-    if (typeof m.encouragement === 'string' && m.encouragement.trim())
-      previousEncouragements.push(m.encouragement.trim());
+    if (m.question?.trim()) previousQuestions.push(m.question.trim());
+    if (m.reframe?.trim()) previousReframes.push(m.reframe.trim());
+    if (m.thoughtPattern?.trim()) previousDistortions.push(m.thoughtPattern.trim());
+    if (m.acknowledgment?.trim()) previousAcknowledgments.push(m.acknowledgment.trim());
+    if (m.encouragement?.trim()) previousEncouragements.push(m.encouragement.trim());
   }
 
-  const originalTrigger =
-    typeof session?.originalTrigger === 'string' && session.originalTrigger.trim()
-      ? session.originalTrigger.trim()
-      : (userMsgs?.[0]?.content as string) || '';
+  // ✅ No originalTrigger field in Session schema -> compute from first user msg
+  const originalTrigger = (userMsgs?.[0]?.content || '').trim();
 
   const lastQuestion = previousQuestions[0] || '';
-  const lastQuestionType: QuestionType = isChoiceQuestionText(lastQuestion) ? 'choice' : lastQuestion ? 'open' : '';
+  const lastQuestionType: QuestionType = isChoiceQuestionText(lastQuestion)
+    ? 'choice'
+    : lastQuestion
+      ? 'open'
+      : '';
 
   return {
     previousQuestions: uniqRecent(previousQuestions, 25),
@@ -76,12 +94,11 @@ function computeSessionContext(session: any) {
     originalTrigger,
 
     groundingMode: !!session?.groundingMode,
-    groundingTurns: Number.isFinite(session?.groundingTurns) ? session.groundingTurns : 0,
+    groundingTurns: Number.isFinite(session?.groundingTurns) ? Number(session.groundingTurns) : 0,
 
     lastQuestionType,
     coreBeliefAlreadyDetected: !!session?.coreBeliefAlreadyDetected,
 
-    // reflect-only (UI sets it per call; but we store last used for analytics)
     userIntent: (session?.lastIntentUsed as UserIntent) || 'AUTO',
   };
 }
@@ -100,28 +117,28 @@ export async function GET() {
       include: {
         messages: {
           orderBy: { createdAt: 'asc' },
-          // keep payload light: only what we need for context + UI playback
           select: {
             id: true,
             role: true,
             content: true,
             createdAt: true,
 
-            // structured fields (if present in schema)
             acknowledgment: true,
             thoughtPattern: true,
             patternNote: true,
             reframe: true,
             question: true,
             encouragement: true,
+
+            icebergLayer: true,
+            layerInsight: true,
           },
         },
       },
       orderBy: { createdAt: 'desc' },
     });
 
-    // attach computed context to each session (backwards compatible)
-    const sessionsWithContext = sessions.map((s: any) => ({
+    const sessionsWithContext = sessions.map(s => ({
       ...s,
       sessionContext: computeSessionContext(s),
     }));
@@ -140,7 +157,7 @@ export async function POST(request: NextRequest) {
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = await request.json();
-    const { title, firstThought } = body;
+    const { title, firstThought } = body as { title?: string; firstThought?: string };
 
     let user = await db.user.findUnique({ where: { clerkId: userId } });
 
@@ -148,10 +165,14 @@ export async function POST(request: NextRequest) {
       const userResponse = await fetch(`https://api.clerk.com/v1/users/${userId}`, {
         headers: { Authorization: `Bearer ${process.env.CLERK_SECRET_KEY}` },
       });
-
       const userData = await userResponse.json();
-      const email = userData.email_addresses?.[0]?.email_address || `${userId}@placeholder.com`;
-      const name = `${userData.first_name || ''} ${userData.last_name || ''}`.trim() || 'User';
+
+      const email =
+        userData.email_addresses?.[0]?.email_address || `${userId}@placeholder.com`;
+
+      const name =
+        `${userData.first_name || ''} ${userData.last_name || ''}`.trim() || 'User';
+
       const avatarUrl = userData.image_url;
 
       user = await db.user.create({
@@ -159,28 +180,64 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const derivedTitle = title || firstThought?.slice(0, 50) || 'New Session';
+    const derivedTitle = title || (firstThought ? String(firstThought).slice(0, 50) : '') || 'New Session';
+
     const session = await db.session.create({
       data: {
         userId: user.id,
         title: derivedTitle,
 
-        // ✅ engine defaults (schema must support these)
-        originalTrigger: typeof firstThought === 'string' ? firstThought : undefined,
-        currentLayer: 'SURFACE',
+        // ✅ Match schema defaults
+        currentLayer: 'surface',
         coreBelief: null,
+        isCompleted: false,
+        distortions: null,
+
         coreBeliefAlreadyDetected: false,
-        lastQuestionType: '',
+        lastQuestionType: null,
         groundingMode: false,
         groundingTurns: 0,
         lastIntentUsed: 'AUTO',
-        lastUpdatedAt: new Date(),
-      } as any,
+      },
+    });
+
+    // ✅ If you want originalTrigger saved, do it via first Message (no schema change)
+    if (typeof firstThought === 'string' && firstThought.trim()) {
+      await db.message.create({
+        data: {
+          sessionId: session.id,
+          role: 'user',
+          content: firstThought.trim(),
+        },
+      });
+    }
+
+    const fullSession = await db.session.findFirst({
+      where: { id: session.id },
+      include: {
+        messages: {
+          orderBy: { createdAt: 'asc' },
+          select: {
+            id: true,
+            role: true,
+            content: true,
+            createdAt: true,
+            acknowledgment: true,
+            thoughtPattern: true,
+            patternNote: true,
+            reframe: true,
+            question: true,
+            encouragement: true,
+            icebergLayer: true,
+            layerInsight: true,
+          },
+        },
+      },
     });
 
     return NextResponse.json({
-      session,
-      sessionContext: computeSessionContext({ ...session, messages: [] }),
+      session: fullSession,
+      sessionContext: computeSessionContext(fullSession || { messages: [] }),
     });
   } catch (error) {
     console.error('Error creating session:', error);
