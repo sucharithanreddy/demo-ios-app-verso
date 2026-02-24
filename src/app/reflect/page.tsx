@@ -25,17 +25,13 @@ type UserIntent = 'AUTO' | 'CALM' | 'CLARITY' | 'NEXT_STEP' | 'MEANING' | 'LISTE
 
 interface ReframeResponse {
   acknowledgment: string;
-  // New Iceberg layer fields
   surface?: string;
   trigger?: string;
   emotion?: string;
   coreBelief?: string;
   question?: string;
-
-  // Legacy fields (kept for backward compatibility)
   thoughtPattern?: string;
   patternNote?: string;
-
   distortionType?: string;
   distortionExplanation?: string;
   reframe?: string;
@@ -51,10 +47,8 @@ interface ReframeResponse {
     coreBelief: number;
   };
   progressNote?: string;
-
   groundingMode?: boolean;
   groundingTurns?: number;
-
   _meta?: Record<string, unknown>;
 }
 
@@ -69,9 +63,6 @@ interface SessionData {
   messages: Message[];
 }
 
-// ------------------------------
-// Helpers: parse assistant JSON content saved in DB
-// ------------------------------
 function safeParseJSON(maybeJson: unknown): any | null {
   if (typeof maybeJson !== 'string') return null;
   try {
@@ -108,7 +99,6 @@ function normalizeLoadedMessages(raw: Message[]): Message[] {
 }
 
 function assistantHistoryContent(m: Message) {
-  // ✅ Ensure assistant history content is JSON parseable (reframe/route.ts hydrates memory from JSON)
   return JSON.stringify({
     acknowledgment: (m.content || '').trim(),
     thoughtPattern: (m.thoughtPattern || m.distortionType || '').toString().trim(),
@@ -166,7 +156,6 @@ export default function ReflectPage() {
   const [editContent, setEditContent] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // ✅ Hard guard refs: prevent double-submit + abort stale requests
   const inFlightRef = useRef(false);
   const abortRef = useRef<AbortController | null>(null);
   const requestSeqRef = useRef(0);
@@ -192,6 +181,14 @@ export default function ReflectPage() {
       const res = await fetch('/api/sessions');
       const data = await res.json();
 
+      // 🔍 DEBUG: Log all sessions from API
+      console.log('=== LOAD SESSIONS FROM API ===');
+      console.log('Total sessions:', data.sessions?.length);
+      (data.sessions || []).forEach((s: any, i: number) => {
+        console.log(`  [${i}] ID: ${s.id} | Title: "${s.title}" | Messages: ${s.messages?.length}`);
+      });
+      console.log('==============================');
+
       const normalized: SessionData[] = (data.sessions || []).map((s: any) => ({
         ...s,
         messages: normalizeLoadedMessages(s.messages || []),
@@ -203,43 +200,44 @@ export default function ReflectPage() {
     }
   };
 
-   const createSession = async (firstThought: string): Promise<string | null> => {
-      try {
-        const res = await fetch('/api/sessions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ firstThought }),
-        });
-        
-        if (!res.ok) {
-          const errorData = await res.json();
-          console.error('Session creation failed:', res.status, errorData);
-          return null;
-        }
-        
-        const data = await res.json();
-        console.log('✅ Session created:', data.session?.id);
-        return data.session?.id || null;
-      } catch (error) {
-        console.error('Error creating session:', error);
+  const createSession = async (firstThought: string): Promise<string | null> => {
+    try {
+      const res = await fetch('/api/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ firstThought }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        console.error('Session creation failed:', res.status, errorData);
         return null;
       }
-   };
 
-  // ✅ IMPORTANT: take sessionId as param (prevents race condition)
+      const data = await res.json();
+      console.log('✅ Session created:', data.session?.id);
+      return data.session?.id || null;
+    } catch (error) {
+      console.error('Error creating session:', error);
+      return null;
+    }
+  };
+
   const saveMessage = async (sessionId: string, message: Omit<Message, 'id'>) => {
     try {
-      await fetch('/api/messages', {
+      const res = await fetch('/api/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...message, sessionId }),
       });
+      if (!res.ok) {
+        console.error('Failed to save message:', await res.text());
+      }
     } catch (error) {
       console.error('Error saving message:', error);
     }
   };
 
-  // ✅ IMPORTANT: take sessionId as param
   const updateSessionComplete = async (sessionId: string) => {
     try {
       await fetch(`/api/sessions/${sessionId}`, {
@@ -249,13 +247,11 @@ export default function ReflectPage() {
           currentLayer: 'coreBelief',
           coreBelief: discoveredInsights.coreBelief,
           isCompleted: true,
-
           coreBeliefAlreadyDetected: true,
           lastQuestionType,
           groundingMode,
           groundingTurns,
           lastIntentUsed: userIntent,
-          // ❌ do NOT send lastUpdatedAt (not in prisma)
         }),
       });
     } catch (error) {
@@ -276,10 +272,8 @@ export default function ReflectPage() {
 
     const reqId = ++requestSeqRef.current;
 
-    // ✅ local sessionId for this request to avoid state timing issues
     let activeSessionId = currentSessionId;
 
-    // Start session if first message
     if (!sessionStarted) {
       setSessionStarted(true);
 
@@ -415,30 +409,30 @@ export default function ReflectPage() {
         setLastQuestionType(isChoiceQ ? 'choice' : 'open');
       }
 
-      // ✅ Save messages + session state using activeSessionId (no race)
-        if (isSignedIn && activeSessionId) {
-          // Only save user message if session already existed (first message is saved during session creation)
-              if (messages.length > 0) {
-                await saveMessage(activeSessionId, userMessage);
-              }
-           await saveMessage(activeSessionId, assistantMessage);
-           await fetch(`/api/sessions/${activeSessionId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  currentLayer: data.icebergLayer || 'surface',
-                  coreBelief: data.icebergLayer === 'coreBelief' ? data.layerInsight : undefined,
-                  coreBeliefAlreadyDetected: coreBeliefAlreadyDetected || (data as any)?._meta?.coreBeliefDetected === true,
-                  lastQuestionType: currentQ
-                    ? (currentQ.toLowerCase().includes('explore') && currentQ.toLowerCase().includes('grounding') ? 'choice' : 'open')
-                    : lastQuestionType,
-                  groundingMode: typeof data.groundingMode === 'boolean' ? data.groundingMode : groundingMode,
-                  groundingTurns: typeof data.groundingTurns === 'number' ? data.groundingTurns : groundingTurns,
-                  lastIntentUsed: userIntent,
-                }),
-           });
+      // Save messages + session state
+      if (isSignedIn && activeSessionId) {
+        // Only save user message if this is NOT the first message (first is saved in createSession)
+        if (messages.length > 0) {
+          await saveMessage(activeSessionId, userMessage);
+        }
+        await saveMessage(activeSessionId, assistantMessage);
 
-        // ✅ refresh sidebar stats so it doesn’t look “stuck”
+        await fetch(`/api/sessions/${activeSessionId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            currentLayer: data.icebergLayer || 'surface',
+            coreBelief: data.icebergLayer === 'coreBelief' ? data.layerInsight : undefined,
+            coreBeliefAlreadyDetected: coreBeliefAlreadyDetected || (data as any)?._meta?.coreBeliefDetected === true,
+            lastQuestionType: currentQ
+              ? (currentQ.toLowerCase().includes('explore') && currentQ.toLowerCase().includes('grounding') ? 'choice' : 'open')
+              : lastQuestionType,
+            groundingMode: typeof data.groundingMode === 'boolean' ? data.groundingMode : groundingMode,
+            groundingTurns: typeof data.groundingTurns === 'number' ? data.groundingTurns : groundingTurns,
+            lastIntentUsed: userIntent,
+          }),
+        });
+
         await loadSessions();
       }
 
@@ -546,7 +540,6 @@ export default function ReflectPage() {
     abortRef.current = controller;
     inFlightRef.current = true;
 
-    // ✅ local session id
     const activeSessionId = currentSessionId;
 
     try {
@@ -666,8 +659,6 @@ export default function ReflectPage() {
       if (data.layerProgress) setLayerProgress(data.layerProgress);
 
       if (isSignedIn && activeSessionId) {
-        // On edit replay, you probably update messages via your API route logic.
-        // If you also want to overwrite DB messages, that requires a different endpoint.
         await fetch(`/api/sessions/${activeSessionId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -705,28 +696,23 @@ export default function ReflectPage() {
   };
 
   const loadSession = async (sessionId: string) => {
+    console.log('🔵 loadSession called with ID:', sessionId);
+
     try {
       const res = await fetch(`/api/sessions/${sessionId}`);
       const data = await res.json();
-      
-      // 🔍 DEBUG: Check what's coming back from API
-      console.log('=== LOAD SESSION DEBUG ===');
-      console.log('Session ID:', sessionId);
-      console.log('Full response:', data);
-      console.log('Messages count:', data.session?.messages?.length);
-      console.log('First message:', data.session?.messages?.[0]);
-      console.log('=========================');      
-      console.log('📦 Loaded session data:', data); // Debug log
-      
+
+      console.log('🟢 API response session ID:', data.session?.id);
+      console.log('🟢 API response messages count:', data.session?.messages?.length);
+      console.log('🟢 First message content:', data.session?.messages?.[0]?.content?.slice(0, 50));
+
       if (data.session) {
         const normalizedMessages = normalizeLoadedMessages(data.session.messages || []);
-        
-        console.log('📦 Normalized messages:', normalizedMessages); // Debug log
-  
+
         setMessages(normalizedMessages);
         setCurrentLayer(data.session.currentLayer as IcebergLayer);
         setCurrentSessionId(sessionId);
-        setSessionStarted(true);  // ✅ Make sure this is set!
+        setSessionStarted(true);
         setShowHistory(false);
 
         if (typeof data.session.coreBeliefAlreadyDetected === 'boolean') {
@@ -838,7 +824,6 @@ export default function ReflectPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-sky-50 via-blue-50 to-teal-50 relative overflow-hidden">
-      {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-pulse" />
         <div
@@ -847,7 +832,6 @@ export default function ReflectPage() {
         />
       </div>
 
-      {/* Header */}
       <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-blue-100">
         <div className="max-w-6xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
@@ -962,15 +946,12 @@ export default function ReflectPage() {
                 </button>
               )}
 
-            <div className="space-y-2">
-              {sessions.map((session, index) => {
-                console.log(`📋 History item ${index}: ID=${session.id?.slice(0, 8)}..., Title="${session.title}"`);
-                
-                return (
+              <div className="space-y-2">
+                {sessions.map((session, index) => (
                   <div
                     key={session.id}
                     onClick={() => {
-                      console.log('🖱️ Clicked session:', session.id);
+                      console.log('🖱️ Clicked session:', session.id, 'Title:', session.title);
                       if (!selectMode) loadSession(session.id);
                     }}
                     className={`w-full text-left p-3 rounded-xl border transition-all cursor-pointer relative group ${
@@ -979,8 +960,8 @@ export default function ReflectPage() {
                         : currentSessionId === session.id
                         ? 'border-blue-500 bg-blue-50'
                         : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
-               }`}
-              >
+                    }`}
+                  >
                     {selectMode ? (
                       <button
                         onClick={(e) => toggleSelect(session.id, e)}
@@ -997,15 +978,14 @@ export default function ReflectPage() {
                         <Trash2 className="w-4 h-4" />
                       </button>
                     )}
-                            <p className="text-sm font-medium text-gray-800 truncate pr-8">{session.title || 'Untitled Session'}</p>
-                            <p className="text-xs text-gray-500 mt-1">
-                              {new Date(session.createdAt).toLocaleDateString()} • {session.messages.length} messages
-                            </p>
-                            {session.coreBelief && <p className="text-xs text-blue-600 mt-1 truncate">Core belief: {session.coreBelief}</p>}
-                          </div>
-                        );
-                      })}
-                    </div>
+                    <p className="text-sm font-medium text-gray-800 truncate pr-8">{session.title || 'Untitled Session'}</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {new Date(session.createdAt).toLocaleDateString()} • {session.messages.length} messages
+                    </p>
+                    {session.coreBelief && <p className="text-xs text-blue-600 mt-1 truncate">Core belief: {session.coreBelief}</p>}
+                  </div>
+                ))}
+              </div>
             </div>
           </motion.div>
         )}
@@ -1016,7 +996,6 @@ export default function ReflectPage() {
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Chat Section */}
           <div className="flex-1 flex flex-col min-h-0">
-            {/* Welcome State */}
             {!sessionStarted && (
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex-1 flex flex-col items-center justify-center py-12">
                 <motion.div
@@ -1049,7 +1028,6 @@ export default function ReflectPage() {
               </motion.div>
             )}
 
-            {/* Messages */}
             {sessionStarted && (
               <div className="flex-1 overflow-y-auto pb-4 space-y-4 max-h-[calc(100vh-300px)]">
                 <AnimatePresence>
