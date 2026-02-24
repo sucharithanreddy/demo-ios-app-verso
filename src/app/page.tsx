@@ -271,8 +271,8 @@ export default function Home() {
                 </motion.div>
               </Link>
 
-              {/* Assist Card */}
-              <Link href="/assist">
+              {/* The Lab Card */}
+              <Link href="/lab">
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -284,25 +284,25 @@ export default function Home() {
                   <div className="relative glass rounded-2xl border border-border/50 p-8 shadow-premium hover:shadow-lg transition-all cursor-pointer">
                     <div className="flex items-start gap-5">
                       <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-accent to-accent/80 flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow flex-shrink-0">
-                        <HandHeart className="w-7 h-7 text-accent-foreground" />
+                        <Sparkles className="w-7 h-7 text-accent-foreground" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-2">
-                          <h3 className="text-xl font-semibold text-foreground">Assist</h3>
+                          <h3 className="text-xl font-semibold text-foreground">The Lab</h3>
                           <ArrowRight className="w-4 h-4 text-accent opacity-0 group-hover:opacity-100 transition-opacity transform group-hover:translate-x-1" />
                         </div>
                         <p className="text-muted-foreground mb-4">
-                          <span className="font-medium text-foreground">From someone I'm helping.</span> I need to respond thoughtfully.
+                          <span className="font-medium text-foreground">Train your mind.</span> Quick tools, practice exercises, and cognitive goals.
                         </p>
                         <div className="flex flex-wrap gap-2">
                           <span className="text-xs px-3 py-1 rounded-full bg-accent/10 text-accent font-medium">
-                            Coaching
+                            Quick Tools
                           </span>
                           <span className="text-xs px-3 py-1 rounded-full bg-secondary text-secondary-foreground font-medium">
-                            Mentoring
+                            Practice
                           </span>
                           <span className="text-xs px-3 py-1 rounded-full bg-secondary text-secondary-foreground font-medium">
-                            Support
+                            Goals
                           </span>
                         </div>
                       </div>
@@ -310,9 +310,6 @@ export default function Home() {
                   </div>
                 </motion.div>
               </Link>
-            </div>
-          </div>
-        </section>
 
         {/* Features Section */}
         <section className="py-20 px-6">
