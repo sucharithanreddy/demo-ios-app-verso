@@ -853,9 +853,7 @@ export default function ReflectPage() {
             <div className="flex items-center gap-2">
               {isSignedIn ? (
                 <>
-                  <Link href="/assist" className="text-sm text-teal-600 hover:text-teal-700 transition-colors mr-2">
-                    Switch to Assist →
-                  </Link>
+                  <Link href="/lab" className="text-sm font-medium text-accent hover:text-accent/80 transition-colors px-3 py-2 hidden sm:block rounded-lg hover:bg-accent/10">The Lab →</Link>
                   <Link href="/progress">
                     <Button variant="ghost" size="sm" className="text-gray-500 hover:text-gray-700">
                       <TrendingUp className="w-4 h-4 mr-1" />
