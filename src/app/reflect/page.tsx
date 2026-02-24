@@ -270,17 +270,25 @@ export default function ReflectPage() {
     // ✅ Only the latest request is allowed to append assistant output
     const reqId = ++requestSeqRef.current;
 
+    let activeSessionId = currentSessionId;
+
     // Start session if first message
     if (!sessionStarted) {
-        setSessionStarted(true);
-      
-        if (isSignedIn) {
-          setIsSaving(true);
-          const sessionId = await createSession(trimmed);
-          if (sessionId) setCurrentSessionId(sessionId);
-          setIsSaving(false);
+      setSessionStarted(true);
+    
+      if (isSignedIn) {
+        setIsSaving(true);
+    
+        const sessionId = await createSession(trimmed);
+    
+        if (sessionId) {
+          activeSessionId = sessionId;   // ✅ store locally
+          setCurrentSessionId(sessionId);
         }
-}
+    
+        setIsSaving(false);
+      }
+    }    
 
     // Build user message
     const userMessage: Message = {
@@ -676,18 +684,35 @@ export default function ReflectPage() {
       if (data.layerProgress) setLayerProgress(data.layerProgress);
 
       // ✅ persist session state on edit replay too
-      if (isSignedIn && currentSessionId) {
-        await fetch(`/api/sessions/${currentSessionId}`, {
+      const sessionToUse = activeSessionId || currentSessionId;
+
+      if (isSignedIn && sessionToUse) {
+        await fetch('/api/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...userMessage, sessionId: sessionToUse }),
+        });
+      
+        await fetch('/api/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...assistantMessage, sessionId: sessionToUse }),
+        });
+      
+        await fetch(`/api/sessions/${sessionToUse}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             currentLayer: data.icebergLayer || 'surface',
-            coreBeliefAlreadyDetected: coreBeliefAlreadyDetected || (data as any)?._meta?.coreBeliefDetected === true,
-            lastQuestionType: currentQ ? (currentQ.toLowerCase().includes('explore') && currentQ.toLowerCase().includes('grounding') ? 'choice' : 'open') : lastQuestionType,
-            groundingMode: typeof data.groundingMode === 'boolean' ? data.groundingMode : groundingMode,
-            groundingTurns: typeof data.groundingTurns === 'number' ? data.groundingTurns : groundingTurns,
+            coreBelief:
+              data.icebergLayer === 'coreBelief' ? data.layerInsight : undefined,
+            coreBeliefAlreadyDetected:
+              coreBeliefAlreadyDetected ||
+              (data as any)?._meta?.coreBeliefDetected === true,
+            lastQuestionType,
+            groundingMode,
+            groundingTurns,
             lastIntentUsed: userIntent,
-            lastUpdatedAt: new Date().toISOString(),
           }),
         });
       }
