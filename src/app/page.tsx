@@ -326,7 +326,7 @@ export default function Home() {
                 One engine. Two perspectives.
               </h2>
               <p className="text-muted-foreground max-w-lg mx-auto">
-                The same AI analyzes both — but adapts its response to who needs clarity.
+                The same AI analyzes both- but adapts its response to who needs clarity.
               </p>
             </motion.div>
 
