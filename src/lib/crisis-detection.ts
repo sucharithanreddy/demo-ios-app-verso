@@ -6,12 +6,12 @@
 // Crisis keywords that indicate potential self-harm or emergency
 const CRISIS_KEYWORDS = [
   // Direct self-harm indicators
-  'kill myself', 'suicide', 'suicidal', 'want to die', 'ending it all',
+  'kill myself', 'suicide', 'suicidal', 'want to die', 'ending it all', 'feel like dying',
   'end my life', 'take my life', 'no reason to live', 'better off dead',
   'hurt myself', 'self-harm', 'cutting myself', 'overdose',
   
   // Severe distress indicators
-  'can\'t go on', 'give up', 'no hope', 'no point in living',
+  'can\'t go on', 'give up', "there's no hope", 'no point in living',
   'everyone would be better off without me', 'planning to',
   
   // Emergency indicators
