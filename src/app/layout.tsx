@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
@@ -15,6 +15,12 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
+
 export const metadata: Metadata = {
   title: "The Optimism Engine - Transform Negative Thoughts",
   description: "An AI-powered web app that helps you hack negative thoughts and cultivate relentless optimism through CBT reframing and root cause analysis.",
@@ -23,12 +29,13 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   icons: {
     icon: [
+      { url: "/logo.png", sizes: "180x180", type: "image/png" },
       { url: "/logo.png", sizes: "192x192", type: "image/png" },
       { url: "/logo.png", sizes: "512x512", type: "image/png" },
     ],
     apple: [
+      { url: "/logo.png", sizes: "180x180", type: "image/png" },
       { url: "/logo.png", sizes: "192x192", type: "image/png" },
-      { url: "/logo.png", sizes: "512x512", type: "image/png" },
     ],
   },
   openGraph: {
@@ -43,21 +50,14 @@ export const metadata: Metadata = {
     description: "Transform negative thoughts into relentless optimism",
     images: ["/logo.png"],
   },
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-  },
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#0ea5e9" },
-    { media: "(prefers-color-scheme: dark)", color: "#0891b2" },
-  ],
+  themeColor: "#0891b2",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
     title: "Optimism Engine",
-    startupImage: ["/logo.png"],
+    startupImage: [
+      { url: "/logo.png", media: "(device-width: 430px)" },
+    ],
   },
   formatDetection: {
     telephone: false,
@@ -76,10 +76,24 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
         <head>
-          <link rel="apple-touch-icon" sizes="180x180" href="/logo.png" />
+          {/* iOS PWA Meta Tags */}
           <meta name="apple-mobile-web-app-capable" content="yes" />
           <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+          <meta name="apple-mobile-web-app-title" content="Optimism Engine" />
           <meta name="mobile-web-app-capable" content="yes" />
+          <meta name="format-detection" content="telephone=no" />
+          
+          {/* Apple Touch Icon - Required for iOS */}
+          <link rel="apple-touch-icon" href="/logo.png" />
+          <link rel="apple-touch-icon" sizes="180x180" href="/logo.png" />
+          <link rel="apple-touch-icon" sizes="192x192" href="/logo.png" />
+          
+          {/* Manifest Link */}
+          <link rel="manifest" href="/manifest.json" />
+          
+          {/* Theme Color for Safari */}
+          <meta name="theme-color" content="#0891b2" media="(prefers-color-scheme: light)" />
+          <meta name="theme-color" content="#0891b2" media="(prefers-color-scheme: dark)" />
         </head>
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
