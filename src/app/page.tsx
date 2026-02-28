@@ -112,7 +112,7 @@ export default function Home() {
             className="text-center mb-6"
           >
             <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-2">
-              Optimism Engine
+              Verso
             </h1>
             <p className="text-sm md:text-base text-muted-foreground">
               Think clearly. Train wisely.
