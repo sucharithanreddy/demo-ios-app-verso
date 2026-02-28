@@ -862,7 +862,7 @@ export default function ReflectPage() {
         <div className="absolute inset-0 dot-pattern opacity-30" />
       </div>
 
-      {/* Mobile Header */}
+      {/* Mobile Header - Sign in via Profile page */}
       <MobileHeader
         title="Reflect"
         subtitle="Understand your thoughts"
@@ -882,13 +882,7 @@ export default function ReflectPage() {
               )}
               <UserButton afterSignOutUrl="/" />
             </div>
-          ) : (
-            <SignInButton mode="modal">
-              <button className="px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-xl">
-                Sign In
-              </button>
-            </SignInButton>
-          )
+          ) : null
         }
       />
 
