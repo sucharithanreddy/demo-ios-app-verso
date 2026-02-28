@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   RotateCcw,
@@ -119,6 +120,7 @@ function assistantHistoryContent(m: Message) {
 
 export default function ReflectPage() {
   const { isSignedIn, isLoaded } = useUser();
+  const searchParams = useSearchParams();
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -196,6 +198,17 @@ export default function ReflectPage() {
       loadSessions();
     }
   }, [isSignedIn]);
+
+  // Load session from URL parameter
+  useEffect(() => {
+    const sessionIdFromUrl = searchParams.get('session');
+    if (sessionIdFromUrl && isSignedIn && sessions.length > 0 && !currentSessionId) {
+      const sessionExists = sessions.find(s => s.id === sessionIdFromUrl);
+      if (sessionExists) {
+        loadSession(sessionIdFromUrl);
+      }
+    }
+  }, [searchParams, isSignedIn, sessions.length]);
 
   useEffect(() => {
     if (currentLayer === 'coreBelief' && discoveredInsights.coreBelief && currentSessionId) {
