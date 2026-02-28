@@ -15,6 +15,7 @@ model User {
   avatarUrl         String?
   role              String           @default("client")
   therapistId       String?
+  activityDates     Json?            // Array of dates when user was active (for streak calculation)
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
   sessions          Session[]

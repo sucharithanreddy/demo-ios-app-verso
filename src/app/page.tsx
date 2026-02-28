@@ -38,6 +38,13 @@ export default function Home() {
     }
   }, []);
 
+  // Record user activity when signed in (for streak calculation)
+  useEffect(() => {
+    if (isSignedIn) {
+      fetch('/api/activity', { method: 'POST' }).catch(console.error);
+    }
+  }, [isSignedIn]);
+
   const toggleDark = () => {
     const newDark = !isDark;
     setIsDark(newDark);

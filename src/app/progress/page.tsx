@@ -82,6 +82,12 @@ export default function ProgressPage() {
   const fetchStats = async () => {
     try {
       setLoading(true);
+      
+      // Fetch activity streak first (this is the main streak based on app usage)
+      const activityRes = await fetch('/api/activity', { cache: 'no-store' });
+      const activityData = await activityRes.json();
+      const streakDays = activityData.streak || 0;
+
       const sessionsRes = await fetch('/api/sessions', { cache: 'no-store' });
       const sessionsData = await sessionsRes.json();
 
@@ -165,19 +171,6 @@ export default function ProgressPage() {
         const secondAvg = secondHalf.reduce((sum: number, e: MoodEntry) => sum + e.mood, 0) / secondHalf.length;
         if (secondAvg > firstAvg + 0.5) moodTrend = 'up';
         else if (secondAvg < firstAvg - 0.5) moodTrend = 'down';
-      }
-
-      const today = new Date();
-      let streakDays = 0;
-      for (let i = 0; i < 30; i++) {
-        const checkDate = new Date(today);
-        checkDate.setDate(today.getDate() - i);
-        const hasEntry = (moodData.entries || []).some((e: MoodEntry) => {
-          const entryDate = new Date(e.createdAt);
-          return entryDate.toDateString() === checkDate.toDateString();
-        });
-        if (hasEntry) streakDays++;
-        else if (i > 0) break;
       }
 
       setStats({
