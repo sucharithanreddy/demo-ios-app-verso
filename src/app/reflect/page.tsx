@@ -303,6 +303,8 @@ export default function ReflectPage() {
     const trimmed = thought.trim();
     if (!trimmed) return;
 
+    console.log('🚀 handleSubmit - isSignedIn:', isSignedIn, 'sessionStarted:', sessionStarted);
+
     if (inFlightRef.current) return;
     inFlightRef.current = true;
 
@@ -318,13 +320,17 @@ export default function ReflectPage() {
       setSessionStarted(true);
 
       if (isSignedIn) {
+        console.log('💾 Creating session for signed-in user...');
         setIsSaving(true);
         const newId = await createSession(trimmed);
+        console.log('📝 Session creation result:', newId);
         if (newId) {
           activeSessionId = newId;
           setCurrentSessionId(newId);
         }
         setIsSaving(false);
+      } else {
+        console.log('⚠️ User not signed in - session will not be saved');
       }
     }
 

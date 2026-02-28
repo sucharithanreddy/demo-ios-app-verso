@@ -106,11 +106,24 @@ function computeSessionContext(session: {
 // GET all sessions for the current user
 export async function GET() {
   try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const authResult = await auth();
+    const userId = authResult?.userId;
+    
+    console.log('📖 GET /api/sessions - userId:', userId);
+    
+    if (!userId) {
+      console.log('❌ GET /api/sessions - No userId, returning unauthorized');
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
-    const user = await db.user.findUnique({ where: { clerkId: userId } });
-    if (!user) return NextResponse.json({ sessions: [] });
+    let user = await db.user.findUnique({ where: { clerkId: userId } });
+    
+    console.log('👤 GET /api/sessions - User found:', user ? user.id : 'null');
+    
+    if (!user) {
+      console.log('⚠️ GET /api/sessions - User not found in DB, returning empty sessions');
+      return NextResponse.json({ sessions: [] });
+    }
 
     const sessions = await db.session.findMany({
       where: { userId: user.id },
@@ -153,19 +166,39 @@ export async function GET() {
 // POST create a new session
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const authResult = await auth();
+    const userId = authResult?.userId;
+    
+    console.log('📝 POST /api/sessions - userId:', userId);
+    
+    if (!userId) {
+      console.log('❌ POST /api/sessions - No userId, returning unauthorized');
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
     const body = await request.json();
     const { title, firstThought } = body as { title?: string; firstThought?: string };
+    
+    console.log('📝 POST /api/sessions - title:', title, 'firstThought:', firstThought?.slice(0, 50));
 
     let user = await db.user.findUnique({ where: { clerkId: userId } });
+    
+    console.log('👤 POST /api/sessions - User found:', user ? user.id : 'null');
 
     if (!user) {
+      console.log('🆕 POST /api/sessions - Creating new user for clerkId:', userId);
+      
+      if (!process.env.CLERK_SECRET_KEY) {
+        console.log('❌ POST /api/sessions - CLERK_SECRET_KEY not set!');
+        return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+      }
+      
       const userResponse = await fetch(`https://api.clerk.com/v1/users/${userId}`, {
         headers: { Authorization: `Bearer ${process.env.CLERK_SECRET_KEY}` },
       });
       const userData = await userResponse.json();
+      
+      console.log('📦 POST /api/sessions - Clerk user data:', JSON.stringify(userData).slice(0, 200));
 
       const email =
         userData.email_addresses?.[0]?.email_address || `${userId}@placeholder.com`;
@@ -178,9 +211,13 @@ export async function POST(request: NextRequest) {
       user = await db.user.create({
         data: { clerkId: userId, email, name, avatarUrl },
       });
+      
+      console.log('✅ POST /api/sessions - Created user:', user.id);
     }
 
     const derivedTitle = title || (firstThought ? String(firstThought).slice(0, 50) : '') || 'New Session';
+    
+    console.log('📋 POST /api/sessions - Creating session with title:', derivedTitle);
 
     const session = await db.session.create({
       data: {
@@ -200,6 +237,8 @@ export async function POST(request: NextRequest) {
         lastIntentUsed: 'AUTO',
       },
     });
+    
+    console.log('✅ POST /api/sessions - Created session:', session.id);
 
     // ✅ If you want originalTrigger saved, do it via first Message (no schema change)
     if (typeof firstThought === 'string' && firstThought.trim()) {
