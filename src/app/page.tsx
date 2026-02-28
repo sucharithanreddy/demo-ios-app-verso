@@ -16,6 +16,8 @@ import {
 } from 'lucide-react';
 import { SignInButton, SignUpButton, UserButton, useUser } from '@clerk/nextjs';
 import Link from 'next/link';
+import { MobileHeader } from '@/components/MobileHeader';
+import { MobileNav } from '@/components/MobileNav';
 
 export default function Home() {
   const { isSignedIn, isLoaded } = useUser();
@@ -78,8 +80,18 @@ export default function Home() {
         <div className="absolute inset-0 dot-pattern opacity-40" />
       </div>
 
-      {/* Header */}
-      <header className="sticky top-0 z-50">
+      {/* Mobile Header */}
+      <MobileHeader 
+        title="Optimism Engine"
+        subtitle="Think clearly. Train wisely."
+        icon="sparkles"
+        onToggleDark={toggleDark}
+        isDark={isDark}
+        rightAction={isSignedIn ? <UserButton afterSignOutUrl="/" /> : undefined}
+      />
+
+      {/* Desktop Header */}
+      <header className="sticky top-0 z-50 hide-on-mobile">
         <div className="glass border-b border-border/50">
           <div className="max-w-7xl mx-auto px-6 py-4">
             <div className="flex items-center justify-between">
@@ -164,19 +176,19 @@ export default function Home() {
       </header>
 
       {/* Main Content */}
-      <main className="relative z-10">
+      <main className="relative z-10 pb-mobile">
         {/* Hero Section */}
-        <section className="pt-20 pb-16 px-6">
+        <section className="pt-10 md:pt-20 pb-8 md:pb-16 px-4 md:px-6">
           <div className="max-w-5xl mx-auto text-center">
             {/* Badge */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-secondary/80 border border-border/50 mb-8"
+              className="inline-flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-full bg-secondary/80 border border-border/50 mb-6 md:mb-8"
             >
-              <Stars className="w-4 h-4 text-accent" />
-              <span className="text-sm font-medium text-secondary-foreground">
+              <Stars className="w-3.5 h-3.5 md:w-4 md:h-4 text-accent" />
+              <span className="text-xs md:text-sm font-medium text-secondary-foreground">
                 AI-powered emotional intelligence
               </span>
             </motion.div>
@@ -186,9 +198,9 @@ export default function Home() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1 }}
-              className="text-display mb-6"
+              className="text-3xl md:text-display mb-4 md:mb-6 px-2"
             >
-              <span className="text-foreground">Understand Your MInd.</span>
+              <span className="text-foreground">Understand Your Mind.</span>
               <br />
               <span className="gradient-text">Before It Understands You.</span>
             </motion.h1>
@@ -198,7 +210,7 @@ export default function Home() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
-              className="text-xl text-muted-foreground max-w-2xl mx-auto mb-4"
+              className="text-base md:text-xl text-muted-foreground max-w-2xl mx-auto mb-3 md:mb-4 px-4"
             >
               Train your thoughts, catch cognitive distortions, and build mental clarity 
               with AI-powered self-reflection.
@@ -209,27 +221,27 @@ export default function Home() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.3 }}
-              className="text-sm text-muted-foreground/80 max-w-lg mx-auto"
+              className="text-xs md:text-sm text-muted-foreground/80 max-w-lg mx-auto px-4"
             >
-              Whether you're processing a difficult emotion or training your mind - 
-              we'll help you see things clearly.
+              Whether you&apos;re processing a difficult emotion or training your mind - 
+              we&apos;ll help you see things clearly.
             </motion.p>
           </div>
         </section>
 
         {/* Mode Selection */}
-        <section className="py-12 px-6">
+        <section className="py-6 md:py-12 px-4 md:px-6">
           <div className="max-w-4xl mx-auto">
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.4 }}
-              className="text-center text-sm font-medium text-muted-foreground uppercase tracking-wider mb-8"
+              className="text-center text-xs md:text-sm font-medium text-muted-foreground uppercase tracking-wider mb-6 md:mb-8"
             >
               Where do you want to start?
             </motion.p>
 
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid md:grid-cols-2 gap-4 md:gap-6">
               {/* Reflect Card */}
               <Link href="/reflect">
                 <motion.div
@@ -240,27 +252,27 @@ export default function Home() {
                   className="group relative"
                 >
                   <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity blur-xl" />
-                  <div className="relative glass rounded-2xl border border-border/50 p-8 shadow-premium hover:shadow-lg transition-all cursor-pointer">
-                    <div className="flex items-start gap-5">
-                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow flex-shrink-0">
-                        <Heart className="w-7 h-7 text-primary-foreground" />
+                  <div className="relative glass rounded-2xl border border-border/50 p-5 md:p-8 shadow-premium hover:shadow-lg transition-all cursor-pointer active:scale-[0.98]">
+                    <div className="flex items-start gap-4 md:gap-5">
+                      <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow flex-shrink-0">
+                        <Heart className="w-6 h-6 md:w-7 md:h-7 text-primary-foreground" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h3 className="text-xl font-semibold text-foreground">Reflect</h3>
+                        <div className="flex items-center gap-2 mb-1.5 md:mb-2">
+                          <h3 className="text-lg md:text-xl font-semibold text-foreground">Reflect</h3>
                           <ArrowRight className="w-4 h-4 text-primary opacity-0 group-hover:opacity-100 transition-opacity transform group-hover:translate-x-1" />
                         </div>
-                        <p className="text-muted-foreground mb-4">
-                          <span className="font-medium text-foreground">From me.</span> I'm feeling something and want to understand it better.
+                        <p className="text-sm md:text-base text-muted-foreground mb-3 md:mb-4">
+                          <span className="font-medium text-foreground">From me.</span> I&apos;m feeling something and want to understand it better.
                         </p>
-                        <div className="flex flex-wrap gap-2">
-                          <span className="text-xs px-3 py-1 rounded-full bg-primary/10 text-primary font-medium">
+                        <div className="flex flex-wrap gap-1.5 md:gap-2">
+                          <span className="text-[10px] md:text-xs px-2 md:px-3 py-0.5 md:py-1 rounded-full bg-primary/10 text-primary font-medium">
                             Journaling
                           </span>
-                          <span className="text-xs px-3 py-1 rounded-full bg-secondary text-secondary-foreground font-medium">
+                          <span className="text-[10px] md:text-xs px-2 md:px-3 py-0.5 md:py-1 rounded-full bg-secondary text-secondary-foreground font-medium">
                             Reframing
                           </span>
-                          <span className="text-xs px-3 py-1 rounded-full bg-secondary text-secondary-foreground font-medium">
+                          <span className="text-[10px] md:text-xs px-2 md:px-3 py-0.5 md:py-1 rounded-full bg-secondary text-secondary-foreground font-medium hidden sm:inline-block">
                             Self-reflection
                           </span>
                         </div>
@@ -280,27 +292,27 @@ export default function Home() {
                   className="group relative"
                 >
                   <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-accent/20 to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity blur-xl" />
-                  <div className="relative glass rounded-2xl border border-border/50 p-8 shadow-premium hover:shadow-lg transition-all cursor-pointer">
-                    <div className="flex items-start gap-5">
-                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-accent to-accent/80 flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow flex-shrink-0">
-                        <Sparkles className="w-7 h-7 text-accent-foreground" />
+                  <div className="relative glass rounded-2xl border border-border/50 p-5 md:p-8 shadow-premium hover:shadow-lg transition-all cursor-pointer active:scale-[0.98]">
+                    <div className="flex items-start gap-4 md:gap-5">
+                      <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-gradient-to-br from-accent to-accent/80 flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow flex-shrink-0">
+                        <Sparkles className="w-6 h-6 md:w-7 md:h-7 text-accent-foreground" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h3 className="text-xl font-semibold text-foreground">The Lab</h3>
+                        <div className="flex items-center gap-2 mb-1.5 md:mb-2">
+                          <h3 className="text-lg md:text-xl font-semibold text-foreground">The Lab</h3>
                           <ArrowRight className="w-4 h-4 text-accent opacity-0 group-hover:opacity-100 transition-opacity transform group-hover:translate-x-1" />
                         </div>
-                        <p className="text-muted-foreground mb-4">
+                        <p className="text-sm md:text-base text-muted-foreground mb-3 md:mb-4">
                           <span className="font-medium text-foreground">Train your mind.</span> Quick tools, practice exercises, and cognitive goals.
                         </p>
-                        <div className="flex flex-wrap gap-2">
-                          <span className="text-xs px-3 py-1 rounded-full bg-accent/10 text-accent font-medium">
+                        <div className="flex flex-wrap gap-1.5 md:gap-2">
+                          <span className="text-[10px] md:text-xs px-2 md:px-3 py-0.5 md:py-1 rounded-full bg-accent/10 text-accent font-medium">
                             Quick Tools
                           </span>
-                          <span className="text-xs px-3 py-1 rounded-full bg-secondary text-secondary-foreground font-medium">
+                          <span className="text-[10px] md:text-xs px-2 md:px-3 py-0.5 md:py-1 rounded-full bg-secondary text-secondary-foreground font-medium">
                             Practice
                           </span>
-                          <span className="text-xs px-3 py-1 rounded-full bg-secondary text-secondary-foreground font-medium">
+                          <span className="text-[10px] md:text-xs px-2 md:px-3 py-0.5 md:py-1 rounded-full bg-secondary text-secondary-foreground font-medium hidden sm:inline-block">
                             Goals
                           </span>
                         </div>
@@ -314,7 +326,7 @@ export default function Home() {
         </section>
 
         {/* Features Section */}
-        <section className="py-20 px-6">
+        <section className="py-12 md:py-20 px-4 md:px-6 hide-on-mobile">
           <div className="max-w-5xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -326,7 +338,7 @@ export default function Home() {
                 One engine. Two Directions.
               </h2>
               <p className="text-muted-foreground max-w-lg mx-auto">
-                Analyse your thoughts, know where thery are coming from!
+                Analyse your thoughts, know where they are coming from!
               </p>
             </motion.div>
 
@@ -375,7 +387,7 @@ export default function Home() {
         </section>
 
         {/* Social Proof */}
-        <section className="py-12 px-6">
+        <section className="py-8 md:py-12 px-4 md:px-6 hide-on-mobile">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -420,22 +432,22 @@ export default function Home() {
         </section>
 
         {/* CTA Section */}
-        <section className="py-16 px-6">
+        <section className="py-10 md:py-16 px-4 md:px-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 1 }}
             className="max-w-2xl mx-auto text-center"
           >
-            <div className="glass rounded-3xl border border-border/50 p-10 shadow-premium relative overflow-hidden">
+            <div className="glass rounded-2xl md:rounded-3xl border border-border/50 p-6 md:p-10 shadow-premium relative overflow-hidden">
               {/* Background gradient */}
               <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
               
               <div className="relative">
-                <h2 className="text-2xl font-semibold text-foreground mb-3">
+                <h2 className="text-xl md:text-2xl font-semibold text-foreground mb-2 md:mb-3">
                   Ready to think clearly?
                 </h2>
-                <p className="text-muted-foreground mb-6">
+                <p className="text-sm md:text-base text-muted-foreground mb-4 md:mb-6">
                   Start your first reflection in under 30 seconds.
                 </p>
                 <Link 
@@ -443,13 +455,13 @@ export default function Home() {
                   onClick={(e) => !isSignedIn && e.preventDefault()}
                 >
                   {isSignedIn ? (
-                    <button className="px-8 py-3.5 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-all shadow-premium hover:shadow-lg btn-hover-lift glow-primary inline-flex items-center gap-2">
+                    <button className="px-6 md:px-8 py-3 md:py-3.5 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-all shadow-premium hover:shadow-lg btn-hover-lift glow-primary inline-flex items-center gap-2 text-sm md:text-base">
                       Start Reflecting
                       <ChevronRight className="w-4 h-4" />
                     </button>
                   ) : (
                     <SignUpButton mode="modal">
-                      <button className="px-8 py-3.5 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-all shadow-premium hover:shadow-lg btn-hover-lift glow-primary inline-flex items-center gap-2">
+                      <button className="px-6 md:px-8 py-3 md:py-3.5 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-all shadow-premium hover:shadow-lg btn-hover-lift glow-primary inline-flex items-center gap-2 text-sm md:text-base">
                         Get Started Free
                         <ChevronRight className="w-4 h-4" />
                       </button>
@@ -462,8 +474,8 @@ export default function Home() {
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="relative z-10 py-8 px-6 border-t border-border/50">
+      {/* Footer - Desktop only */}
+      <footer className="relative z-10 py-8 px-6 border-t border-border/50 hide-on-mobile">
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-xs text-muted-foreground">
             Not a replacement for professional help. If in crisis, call 988 (US) or your local helpline.
@@ -477,6 +489,9 @@ export default function Home() {
           </div>
         </div>
       </footer>
+
+      {/* Mobile Bottom Navigation */}
+      <MobileNav />
     </div>
   );
 }

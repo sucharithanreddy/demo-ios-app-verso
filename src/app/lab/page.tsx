@@ -26,6 +26,8 @@ import { UserButton } from '@clerk/nextjs';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { MobileHeader } from '@/components/MobileHeader';
+import { MobileNav } from '@/components/MobileNav';
 
 // ============================================================================
 // QUICK TOOLS - The Gatekeeper
@@ -651,8 +653,18 @@ export default function LabPage() {
         <div className="absolute inset-0 dot-pattern opacity-30" />
       </div>
 
-      {/* Header */}
-      <header className="sticky top-0 z-50">
+      {/* Mobile Header */}
+      <MobileHeader
+        title="The Lab"
+        subtitle="Train your mind"
+        icon="lab"
+        onToggleDark={toggleDark}
+        isDark={isDark}
+        rightAction={<UserButton afterSignOutUrl="/" />}
+      />
+
+      {/* Desktop Header */}
+      <header className="sticky top-0 z-50 hide-on-mobile">
         <div className="glass border-b border-border/50">
           <div className="max-w-6xl mx-auto px-6 py-4">
             <div className="flex items-center justify-between">
@@ -690,7 +702,7 @@ export default function LabPage() {
         </div>
       </header>
 
-      <main className="relative z-10 max-w-6xl mx-auto px-6 py-8 space-y-10">
+      <main className="relative z-10 max-w-6xl mx-auto px-4 md:px-6 py-6 md:py-8 space-y-8 md:space-y-10 pb-mobile">
         {/* Quick Tools Section */}
         <section>
           <div className="flex items-center gap-2 mb-4">
@@ -770,6 +782,9 @@ export default function LabPage() {
         {activeTool === 'breathwork' && <BreathworkExercise onClose={() => setActiveTool(null)} />}
         {activeTool === 'reality' && <RealityCheck onClose={() => setActiveTool(null)} />}
       </AnimatePresence>
+
+      {/* Mobile Bottom Navigation */}
+      <MobileNav />
     </div>
   );
 }

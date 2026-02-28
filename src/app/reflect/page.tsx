@@ -24,6 +24,8 @@ import { DraggableBubble } from '@/components/DraggableBubble';
 import { ThoughtInput } from '@/components/ThoughtInput';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { MobileHeader } from '@/components/MobileHeader';
+import { MobileNav } from '@/components/MobileNav';
 
 type UserIntent = 'AUTO' | 'CALM' | 'CLARITY' | 'NEXT_STEP' | 'MEANING' | 'LISTEN';
 
@@ -860,8 +862,18 @@ export default function ReflectPage() {
         <div className="absolute inset-0 dot-pattern opacity-30" />
       </div>
 
-      {/* Header */}
-      <header className="sticky top-0 z-50">
+      {/* Mobile Header */}
+      <MobileHeader
+        title="Reflect"
+        subtitle="Understand your thoughts"
+        icon="heart"
+        onToggleDark={toggleDark}
+        isDark={isDark}
+        rightAction={isSignedIn ? <UserButton afterSignOutUrl="/" /> : undefined}
+      />
+
+      {/* Desktop Header */}
+      <header className="sticky top-0 z-50 hide-on-mobile">
         <div className="glass border-b border-border/50">
           <div className="max-w-7xl mx-auto px-6 py-4">
             <div className="flex items-center justify-between">
@@ -1013,7 +1025,7 @@ export default function ReflectPage() {
       </AnimatePresence>
 
       {/* Main Content */}
-      <main className="relative z-10 max-w-7xl mx-auto px-6 py-6">
+      <main className="relative z-10 max-w-7xl mx-auto px-4 md:px-6 py-4 md:py-6 pb-mobile">
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Chat Section */}
           <div className="flex-1 flex flex-col min-h-0">
@@ -1144,12 +1156,15 @@ export default function ReflectPage() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="relative z-10 py-6 px-6 border-t border-border/50 mt-8">
+      {/* Footer - Desktop only */}
+      <footer className="relative z-10 py-6 px-6 border-t border-border/50 mt-8 hide-on-mobile">
         <div className="max-w-5xl mx-auto text-center">
           <p className="text-xs text-muted-foreground">Not a replacement for professional help. If in crisis, call 988 (US) or your local helpline.</p>
         </div>
       </footer>
+
+      {/* Mobile Bottom Navigation */}
+      <MobileNav />
     </div>
   );
 }
