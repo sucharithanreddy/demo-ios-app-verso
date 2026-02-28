@@ -171,7 +171,7 @@ export default function ProfilePage() {
             Verso v1.0
           </p>
           <p className="text-xs text-muted-foreground/60 mt-1">
-            AI Safety Layer — Anti-Hallucination Architecture
+            Anti-Hallucination Architecture with AI Safety Layer.
           </p>
         </motion.div>
       </main>
