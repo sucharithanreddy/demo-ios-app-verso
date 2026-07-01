@@ -1,0 +1,45 @@
+%%{init: {'theme':'base','themeVariables':{'fontSize':'15px'}}}%%
+flowchart TB
+    subgraph clients["Clients"]
+        C1["Browser / PWA<br><small>Verso manifest + sw.js</small>"]
+        C2["Android WebView<br><small>Capacitor 8 · loads Vercel URL</small>"]
+    end
+
+    subgraph edge["Edge / Auth"]
+        MW["Clerk Middleware<br><small>src/middleware.ts</small>"]
+        CLERK[("Clerk<br><small>PUBLISHABLE + SECRET keys</small>")]
+    end
+
+    subgraph app["Next.js 16 App · Vercel (iad1)"]
+        PAGES["App Router<br><small>4 role route trees</small>"]
+        API["29 API Routes<br><small>Route Handlers</small>"]
+        LIBS["Core Libs<br><small>Engine · Crisis · Auth · Prisma</small>"]
+    end
+
+    subgraph data["Data & AI"]
+        DB[("Neon PostgreSQL<br><small>Prisma · 22 models</small>")]
+        LLM["8 LLM Providers<br><small>Mistral → Anthropic → OpenAI → …</small>"]
+    end
+
+    C1 & C2 --> MW
+    MW <--> CLERK
+    MW --> PAGES
+    PAGES --> API
+    API --> LIBS
+    LIBS --> DB
+    LIBS --> LLM
+
+    style clients fill:#EFF6FF,stroke:#3B82F6,stroke-width:1.5px
+    style edge fill:#FFF7ED,stroke:#F59E0B,stroke-width:1.5px
+    style app fill:#F0FDF4,stroke:#10B981,stroke-width:1.5px
+    style data fill:#F5F3FF,stroke:#8B5CF6,stroke-width:1.5px
+
+    style C1 fill:#DBEAFE,stroke:#3B82F6,stroke-width:1px,color:#1E293B
+    style C2 fill:#DBEAFE,stroke:#3B82F6,stroke-width:1px,color:#1E293B
+    style MW fill:#FEF3C7,stroke:#F59E0B,stroke-width:1px,color:#1E293B
+    style CLERK fill:#FEF3C7,stroke:#F59E0B,stroke-width:1px,color:#1E293B
+    style PAGES fill:#D1FAE5,stroke:#10B981,stroke-width:1px,color:#1E293B
+    style API fill:#D1FAE5,stroke:#10B981,stroke-width:1px,color:#1E293B
+    style LIBS fill:#D1FAE5,stroke:#10B981,stroke-width:1px,color:#1E293B
+    style DB fill:#EDE9FE,stroke:#8B5CF6,stroke-width:1px,color:#1E293B
+    style LLM fill:#EDE9FE,stroke:#8B5CF6,stroke-width:1px,color:#1E293B

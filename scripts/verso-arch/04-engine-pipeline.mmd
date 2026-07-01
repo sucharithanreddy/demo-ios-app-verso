@@ -1,0 +1,27 @@
+%%{init: {'theme':'base','themeVariables':{'fontSize':'15px'}}}%%
+flowchart TB
+    IN(["POST /api/reframe<br>User text input"])
+    CRISIS{"Crisis keyword<br>check?"}
+    CRES["Crisis Pack<br><small>canned response + helplines<br>(AASRA, 988, Samaritans…)</small>"]
+    ROUTER["Intent Resolver + Grounding Check<br>+ Deterministic Router<br><small>6 states × 6 interventions</small>"]
+    AI1["LLM Phase 1 · Analyze<br><small>trigger · interpretation · fear ·<br>emotional need · core wound</small>"]
+    MAP["Core-Belief Detector<br><small>~30 regex patterns</small><br>+ Layer Assignment<br><small>SURFACE → EMOTION → CORE_WOUND</small>"]
+    AI2["LLM Phase 2 · Respond<br><small>ack · reframe · question ·<br>iceberg layer · progress score</small>"]
+    OUT(["Structured Response<br>→ POST /api/messages → DB"])
+
+    IN --> CRISIS
+    CRISIS -->|HIGH severity| CRES
+    CRISIS -->|LOW / MODERATE| ROUTER
+    ROUTER --> AI1
+    AI1 --> MAP
+    MAP --> AI2
+    AI2 --> OUT
+
+    style IN fill:#DBEAFE,stroke:#3B82F6,stroke-width:2px,color:#1E293B
+    style CRISIS fill:#FEF3C7,stroke:#F59E0B,stroke-width:2px,color:#1E293B
+    style CRES fill:#FEE2E2,stroke:#EF4444,stroke-width:2px,color:#1E293B
+    style ROUTER fill:#D1FAE5,stroke:#10B981,stroke-width:2px,color:#1E293B
+    style AI1 fill:#EDE9FE,stroke:#8B5CF6,stroke-width:2px,color:#1E293B
+    style MAP fill:#D1FAE5,stroke:#10B981,stroke-width:2px,color:#1E293B
+    style AI2 fill:#EDE9FE,stroke:#8B5CF6,stroke-width:2px,color:#1E293B
+    style OUT fill:#DBEAFE,stroke:#3B82F6,stroke-width:2px,color:#1E293B

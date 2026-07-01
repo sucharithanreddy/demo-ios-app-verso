@@ -1,0 +1,34 @@
+%%{init: {'theme':'base','themeVariables':{'fontSize':'15px'}}}%%
+flowchart LR
+    subgraph roles["User Roles (3 systems coexist)"]
+        direction TB
+        IND["Individual<br><small>UserType = INDIVIDUAL</small>"]
+        SAL["Sales Person<br><small>UserType = SALES_PERSON</small>"]
+        MGR["Sales Manager<br><small>UserType = SALES_MANAGER</small>"]
+        ADM["Company Admin<br><small>CompanyMember.role = admin</small>"]
+    end
+
+    subgraph features["Key Features & Routes"]
+        direction TB
+        F1["Reflect (CBT chat) · Mood · Gratitude<br>Diagnostic · Streak · Lab · Payment"]
+        F2["Sales Check-in · Trend Analytics<br>Coach Tips · Lab · Reflect (sales mode)<br>Link to Manager via MGR- code"]
+        F3["Team NPS · Risk Zones · Patterns<br>Discussions · Code Generator<br>ROI · CSV Export"]
+        F4["ROI Dashboard · Bulk Code Gen<br>Seats Used / Max · Engagement<br>Wellbeing Trend"]
+    end
+
+    IND --> F1
+    SAL --> F2
+    MGR --> F3
+    ADM --> F4
+
+    style roles fill:#EFF6FF,stroke:#3B82F6,stroke-width:1.5px
+    style features fill:#F0FDF4,stroke:#10B981,stroke-width:1.5px
+
+    style IND fill:#DBEAFE,stroke:#3B82F6,stroke-width:1px,color:#1E293B
+    style SAL fill:#DBEAFE,stroke:#3B82F6,stroke-width:1px,color:#1E293B
+    style MGR fill:#DBEAFE,stroke:#3B82F6,stroke-width:1px,color:#1E293B
+    style ADM fill:#DBEAFE,stroke:#3B82F6,stroke-width:1px,color:#1E293B
+    style F1 fill:#D1FAE5,stroke:#10B981,stroke-width:1px,color:#1E293B
+    style F2 fill:#D1FAE5,stroke:#10B981,stroke-width:1px,color:#1E293B
+    style F3 fill:#D1FAE5,stroke:#10B981,stroke-width:1px,color:#1E293B
+    style F4 fill:#D1FAE5,stroke:#10B981,stroke-width:1px,color:#1E293B

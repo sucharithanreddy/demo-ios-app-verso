@@ -1,0 +1,33 @@
+%%{init: {'theme':'base','themeVariables':{'fontSize':'14px'}}}%%
+sequenceDiagram
+    autonumber
+    actor U as User
+    participant L as Landing (/)
+    participant SI as Sign-in/up
+    participant CK as Clerk OAuth
+    participant RD as /redirect
+    participant API as /api/auth/redirect
+    participant DB as Prisma + Neon
+    participant DASH as Role Dashboard
+
+    U->>L: Pick role (individual / sales_person / sales_manager)
+    L->>SI: Navigate with ?type=...
+    Note over SI: Role persisted to sessionStorage<br>+ localStorage (verso_selected_user_type)
+    SI->>CK: Authenticate (or demo mode fallback)
+    CK-->>SI: Authenticated (clerkId)
+    SI->>RD: /redirect?type=...
+    RD->>API: POST {selectedUserType}
+    API->>DB: Upsert User.userType<br>+ Create UserStreak
+    Note over API: If new user: fetch from<br>Clerk REST API (Bearer SECRET_KEY)
+    DB-->>API: OK
+    API-->>RD: {redirectUrl, userType, userName}
+
+    alt userType = SALES_MANAGER
+        RD->>DASH: /manager-dashboard
+    else userType = SALES_PERSON
+        RD->>DASH: /sales-dashboard
+    else userType = INDIVIDUAL
+        RD->>DASH: /home
+    end
+
+    Note over DASH: Optional: /complete-profile<br>captures phone, org, manager email<br>(generates MGR-xxxxxx for managers)
