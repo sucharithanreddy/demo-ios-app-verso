@@ -183,28 +183,79 @@ export async function fetchCoachingTips(
 export interface CoachRequest {
   userMessage: string;
   conversationHistory: Array<{ role: 'user' | 'assistant'; content: string }>;
-  sessionContext?: Record<string, unknown>;
+  /**
+   * Engine memory + state. The backend's `runEngine` reconstructs most of this
+   * from conversationHistory, but grounding/intent state must be passed in to
+   * preserve across turns.
+   */
+  sessionContext?: {
+    previousQuestions?: string[];
+    previousReframes?: string[];
+    previousAcknowledgments?: string[];
+    previousEncouragements?: string[];
+    previousDistortions?: string[];
+    originalTrigger?: string;
+    groundingMode?: boolean;
+    groundingTurns?: number;
+    coreBeliefAlreadyDetected?: boolean;
+    lastQuestionType?: 'choice' | 'open' | '';
+    userIntent?: 'AUTO' | 'CALM' | 'CLARITY' | 'NEXT_STEP' | 'MEANING' | 'LISTEN';
+  };
+}
+
+/**
+ * The backend engine returns `_meta` and `_isCrisisResponse` (underscore-prefixed).
+ * Normalize to clean field names for the mobile app.
+ */
+function normalizeEngineResponse(raw: any): EngineResponse {
+  return {
+    acknowledgment: String(raw?.acknowledgment ?? raw?.content ?? ''),
+    thoughtPattern: raw?.thoughtPattern ?? raw?.distortionType ?? undefined,
+    patternNote: raw?.patternNote ?? raw?.distortionExplanation ?? undefined,
+    reframe: raw?.reframe ?? undefined,
+    question: raw?.question ?? raw?.probingQuestion ?? undefined,
+    encouragement: raw?.encouragement ?? undefined,
+    icebergLayer: raw?.icebergLayer ?? undefined,
+    layerInsight: raw?.layerInsight ?? undefined,
+    progressScore: typeof raw?.progressScore === 'number' ? raw.progressScore : undefined,
+    layerProgress:
+      raw?.layerProgress && typeof raw.layerProgress === 'object'
+        ? {
+            surface: Number(raw.layerProgress.surface ?? 0),
+            trigger: Number(raw.layerProgress.trigger ?? 0),
+            emotion: Number(raw.layerProgress.emotion ?? 0),
+            coreBelief: Number(raw.layerProgress.coreBelief ?? 0),
+          }
+        : undefined,
+    groundingMode: typeof raw?.groundingMode === 'boolean' ? raw.groundingMode : undefined,
+    groundingTurns: typeof raw?.groundingTurns === 'number' ? raw.groundingTurns : undefined,
+    isCrisisResponse: Boolean(raw?._isCrisisResponse ?? raw?.isCrisisResponse),
+    meta: (raw?._meta ?? raw?.meta) as EngineResponse['meta'],
+  };
 }
 
 export async function sendCoachMessage(
   req: CoachRequest
 ): Promise<EngineResponse> {
-  return apiFetch<EngineResponse>('/api/reframe', {
+  const raw = await apiFetch<any>('/api/reframe', {
     method: 'POST',
     body: JSON.stringify(req),
   });
+  return normalizeEngineResponse(raw);
 }
 
 // ---------------------------------------------------------------------------
-// Sessions (conversation persistence)
+// Sessions (conversation persistence) — best-effort, non-blocking
 // ---------------------------------------------------------------------------
 
-export async function fetchSessions(): Promise<
-  Array<{ id: string; title: string | null; createdAt: string }>
-> {
-  const data = await apiFetch<{
-    sessions: Array<{ id: string; title: string | null; createdAt: string }>;
-  }>('/api/sessions');
+export interface SessionSummary {
+  id: string;
+  title: string | null;
+  createdAt: string;
+}
+
+export async function fetchSessions(): Promise<SessionSummary[]> {
+  const data = await apiFetch<{ sessions: SessionSummary[] }>('/api/sessions');
   return data.sessions;
 }
 
@@ -215,6 +266,90 @@ export async function fetchSessionMessages(
     `/api/sessions/${sessionId}`
   );
   return data.messages;
+}
+
+/**
+ * Create a new session. Returns the sessionId + the initial sessionContext
+ * (computed by the backend from prior sessions).
+ *
+ * Best-effort: returns null on any error so callers can fall back to
+ * stateless /api/reframe calls.
+ */
+export async function createSession(
+  firstThought?: string,
+  title?: string
+): Promise<{ sessionId: string } | null> {
+  try {
+    const data = await apiFetch<{ session: { id: string } }>('/api/sessions', {
+      method: 'POST',
+      body: JSON.stringify({ firstThought, title }),
+    });
+    return { sessionId: data.session.id };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Append a message (user or assistant) to a backend session.
+ * Best-effort: failures are silently swallowed — local SQLite is the
+ * source of truth for the chat UI, backend sessions are for cross-device
+ * continuity + insights.
+ */
+export async function appendSessionMessage(
+  sessionId: string,
+  message: {
+    role: 'user' | 'assistant';
+    content: string;
+    acknowledgment?: string;
+    thoughtPattern?: string;
+    patternNote?: string;
+    reframe?: string;
+    question?: string;
+    encouragement?: string;
+    icebergLayer?: string;
+    layerInsight?: string;
+    progressScore?: number;
+    layerProgress?: Record<string, number>;
+    groundingMode?: boolean;
+    groundingTurns?: number;
+    isCrisisResponse?: boolean;
+    meta?: Record<string, unknown>;
+  }
+): Promise<void> {
+  try {
+    await apiFetch('/api/messages', {
+      method: 'POST',
+      body: JSON.stringify({ sessionId, ...message }),
+    });
+  } catch {
+    // Best-effort — don't break the chat UX on backend persistence failure.
+  }
+}
+
+/**
+ * Update session state (grounding, intent, layer, etc.) so the backend
+ * has the latest engine state for the next time the user opens this session.
+ */
+export async function updateSessionState(
+  sessionId: string,
+  patch: {
+    groundingMode?: boolean;
+    groundingTurns?: number;
+    coreBeliefAlreadyDetected?: boolean;
+    lastQuestionType?: 'choice' | 'open' | '';
+    lastIntentUsed?: 'AUTO' | 'CALM' | 'CLARITY' | 'NEXT_STEP' | 'MEANING' | 'LISTEN';
+    currentLayer?: string;
+  }
+): Promise<void> {
+  try {
+    await apiFetch(`/api/sessions/${sessionId}`, {
+      method: 'PUT',
+      body: JSON.stringify(patch),
+    });
+  } catch {
+    // Best-effort.
+  }
 }
 
 // ---------------------------------------------------------------------------

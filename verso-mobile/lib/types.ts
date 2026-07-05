@@ -57,21 +57,64 @@ export interface UserStreak {
 }
 
 // ============================================================================
-// AI Engine response — matches /api/reframe output
+// AI Engine response — matches /api/reframe output EXACTLY
 // ============================================================================
 
+export type IcebergLayer =
+  | 'surface'
+  | 'transition'
+  | 'emotion'
+  | 'core_wound'
+  | 'SURFACE'
+  | 'TRANSITION'
+  | 'EMOTION'
+  | 'CORE_WOUND';
+
+export interface LayerProgress {
+  surface: number;    // 0-100
+  trigger: number;    // 0-100
+  emotion: number;    // 0-100
+  coreBelief: number; // 0-100
+}
+
+export interface EngineMeta {
+  provider?: string;
+  model?: string;
+  turn?: number;
+  effectiveLayer?: string;
+  coreBeliefDetected?: boolean;
+  intent?: 'AUTO' | 'CALM' | 'CLARITY' | 'NEXT_STEP' | 'MEANING' | 'LISTEN';
+  state?: string;
+  intervention?: string;
+  confidence?: number;
+  reasons?: string[];
+  crisis?: boolean;
+}
+
 export interface EngineResponse {
+  // Core structured response — what the user sees
   acknowledgment: string;
   thoughtPattern?: string;
   patternNote?: string;
   reframe?: string;
   question?: string;
   encouragement?: string;
+
+  // Iceberg layer context
   icebergLayer?: string;
   layerInsight?: string;
-  isCrisisResponse?: boolean;
+
+  // Progress + state — drives the depth visualization
+  progressScore?: number;            // 0-100 overall conversation progress
+  layerProgress?: LayerProgress;     // per-layer depth
   groundingMode?: boolean;
-  meta?: Record<string, unknown>;
+  groundingTurns?: number;
+
+  // Crisis flag — engine detected acute safety concern
+  isCrisisResponse?: boolean;
+
+  // Engine meta — provider, turn count, layer, intent, decision
+  meta?: EngineMeta;
 }
 
 // ============================================================================
@@ -85,10 +128,18 @@ export interface ChatMessage {
   // Structured fields from the engine (assistant messages only)
   acknowledgment?: string;
   thoughtPattern?: string;
+  patternNote?: string;
   reframe?: string;
   question?: string;
+  encouragement?: string;
   icebergLayer?: string;
+  layerInsight?: string;
+  progressScore?: number;
+  layerProgress?: LayerProgress;
+  groundingMode?: boolean;
+  groundingTurns?: number;
   isCrisisResponse?: boolean;
+  meta?: EngineMeta;
   createdAt: number;
   // Sync state for offline support
   synced: boolean;
