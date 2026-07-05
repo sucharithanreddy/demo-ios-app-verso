@@ -32,6 +32,37 @@ export class ApiError extends Error {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Backend user shape (from /api/user/profile) — mapped to our UserProfile
+// ---------------------------------------------------------------------------
+
+interface BackendUserProfile {
+  id: string;
+  clerkId: string;
+  email: string;
+  name: string | null;
+  avatarUrl: string | null;
+  userType: 'INDIVIDUAL' | 'SALES_PERSON' | 'SALES_MANAGER';
+  industry: string | null;
+  companyName: string | null;
+  subscriptionPlan: 'FREE' | 'PRO' | 'ENTERPRISE';
+  subscriptionStatus: 'FREE' | 'ACTIVE' | 'CANCELLED' | 'EXPIRED';
+}
+
+function mapBackendUser(u: BackendUserProfile): UserProfile {
+  return {
+    id: u.id,
+    email: u.email,
+    name: u.name,
+    avatarUrl: u.avatarUrl,
+    userType: u.userType,
+    industry: u.industry,
+    companyName: u.companyName,
+    subscriptionStatus: u.subscriptionStatus,
+    subscriptionPlan: u.subscriptionPlan,
+  };
+}
+
 async function authHeaders(): Promise<HeadersInit> {
   try {
     const token = await getToken();
@@ -79,7 +110,9 @@ export async function apiFetch<T>(
 // ---------------------------------------------------------------------------
 
 export async function fetchProfile(): Promise<UserProfile> {
-  return apiFetch<UserProfile>('/api/user/profile');
+  // Backend returns { user: {...} }
+  const data = await apiFetch<{ user: BackendUserProfile }>('/api/user/profile');
+  return mapBackendUser(data.user);
 }
 
 // ---------------------------------------------------------------------------
@@ -87,10 +120,11 @@ export async function fetchProfile(): Promise<UserProfile> {
 // ---------------------------------------------------------------------------
 
 export async function fetchLatestDiagnostic(): Promise<DiagnosticResult | null> {
-  const data = await apiFetch<{ result: DiagnosticResult | null }>(
-    '/api/diagnostic?latest=true'
+  // Backend returns { results: [...] } (most recent first). We take the first.
+  const data = await apiFetch<{ results: DiagnosticResult[]; dbUnavailable?: boolean }>(
+    '/api/diagnostic'
   );
-  return data.result;
+  return data.results?.[0] ?? null;
 }
 
 // ---------------------------------------------------------------------------
@@ -122,7 +156,9 @@ export async function createCheckIn(
 
 export async function fetchStreak(): Promise<UserStreak | null> {
   try {
-    return await apiFetch<UserStreak>('/api/streak');
+    // Backend returns { streak: {...}, hasStreak: boolean }
+    const data = await apiFetch<{ streak: UserStreak; hasStreak: boolean }>('/api/streak');
+    return data.streak;
   } catch {
     return null;
   }
