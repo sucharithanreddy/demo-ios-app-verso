@@ -1,0 +1,2 @@
+-- Baseline migration (no-op)
+-- This marks the existing Neon schema as the starting point for Prisma migrations.

@@ -1,0 +1,9 @@
+node_modules
+.next
+android
+ios
+.git
+.gitignore
+*.md
+.env*.local
+.vercel

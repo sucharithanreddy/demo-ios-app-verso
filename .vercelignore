@@ -1,0 +1,14 @@
+# Android/iOS native builds - not needed for web
+android/
+ios/
+
+# Development files
+*.log
+.env*.local
+
+# Capacitor
+capacitor.config.ts
+capacitor.config.json
+
+# Scripts not needed for runtime
+scripts/

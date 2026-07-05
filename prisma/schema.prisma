@@ -1,0 +1,524 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+}
+
+// Subscription status enum
+enum SubscriptionStatus {
+  FREE
+  ACTIVE
+  CANCELLED
+  EXPIRED
+}
+
+// Subscription plan enum
+enum SubscriptionPlan {
+  FREE
+  PRO
+  ENTERPRISE
+}
+
+// User type enum
+enum UserType {
+  INDIVIDUAL      // Individual user (not part of organization)
+  SALES_PERSON    // Sales person within an organization
+  SALES_MANAGER   // Sales manager within an organization
+}
+
+model User {
+  id                String           @id @default(cuid())
+  clerkId           String           @unique
+  email             String           @unique
+  name              String?
+  avatarUrl         String?
+  role              String           @default("client")
+  therapistId       String?
+  activityDates     Json?            // Array of dates when user was active (for streak calculation)
+
+  // New user type fields
+  userType          UserType         @default(INDIVIDUAL)
+  phone             String?
+  industry          String?          // Industry/Profession for individual users
+  organizationId    String?          // Reference to organization
+  organizationCode  String?          // Code entered during signup
+  managerId         String?          // For sales persons, reference to their manager
+  managerCode       String?          @unique // Unique code for managers to share with team
+  designation       String?          // Role/Designation for managers
+
+  // Profile fields (for sales persons and managers)
+  companyName       String?          // Company/Organization name
+  department        String?          // Department within company
+  bio               String?          // Short bio/about me
+  timezone          String?          // User's timezone
+
+  // Address fields
+  streetAddress     String?
+  city              String?
+  state             String?
+  country           String?
+  zipCode           String?
+
+  // Subscription fields
+  subscriptionStatus    SubscriptionStatus @default(FREE)
+  subscriptionPlan      SubscriptionPlan   @default(FREE)
+  stripeCustomerId      String?            @unique
+  stripeSubscriptionId  String?            @unique
+  subscriptionCurrentPeriodEnd DateTime?
+
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  sessions          Session[]
+  moodEntries       MoodEntry[]
+  gratitudeEntries  GratitudeEntry[]
+  assignments       Assignment[]     @relation("ClientAssignments")
+  createdAssignments Assignment[]    @relation("TherapistAssignments")
+  dailyCheckIns     DailyCheckIn[]
+  therapistNotes    TherapistNote[]  @relation("ClientNotes")
+  writtenNotes      TherapistNote[]  @relation("TherapistNotes")
+  crisisAlerts      CrisisAlert[]    @relation("ClientAlerts")
+  createdAlerts     CrisisAlert[]    @relation("TherapistAlerts")
+  diagnosticResults DiagnosticResult[]
+  teamMembers       User[]           @relation("ManagerTeam")  // Team members (if manager)
+  manager           User?            @relation("ManagerTeam", fields: [managerId], references: [id])
+  organization      Organization?    @relation(fields: [organizationId], references: [id])
+
+  // Phase 1: Sales Wellbeing Features
+  userStreak        UserStreak?
+  salesCheckIns     SalesCheckIn[]
+  unlockCodeUsages  UnlockCodeUsage[]
+
+  // Phase 2: Team & Company Features
+  companyMemberships CompanyMember[]
+  teamMemberships    TeamMember[]
+  
+  // Manager Discussion Features
+  initiatedDiscussions  ManagerDiscussion[] @relation("ManagerInitiated")
+  receivedDiscussions   ManagerDiscussion[] @relation("MemberReceived")
+
+  @@index([subscriptionStatus])
+  @@index([stripeCustomerId])
+  @@index([stripeSubscriptionId])
+  @@index([userType])
+  @@index([organizationId])
+  @@index([managerCode])
+}
+
+// Organization model for company/team management
+model Organization {
+  id              String    @id @default(cuid())
+  name            String
+  code            String    @unique  // Unique organization code for signup
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  users           User[]
+
+  @@index([code])
+}
+
+model Session {
+  id                       String    @id @default(cuid())
+  userId                   String
+  user                     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title                    String?
+  summary                  String?
+  coreBelief               String?
+  currentLayer             String    @default("surface")
+  distortions              String?
+  isCompleted              Boolean   @default(false)
+
+  // ✅ Engine/session state (product-grade memory)
+  coreBeliefAlreadyDetected Boolean  @default(false)
+  lastQuestionType          String?
+  groundingMode             Boolean  @default(false)
+  groundingTurns            Int      @default(0)
+  lastIntentUsed            String?
+
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+  messages                 Message[]
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model Message {
+  id                    String    @id @default(cuid())
+  sessionId             String
+  session               Session   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role                  String
+  content               String
+
+  // ✅ Structured assistant output fields (analytics + playback)
+  acknowledgment         String?
+  thoughtPattern         String?
+  patternNote            String?
+  reframe                String?
+  question               String?
+  encouragement          String?
+  icebergLayer           String?
+  layerInsight           String?
+
+  // ✅ Rich telemetry/state (optional but valuable)
+  meta                   Json?
+  progressScore          Int?
+  layerProgress          Json?
+  groundingMode          Boolean?
+  groundingTurns         Int?
+  isCrisisResponse       Boolean?  @default(false)
+
+  // ✅ Back-compat legacy fields (keep so old code/data still works)
+  distortionType        String?
+  distortionExplanation String?
+  probingQuestion       String?
+
+  createdAt             DateTime  @default(now())
+
+  @@index([sessionId])
+  @@index([createdAt])
+}
+
+model MoodEntry {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mood        Int
+  emotions    String?
+  notes       String?
+  triggers    String?
+  createdAt   DateTime  @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model GratitudeEntry {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content     String
+  category    String?
+  createdAt   DateTime  @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model DailyCheckIn {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date            DateTime  @default(now())
+  completedGoals  Int       @default(0)
+  totalGoals      Int       @default(3)
+  moodScore       Int?
+  reflection      String?
+  createdAt       DateTime  @default(now())
+
+  @@index([userId])
+  @@index([date])
+}
+
+model Assignment {
+  id              String    @id @default(cuid())
+  therapistId     String
+  therapist       User      @relation("TherapistAssignments", fields: [therapistId], references: [id], onDelete: Cascade)
+  clientId        String
+  client          User      @relation("ClientAssignments", fields: [clientId], references: [id], onDelete: Cascade)
+  title           String
+  description     String
+  dueDate         DateTime?
+  status          String    @default("pending")
+  completedAt     DateTime?
+  therapistNotes  String?
+  clientResponse  String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([therapistId])
+  @@index([clientId])
+  @@index([status])
+}
+
+model TherapistNote {
+  id          String    @id @default(cuid())
+  therapistId String
+  therapist   User      @relation("TherapistNotes", fields: [therapistId], references: [id], onDelete: Cascade)
+  clientId    String
+  client      User      @relation("ClientNotes", fields: [clientId], references: [id], onDelete: Cascade)
+  sessionId   String?
+  content     String
+  isPrivate   Boolean   @default(true)
+  tags        String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([therapistId])
+  @@index([clientId])
+}
+
+model CrisisAlert {
+  id            String    @id @default(cuid())
+  clientId      String
+  client        User      @relation("ClientAlerts", fields: [clientId], references: [id], onDelete: Cascade)
+  therapistId   String
+  therapist     User      @relation("TherapistAlerts", fields: [therapistId], references: [id], onDelete: Cascade)
+  triggerPhrase String
+  severity      String    @default("moderate")
+  status        String    @default("active")
+  notes         String?
+  resolvedAt    DateTime?
+  createdAt     DateTime  @default(now())
+
+  @@index([clientId])
+  @@index([therapistId])
+  @@index([status])
+}
+
+// Sales Wellbeing Diagnostic Tool
+model DiagnosticResult {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Pattern scores (0-100)
+  driverScore     Int       @default(0)
+  strategistScore Int       @default(0)
+  connectorScore  Int       @default(0)
+  reactorScore    Int       @default(0)
+
+  // Primary profile
+  primaryProfile  String    // "Driver", "Strategist", "Connector", or "Reactor"
+  secondaryProfile String?
+
+  // Raw answers stored as JSON
+  answers         Json      // Array of {questionId, score}
+
+  // Report data
+  strengths       Json?     // Array of strength strings
+  wellbeingRisks  Json?     // Array of risk strings
+  recommendations Json?     // Array of recommendation strings
+
+  // Metadata
+  isPaid          Boolean   @default(false)  // Free vs full report
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// ============================================
+// PHASE 1: Sales Wellbeing Enhanced Features
+// ============================================
+
+// User streak tracking for daily engagement
+model UserStreak {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  currentStreak   Int       @default(0)
+  longestStreak   Int       @default(0)
+  lastCheckInDate DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+// Daily Sales Check-in (enhanced for sales wellbeing)
+model SalesCheckIn {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date            DateTime  @default(now())
+
+  // Core metrics (1-5 scale)
+  mood            Int       // "How was today?" overall feeling
+  energy          Int       // Energy level
+  confidence      Int       // Confidence level
+
+  // Impact tags (what affected them today)
+  impactTags      Json?     // ["missed_target", "tough_client", "win", "rejection", "good_call", etc.]
+
+  // Optional notes
+  notes           String?
+
+  // Pattern insight (auto-generated based on archetype)
+  patternInsight  String?   // e.g., "This matches your Reactor pattern under pressure"
+
+  createdAt       DateTime  @default(now())
+
+  @@unique([userId, date])  // One check-in per user per day
+  @@index([userId])
+  @@index([date])
+}
+
+// Coaching tips library
+model CoachingTip {
+  id              String    @id @default(cuid())
+  archetype       String    // "Driver", "Strategist", "Connector", "Reactor"
+  situation       String    // "before_call", "after_rejection", "bad_day", "good_win", "morning", "evening"
+  tip             String    // The coaching advice
+  actionTitle     String?   // Short title like "Try this before your next call"
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+
+  @@index([archetype])
+  @@index([situation])
+}
+
+// B2B Unlock codes for company purchases
+model UnlockCode {
+  id              String    @id @default(cuid())
+  code            String    @unique
+  companyId       String?   // Reference to company (if we add Company model later)
+  companyName     String?   // Denormalized for easy access
+  planType        String    @default("PRO") // "PRO", "ENTERPRISE"
+  maxUses         Int       @default(1)
+  usedCount       Int       @default(0)
+  expiresAt       DateTime?
+  isActive        Boolean   @default(true)
+  createdById     String?   // Admin who created the code
+  createdAt       DateTime  @default(now())
+  
+  usages          UnlockCodeUsage[]
+
+  @@index([code])
+  @@index([companyId])
+}
+
+// Track unlock code usage
+model UnlockCodeUsage {
+  id              String    @id @default(cuid())
+  codeId          String
+  unlockCode      UnlockCode @relation(fields: [codeId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  usedAt          DateTime  @default(now())
+
+  @@index([codeId])
+  @@index([userId])
+}
+
+// ============================================
+// PHASE 2: Team & Manager Features
+// ============================================
+
+// Company/Organization
+model Company {
+  id              String    @id @default(cuid())
+  name            String
+  slug            String    @unique
+  logoUrl         String?
+  isActive        Boolean   @default(true)
+  planType        String    @default("ENTERPRISE")
+  maxUsers        Int       @default(50)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  teams           Team[]
+  members         CompanyMember[]
+
+  @@index([slug])
+}
+
+// Company membership
+model CompanyMember {
+  id              String    @id @default(cuid())
+  companyId       String
+  company         Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role            String    @default("member") // "admin", "manager", "member"
+  joinedAt        DateTime  @default(now())
+
+  @@unique([companyId, userId])
+  @@index([companyId])
+  @@index([userId])
+}
+
+// Team within a company
+model Team {
+  id              String    @id @default(cuid())
+  companyId       String
+  company         Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name            String
+  managerId       String?   // User ID of the team manager
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  members         TeamMember[]
+
+  @@index([companyId])
+  @@index([managerId])
+}
+
+// Team membership
+model TeamMember {
+  id              String    @id @default(cuid())
+  teamId          String
+  team            Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt        DateTime  @default(now())
+
+  @@unique([teamId, userId])
+  @@index([teamId])
+  @@index([userId])
+}
+
+// ============================================
+// PHASE 3: Manager Discussion & Communication
+// ============================================
+
+// Discussion thread between manager and team member
+model ManagerDiscussion {
+  id              String    @id @default(cuid())
+  managerId       String
+  manager         User      @relation("ManagerInitiated", fields: [managerId], references: [id], onDelete: Cascade)
+  memberId        String
+  member          User      @relation("MemberReceived", fields: [memberId], references: [id], onDelete: Cascade)
+  
+  // Discussion details
+  title           String
+  status          String    @default("open") // "open", "in_progress", "resolved", "closed"
+  priority        String    @default("normal") // "low", "normal", "high", "urgent"
+  
+  // Recommended actions (set by manager)
+  recommendedActions Json?  // Array of recommended actions
+  
+  // Scheduling
+  scheduledAt     DateTime? // For scheduled check-ins
+  completedAt     DateTime?
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  messages        DiscussionMessage[]
+  
+  @@index([managerId])
+  @@index([memberId])
+  @@index([status])
+}
+
+// Messages within a discussion
+model DiscussionMessage {
+  id              String    @id @default(cuid())
+  discussionId    String
+  discussion      ManagerDiscussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  senderId        String    // User ID of sender (manager or member)
+  content         String
+  isManagerMessage Boolean  @default(false)
+  isRead          Boolean   @default(false)
+  readAt          DateTime?
+  createdAt       DateTime  @default(now())
+
+  @@index([discussionId])
+  @@index([senderId])
+  @@index([createdAt])
+}

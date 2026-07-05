@@ -1,0 +1,68 @@
+%%{init: {'theme':'base','themeVariables':{'fontSize':'15px'}}}%%
+flowchart TB
+    subgraph input["Assessment Input"]
+        IN1["16Q Snapshot<br><small>free tier · localStorage + DB</small>"]
+        IN2["64Q Full Map<br><small>paid tier · DB-persisted</small>"]
+    end
+
+    subgraph scoring["Scoring Engine · src/lib/full-diagnostic-questions.ts"]
+        L1["Layer 1<br><small>4 archetype scores (0-100)<br>+ primary / secondary + confidence</small>"]
+        L2["Layer 2<br><small>8 sub-dimension scores<br>(achievement, pace, pressure_response,<br>recovery, motivation, decision_making,<br>confidence, relationships)</small>"]
+        L3["Layer 3<br><small>5 wellbeing indicators<br>(confidence stability, energy sustainability,<br>response to rejection, tolerance of uncertainty,<br>overall wellbeing index)</small>"]
+    end
+
+    subgraph persist["Persistence"]
+        DB[("DiagnosticResult<br><small>Prisma · PostgreSQL</small>")]
+    end
+
+    subgraph dashboard["Interactive Dashboard · /diagnostic/dashboard"]
+        direction TB
+        D1["Overview Card<br><small>primary + secondary archetype<br>+ confidence rating</small>"]
+        D2["Sub-Dimension Drill-down<br><small>radar chart · 8 axes<br>per-archetype breakdown</small>"]
+        D3["Wellbeing Lens<br><small>5 indicator bars + composite<br>wellbeing index gauge</small>"]
+        D4["Sales-Cycle Lens<br><small>prospecting · discovery · pipeline<br>negotiation · closing · between-deals<br>(profile mapped to each stage)</small>"]
+        D5["History & Retake Tracking<br><small>timeline of past attempts<br>trend lines: confidence / energy /<br>resilience / wellbeing</small>"]
+    end
+
+    subgraph companion["AI Companion · /reflect"]
+        AI["Personalized Coaching<br><small>Optimism Engine<br>hydrates prompt with userProfile</small>"]
+    end
+
+    IN1 & IN2 --> L1
+    IN1 & IN2 --> L2
+    IN1 & IN2 --> L3
+    L1 --> DB
+    L2 --> DB
+    L3 --> DB
+
+    DB --> D1
+    DB --> D2
+    DB --> D3
+    DB --> D4
+    DB --> D5
+    DB --> AI
+
+    D1 -.user clicks.-> D2
+    D2 -.user clicks.-> D3
+    D3 -.user clicks.-> D4
+    D4 -.user clicks.-> D5
+    D5 -.ask AI.-> AI
+
+    style input fill:#EFF6FF,stroke:#3B82F6,stroke-width:1.5px
+    style scoring fill:#F0FDF4,stroke:#10B981,stroke-width:1.5px
+    style persist fill:#F5F3FF,stroke:#8B5CF6,stroke-width:1.5px
+    style dashboard fill:#FFF7ED,stroke:#F59E0B,stroke-width:1.5px
+    style companion fill:#FEF3C7,stroke:#F59E0B,stroke-width:1.5px
+
+    style IN1 fill:#DBEAFE,stroke:#3B82F6,stroke-width:1px,color:#1E293B
+    style IN2 fill:#DBEAFE,stroke:#3B82F6,stroke-width:1px,color:#1E293B
+    style L1 fill:#D1FAE5,stroke:#10B981,stroke-width:1px,color:#1E293B
+    style L2 fill:#D1FAE5,stroke:#10B981,stroke-width:1px,color:#1E293B
+    style L3 fill:#D1FAE5,stroke:#10B981,stroke-width:1px,color:#1E293B
+    style DB fill:#EDE9FE,stroke:#8B5CF6,stroke-width:1px,color:#1E293B
+    style D1 fill:#FEF3C7,stroke:#F59E0B,stroke-width:1px,color:#1E293B
+    style D2 fill:#FEF3C7,stroke:#F59E0B,stroke-width:1px,color:#1E293B
+    style D3 fill:#FEF3C7,stroke:#F59E0B,stroke-width:1px,color:#1E293B
+    style D4 fill:#FEF3C7,stroke:#F59E0B,stroke-width:1px,color:#1E293B
+    style D5 fill:#FEF3C7,stroke:#F59E0B,stroke-width:1px,color:#1E293B
+    style AI fill:#FEF3C7,stroke:#F59E0B,stroke-width:1px,color:#1E293B

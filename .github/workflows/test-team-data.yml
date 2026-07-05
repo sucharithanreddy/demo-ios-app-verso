@@ -1,0 +1,105 @@
+name: Test Team Data
+
+# Manual-only trigger. Never runs automatically — protects production data.
+# Two actions:
+#   - seed    : inserts 20 fake sales-person users + diagnostics + check-ins + streaks
+#               under the manager with clerkId "user_3G3WIKMf0gExMInrLjScYxFBold"
+#   - delete  : permanently deletes every User whose email matches testuser+<n>@verso.dev
+#               (cascade-deletes all their DiagnosticResult / SalesCheckIn / UserStreak rows).
+#               Requires typed confirmation "DELETE-TEST-DATA" in the confirm field.
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Action to run"
+        type: choice
+        required: true
+        default: "seed"
+        options:
+          - seed
+          - delete
+      confirm:
+        description: 'For delete: type DELETE-TEST-DATA exactly. Ignored for seed.'
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: test-team-data
+  cancel-in-progress: false
+
+jobs:
+  seed:
+    name: Seed 20 test users
+    if: ${{ github.event.inputs.action == 'seed' }}
+    runs-on: ubuntu-latest
+    env:
+      # Prefer DATABASE_URL if set; fall back to DIRECT_DATABASE_URL (existing convention).
+      DATABASE_URL: ${{ secrets.DATABASE_URL || secrets.DIRECT_DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check DATABASE_URL is configured
+        run: |
+          if [ -z "${DATABASE_URL}" ]; then
+            echo "::error::No DATABASE_URL or DIRECT_DATABASE_URL secret found. Add one in Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+          echo "✓ DATABASE_URL is configured (length: ${#DATABASE_URL})"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      - name: Run seed script
+        run: npx tsx scripts/seed-test-team.ts
+
+  delete:
+    name: Delete test users
+    if: ${{ github.event.inputs.action == 'delete' && github.event.inputs.confirm == 'DELETE-TEST-DATA' }}
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL || secrets.DIRECT_DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check DATABASE_URL is configured
+        run: |
+          if [ -z "${DATABASE_URL}" ]; then
+            echo "::error::No DATABASE_URL or DIRECT_DATABASE_URL secret found. Add one in Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+          echo "✓ DATABASE_URL is configured (length: ${#DATABASE_URL})"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      - name: Run delete script (--yes skips interactive prompt in CI)
+        run: npx tsx scripts/delete-test-team.ts --yes
+
+  delete-guard:
+    name: Delete confirmation required
+    if: ${{ github.event.inputs.action == 'delete' && github.event.inputs.confirm != 'DELETE-TEST-DATA' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Abort
+        run: |
+          echo "::error::You selected 'delete' but did not type DELETE-TEST-DATA in the confirm field."
+          echo "::error::Re-run the workflow and type DELETE-TEST-DATA (case-sensitive, with hyphens) in the confirm input."
+          exit 1
