@@ -658,7 +658,7 @@ children.push(body(
 ));
 
 children.push(body(
-  '1.7  Upon the Purchaser\u2019s request, the Developer agreed to defer receipt of the purchase consideration subject to the Purchaser paying the Developer the agreed Revenue Share from commercialisation of the Software in accordance with this Agreement, and to provide ongoing technical support, software maintenance, AI optimisation, feature enhancements, bug fixes, security updates, and future software development services upon the terms set out herein.',
+  '1.7  Upon the Purchaser\u2019s request, the Developer agreed to defer receipt of the balance of the Purchase Consideration (after the Earnest Money) subject to the Purchaser paying the Developer the agreed Revenue Share and Minimum Monthly Payment from commercialisation of the Software in accordance with this Agreement, and to provide ongoing technical support, software maintenance, AI optimisation, feature enhancements, bug fixes, security updates, and future software development services upon the terms set out herein. The Developer\u2019s agreement to defer the balance is expressly contingent upon the Purchaser paying the non-refundable Earnest Money under Clause 3.5 and complying with the Sunset Date under Clause 9.5.',
   { noIndent: true }
 ));
 
@@ -679,17 +679,21 @@ children.push(body(
 ));
 
 children.push(definitionsTable([
-  ['Agreement', 'This Software Purchase, Assignment, Exclusive Licence, Revenue Sharing and Technical Services Agreement, including all Schedules attached hereto and any amendments made in writing pursuant to Clause 12.'],
+  ['Agreement', 'This Software Purchase, Assignment, Exclusive Licence, Revenue Sharing and Technical Services Agreement, including all Schedules attached hereto and any amendments made in writing pursuant to Clause 14.'],
   ['Software', 'The proprietary Artificial Intelligence platform known as "THE OPTIMISM ENGINE", including without limitation all source code, object code, AI models, prompts, prompt libraries, algorithms, workflows, APIs, databases, architecture, software framework, user interface, dashboards, mood tracking systems, gratitude journal module, grounding exercise module, emotional wellbeing tools, analytics engine, progress tracking engine, documentation, technical know-how, future updates, enhancements, derivative works, and every other component forming part of or connected with THE OPTIMISM ENGINE, together with all Intellectual Property Rights subsisting therein.'],
-  ['Purchase Consideration', 'The total sum of INR Rs. 40,00,000/- (Rupees Forty Lakhs Only) payable by the Purchaser to the Developer for acquisition of the Software, to be discharged through Revenue Share payments and any top-up payments in accordance with Clause 6.'],
-  ['Revenue Share', 'The percentage of Gross Revenue payable by the Purchaser to the Developer under Clause 6 of this Agreement, applied towards discharge of the Purchase Consideration until paid in full.'],
+  ['Purchase Consideration', 'The total sum of INR Rs. 40,00,000/- (Rupees Forty Lakhs Only) payable by the Purchaser to the Developer for acquisition of the Software, to be discharged through the Earnest Money, Revenue Share payments, and any top-up payments in accordance with Clause 6.'],
+  ['Earnest Money', 'The non-refundable sum of INR Rs. 10,00,000/- (Rupees Ten Lakhs Only) payable by the Purchaser to the Developer within fourteen (14) days of the Effective Date pursuant to Clause 3.5, representing reasonable commitment compensation for the Developer\u2019s deferral of the balance of the Purchase Consideration. The Earnest Money is adjusted against the Purchase Consideration but is non-refundable in all circumstances.'],
+  ['Revenue Share', 'Twenty percent (20%) of Gross Revenue, plus a Minimum Monthly Payment of INR Rs. 50,000/- (Rupees Fifty Thousand Only), payable by the Purchaser to the Developer under Clause 6 of this Agreement, applied towards discharge of the Purchase Consideration until paid in full.'],
+  ['Minimum Monthly Payment', 'The minimum monthly amount of INR Rs. 50,000/- (Rupees Fifty Thousand Only) payable by the Purchaser to the Developer commencing sixty (60) days after Commercial Launch, irrespective of actual Gross Revenue received, as a floor on the Revenue Share obligation.'],
   ['Gross Revenue', 'All monies, subscription fees, licence fees, service fees, usage charges, implementation fees, and every other amount received by the Purchaser directly or indirectly from commercialisation of the Software, without deduction of operational expenses, marketing costs, or third-party commissions. Net of VAT/GST, payment processing fees, and mandatory refunds actually issued.'],
   ['Commercial Launch', 'The date from which the Purchaser commercially deploys, licenses, sells, markets, subscribes, or otherwise exploits the Software for monetary consideration, whether directly through Verso or through any subsidiary, affiliate, or sub-licensee.'],
+  ['Sunset Date', 'The date falling thirty-six (36) months after the Effective Date, by which the full Purchase Consideration must be paid in full. If the Purchase Consideration is not paid in full by the Sunset Date, the Developer may terminate the exclusive licence and retain all rights in the Software in accordance with Clause 9.5.'],
   ['Intellectual Property Rights', 'All patents, copyrights, database rights, design rights, trade marks, trade secrets, know-how, source code rights, and every other proprietary right recognised under applicable law, whether registered or unregistered, anywhere in the world.'],
-  ['Foreground IP', 'All Intellectual Property Rights created, developed, or arising directly or indirectly from the Technical Services performed under this Agreement after the Effective Date, including enhancements, updates, bug fixes, and new modules delivered by the Developer.'],
+  ['Foreground IP', 'All Intellectual Property Rights created, developed, or arising directly or indirectly from the Technical Services performed under this Agreement after the Effective Date, including enhancements, updates, bug fixes, and new modules delivered by the Developer. Foreground IP vests in the Purchaser only upon acceptance and payment in accordance with Clause 5.4.'],
   ['Background IP', 'The Software and all Intellectual Property Rights subsisting therein as of the Effective Date, being the proprietary intellectual creation of the Developer developed independently and prior to this Agreement.'],
   ['Technical Services', 'The ongoing technical assistance, software maintenance, AI optimisation, feature enhancements, bug fixes, security updates, additional module development, and consultancy services to be provided by the Developer pursuant to Clause 7.'],
   ['Milestone', 'A defined deliverable, phase of work, or service level set out in Schedule 1 or agreed in writing between the Parties from time to time.'],
+  ['Late Payment Interest', 'Interest accruing daily at the rate of one and one-half percent (1.5%) per month (or the maximum rate permitted by applicable law, whichever is lower) on any payment not received within fifteen (15) days of its due date, as provided in Clause 6.8.'],
 ]));
 
 // ============================================================================
@@ -698,10 +702,10 @@ children.push(definitionsTable([
 
 children.push(sectionHeading('3.  Sale of Software'));
 
-children.push(subHeading('Key Principle: Deferred Purchase with Exclusive Licence'));
+children.push(subHeading('Key Principle: Deferred Purchase with Exclusive Licence, Earnest Money, and Sunset Date'));
 
 children.push(body(
-  'The Developer agrees to sell and the Purchaser agrees to purchase the Software for the total consideration of INR Rs. 40,00,000/- (Rupees Forty Lakhs Only). Pending payment of the full Purchase Consideration, the Developer grants the Purchaser an exclusive licence to commercially exploit the Software. Upon payment in full, ownership of the Software and all associated Intellectual Property Rights shall assign to the Purchaser.',
+  'The Developer agrees to sell and the Purchaser agrees to purchase the Software for the total consideration of INR Rs. 40,00,000/- (Rupees Forty Lakhs Only). The Purchaser shall pay a non-refundable Earnest Money of INR Rs. 10,00,000/- within 14 days of the Effective Date. Pending payment of the full Purchase Consideration, the Developer grants the Purchaser a revocable, non-exclusive licence to commercially exploit the Software, subject to timely payment of Revenue Share and Minimum Monthly Payment. The full Purchase Consideration must be paid within 36 months of the Effective Date (the Sunset Date), failing which the Developer may terminate the licence and retain all rights. Upon payment in full, ownership of the Software and all associated Intellectual Property Rights shall assign to the Purchaser.',
   { noIndent: true }
 ));
 
@@ -721,6 +725,10 @@ children.push(clause('3.4',
   'Nothing contained in this Agreement shall be construed as a waiver by the Developer of her right to receive the full Purchase Consideration. The Developer retains the right to demand immediate payment of any outstanding balance in the event of material breach by the Purchaser, subject to the remedies in Clause 9.'
 ));
 
+children.push(clause('3.5',
+  'Non-Refundable Earnest Money. Within fourteen (14) days of the Effective Date, the Purchaser shall pay to the Developer a non-refundable earnest money payment of INR Rs. 10,00,000/- (Rupees Ten Lakhs Only), which shall be adjusted against the Purchase Consideration. The Parties expressly agree that this earnest money is non-refundable in all circumstances, including termination of this Agreement for any reason, and constitutes reasonable compensation for the Developer\u2019s commitment to defer the balance of the Purchase Consideration, grant the exclusive licence under Clause 4, and provide the free Technical Services under Clause 7.6. Time is of the essence for this payment. Failure to pay the Earnest Money within the stipulated period shall constitute a material breach of this Agreement entitling the Developer to terminate this Agreement immediately and retain all rights in the Software.'
+));
+
 // ============================================================================
 // 4. LIMITED EXCLUSIVE LICENCE
 // ============================================================================
@@ -728,7 +736,7 @@ children.push(clause('3.4',
 children.push(sectionHeading('4.  Limited Exclusive Licence'));
 
 children.push(clause('4.1',
-  'Pending payment of the entire Purchase Consideration, the Developer hereby grants the Purchaser an exclusive, non-transferable, and non-assignable licence to use the Software solely for the purpose of commercial exploitation through Verso and its authorised channels.'
+  'Pending payment of the entire Purchase Consideration, the Developer hereby grants the Purchaser a revocable, non-transferable, and non-assignable licence to use the Software solely for the purpose of commercial exploitation through Verso and its authorised channels. The licence is expressly conditional upon the Purchaser\u2019s timely compliance with all payment obligations under Clause 6 and shall suspend or terminate in accordance with Clauses 4.6, 9.3, and 9.5.'
 ));
 
 children.push(clause('4.2',
@@ -747,6 +755,10 @@ children.push(clause('4.5',
   'Upon payment of the entire Purchase Consideration, the Developer shall, at the Purchaser\u2019s request and cost, execute all documents and do all things reasonably necessary to assign the Software and all associated Intellectual Property Rights to the Purchaser, subject to any continuing maintenance, royalty, or service obligations expressly agreed between the Parties under Clause 7.'
 ));
 
+children.push(clause('4.6',
+  'Automatic Suspension on Payment Default. In the event that the Purchaser fails to make any payment due under Clause 6 (including the Earnest Money, Revenue Share, Minimum Monthly Payment, or any top-up payment) within fifteen (15) days of its due date, the exclusive licence granted under Clause 4.1 shall automatically suspend, and the Purchaser shall immediately cease all commercial exploitation of the Software until all outstanding amounts (together with any Late Payment Interest accrued under Clause 6.8) are paid in full. The Developer shall also be entitled, but not obligated, to disable the Software through technical means as expressly permitted under Clause 10.3. The licence shall automatically reinstate upon receipt of all cleared funds, provided that three or more suspensions in any twelve-month period shall entitle the Developer to terminate this Agreement and the licence under Clause 9.3.'
+));
+
 // ============================================================================
 // 5. INTELLECTUAL PROPERTY — OWNERSHIP AND ASSIGNMENT
 // ============================================================================
@@ -756,7 +768,7 @@ children.push(sectionHeading('5.  Intellectual Property — Ownership and Assign
 children.push(subHeading('Key Principle: Conditional Assignment upon Full Payment'));
 
 children.push(body(
-  'The Software (Background IP) remains the sole and exclusive property of the Developer until the entire Purchase Consideration is paid in full. Upon full payment, all rights in the Software assign to the Purchaser. All Foreground IP created by the Developer during the Technical Services vests in the Purchaser from the date of creation, subject to payment of the agreed service fees.',
+  'The Software (Background IP) remains the sole and exclusive property of the Developer until the entire Purchase Consideration is paid in full (and no later than the Sunset Date). The licence granted to the Purchaser pending full payment is revocable and non-exclusive, and may be suspended or terminated upon payment default or failure to pay by the Sunset Date. Upon full payment, all rights in the Software assign to the Purchaser. All Foreground IP created by the Developer during the Technical Services vests in the Purchaser only upon acceptance and payment for the relevant Milestone, as set out in Clause 5.4.',
   { noIndent: true }
 ));
 
@@ -765,15 +777,15 @@ children.push(clause('5.1',
 ));
 
 children.push(clause('5.2',
-  'This assignment takes effect as a present assignment of future rights. To the extent that any right in the Software cannot be assigned as a matter of law prior to full payment, the Developer hereby grants the Purchaser an irrevocable, exclusive, royalty-free, worldwide licence to use, modify, sub-license, and commercialise such rights without restriction, such licence to convert to outright ownership upon payment in full.'
+  'Conditional Licence Pending Full Payment. Pending full payment of the Purchase Consideration, the Developer grants the Purchaser a revocable, non-exclusive licence to use the Software solely for the purpose of commercial exploitation through Verso and its authorised channels. This licence is expressly conditional upon the Purchaser\u2019s timely compliance with all payment obligations under Clause 6, including payment of the Earnest Money, Revenue Share, and Minimum Monthly Payment. The licence shall automatically terminate upon: (a) any payment default continuing uncured for fifteen (15) days, in accordance with Clause 4.6; (b) failure to pay the full Purchase Consideration by the Sunset Date, in accordance with Clause 9.5; or (c) termination of this Agreement for any reason where the Purchaser has not acquired full ownership. The Developer expressly reserves all rights not granted herein, and no irrevocable or royalty-free licence is granted under any circumstances prior to full payment of the Purchase Consideration.'
 ));
 
 children.push(clause('5.3',
-  'The Developer waives all moral rights in the Software and in all Foreground IP created under this Agreement to the fullest extent permitted by applicable law.'
+  'The Developer waives all moral rights in the Software and in all Foreground IP created under this Agreement to the fullest extent permitted by applicable law, save that the Developer retains the right to be identified as the author of the Software in academic, portfolio, and professional contexts where such identification would not disclose Verso\u2019s confidential information or business strategy.'
 ));
 
 children.push(clause('5.4',
-  'All Foreground IP created by the Developer in the course of providing Technical Services under Clause 7 shall vest solely and exclusively in the Purchaser upon creation, as a work made for hire or by way of present assignment of future rights, absolutely and free from all encumbrances.'
+  'Conditional Vesting of Foreground IP. All Foreground IP created by the Developer in the course of providing Technical Services under Clause 7 shall vest in the Purchaser only upon the cumulative satisfaction of both of the following conditions: (a) acceptance of the deliverable containing such Foreground IP by the Purchaser pursuant to the procedure in Clause 7.5; AND (b) payment in full of all fees, Revenue Share, and other amounts due to the Developer for the Milestone or service period to which such Foreground IP relates. Until both conditions are met, Foreground IP remains the sole and exclusive property of the Developer, and the Purchaser shall not use, copy, modify, or commercialise such Foreground IP without the Developer\u2019s prior written consent. Upon satisfaction of both conditions, Foreground IP shall vest in the Purchaser absolutely and free from all encumbrances.'
 ));
 
 children.push(clause('5.5',
@@ -802,12 +814,15 @@ children.push(body(
 ));
 
 children.push(compTable([
-  ['Rate', '[X]% of Gross Revenue received by the Purchaser directly attributable to the Software, including all subscriptions, licence fees, and usage charges'],
+  ['Revenue Share Rate', 'Twenty percent (20%) of Gross Revenue received by the Purchaser directly attributable to the Software, including all subscriptions, licence fees, and usage charges'],
+  ['Minimum Monthly Payment', 'INR Rs. 50,000/- (Rupees Fifty Thousand Only) per month, commencing sixty (60) days after Commercial Launch and payable irrespective of actual Gross Revenue received in any month. The Minimum Monthly Payment is adjusted against the Revenue Share for the same month; if actual Revenue Share exceeds the Minimum, the higher amount is payable.'],
+  ['Earnest Money', 'INR Rs. 10,00,000/- (Rupees Ten Lakhs Only), non-refundable, payable within 14 days of the Effective Date per Clause 3.5, adjusted against the Purchase Consideration'],
   ['Payment Frequency', 'Monthly in arrears, on or before the 7th day of every succeeding calendar month, together with a detailed statement of accounts'],
   ['Currency', 'INR (or USD equivalent at the Reserve Bank of India reference rate on the last business day of the reporting month)'],
-  ['Commencement', 'Revenue Share shall become payable immediately upon Commercial Launch of the Software'],
-  ['Application', 'Every Revenue Share payment shall be adjusted towards discharge of the Purchase Consideration until the full INR Rs. 40,00,000/- has been paid'],
-  ['Post-Payment Royalty', 'After the Purchase Consideration is paid in full, the Revenue Share shall cease and the Purchaser shall own the Software outright, subject to ongoing Technical Services fees under Clause 7'],
+  ['Commencement', 'Revenue Share and Minimum Monthly Payment become payable immediately upon Commercial Launch of the Software (or 60 days after Commercial Launch for the Minimum Monthly Payment)'],
+  ['Application', 'Every Revenue Share and Minimum Monthly Payment shall be adjusted towards discharge of the Purchase Consideration until the full INR Rs. 40,00,000/- has been paid'],
+  ['Sunset Date', 'The full Purchase Consideration must be paid within thirty-six (36) months of the Effective Date. If not paid in full by the Sunset Date, the Developer may terminate the exclusive licence and retain all rights in the Software per Clause 9.5.'],
+  ['Post-Payment Royalty', 'After the Purchase Consideration is paid in full, the Revenue Share and Minimum Monthly Payment shall cease and the Purchaser shall own the Software outright, subject to ongoing Technical Services fees under Clause 7'],
 ]));
 
 children.push(clause('6.3',
@@ -815,7 +830,7 @@ children.push(clause('6.3',
 ));
 
 children.push(clause('6.4',
-  'The Purchaser shall provide the Developer with a monthly revenue statement setting out the calculation of amounts due, including gross receipts, applicable deductions, Revenue Share calculation, and cumulative balance of Purchase Consideration outstanding. The Developer shall have the right, on reasonable prior written notice and not more than once per calendar quarter, to audit the Purchaser\u2019s relevant books and records relating to the Software\u2019s commercialisation.'
+  'The Purchaser shall provide the Developer with a monthly revenue statement setting out the calculation of amounts due, including gross receipts, applicable deductions, Revenue Share calculation, Minimum Monthly Payment calculation, and cumulative balance of Purchase Consideration outstanding. The Developer shall have the right, on reasonable prior written notice and not more than once per calendar quarter, to audit the Purchaser\u2019s relevant books and records relating to the Software\u2019s commercialisation. If an audit reveals a discrepancy of more than five percent (5%) in favour of the Developer, the Purchaser shall bear the full cost of the audit in addition to paying any shortfall within seven (7) days of the audit report. If the discrepancy is five percent (5%) or less, the Developer shall bear the audit cost.'
 ));
 
 children.push(clause('6.5',
@@ -825,13 +840,19 @@ children.push(clause('6.5',
 children.push(subHeading('6.6  Top-Up Payment Option'));
 
 children.push(clause('6.6',
-  'At any time after Commercial Launch, the Purchaser may, at its sole discretion, pay the outstanding balance of the Purchase Consideration in a single lump-sum payment to accelerate acquisition of full ownership. Upon receipt of such payment, the Developer shall execute all assignment documents contemplated by Clause 5.1 and the Revenue Share obligation under Clause 6.2 shall cease.'
+  'Top-Up Payment Option. At any time after Commercial Launch, the Purchaser may, at its sole discretion, pay the outstanding balance of the Purchase Consideration in a single lump-sum payment to accelerate acquisition of full ownership. The Purchaser shall provide the Developer with not less than thirty (30) days\u2019 prior written notice of its intention to exercise this option, to enable the Developer to plan accordingly. Upon receipt of such payment, the Developer shall execute all assignment documents contemplated by Clause 5.1 and the Revenue Share and Minimum Monthly Payment obligations under Clause 6.2 shall cease.'
 ));
 
-children.push(subHeading('6.7  No Upfront Fee'));
+children.push(subHeading('6.7  No Other Upfront Fee'));
 
 children.push(clause('6.7',
-  'Unless separately agreed in writing and appended as a Schedule, no upfront or milestone-based fees are payable under this Agreement other than as expressly set out herein. The Revenue Share in Clause 6.2 constitutes the Developer\u2019s primary compensation until the Purchase Consideration is discharged in full.'
+  'The Earnest Money under Clause 3.5 and the Revenue Share and Minimum Monthly Payment under Clause 6.2 together constitute the Developer\u2019s primary consideration until the Purchase Consideration is discharged in full. No other upfront or milestone-based fees are payable under this Agreement except as expressly set out herein or as may be agreed in writing as an additional Schedule.'
+));
+
+children.push(subHeading('6.8  Late Payment Interest'));
+
+children.push(clause('6.8',
+  'Late Payment Interest. Any amount not paid by the Purchaser within fifteen (15) days of its due date (including the Earnest Money, Revenue Share, Minimum Monthly Payment, or any top-up payment) shall accrue interest at the rate of one and one-half percent (1.5%) per month, or the maximum rate permitted by applicable law, whichever is lower, calculated daily from the due date until the date of actual payment. Such interest is in addition to, and does not limit, the Developer\u2019s other rights and remedies under this Agreement, including the right to suspend the licence under Clause 4.6 and the right to disable the Software under Clause 10.3.'
 ));
 
 // ============================================================================
@@ -881,7 +902,7 @@ children.push(letteredClause('e',
 children.push(subHeading('7.6  Compensation for Technical Services'));
 
 children.push(clause('7.6',
-  'During the period when the Purchase Consideration remains outstanding, the Developer shall provide the Technical Services at no additional charge, such services being considered part of the overall consideration for the Revenue Share. After the Purchase Consideration is paid in full, the Parties shall agree in writing on a separate monthly retainer or hourly rate for ongoing Technical Services, the terms of which shall be appended as Schedule 2.'
+  'Cap on Free Technical Services. During the period when the Purchase Consideration remains outstanding, the Developer shall provide the Technical Services at no additional charge for a period of twelve (12) months from the Effective Date, such services being considered part of the overall consideration for the Revenue Share, Minimum Monthly Payment, and Earnest Money. After the expiry of the twelve (12) month free period, or after the Purchase Consideration is paid in full (whichever occurs first), the Parties shall agree in writing on a separate monthly retainer or hourly rate for ongoing Technical Services, the terms of which shall be appended as Schedule 2. Until Schedule 2 is agreed, any Technical Services requested by the Purchaser after the free period shall be chargeable at the Developer\u2019s standard hourly rate of INR Rs. 5,000/- (Rupees Five Thousand Only) per hour, invoiced monthly.'
 ));
 
 // ============================================================================
@@ -899,7 +920,7 @@ children.push(clause('8.2',
 ));
 
 children.push(clause('8.3',
-  'These obligations survive termination of this Agreement for a period of five (5) years.'
+  'These obligations survive termination of this Agreement for a period of three (3) years.'
 ));
 
 // ============================================================================
@@ -942,6 +963,16 @@ children.push(letteredClause('e',
   'Source Code Purge. Immediately following the successful delivery and acceptance of the final build, or upon termination of this Agreement for any reason where the Purchaser does not acquire full ownership, the Purchaser shall permanently delete, purge, and destroy all local copies, partial backups, staging builds, and remnants of the source code from all of the Purchaser\u2019s servers, cloud environments, and physical storage media. Within seven (7) business days of such request, the Purchaser shall provide a signed, written certification that a complete system purge has been executed and no source code copies have been retained.'
 ));
 
+children.push(letteredClause('f',
+  'Survival of Developer\u2019s Rights. Termination of this Agreement for any reason shall not affect the Developer\u2019s right to receive all accrued and unpaid amounts, including the Earnest Money (which is non-refundable), Revenue Share, Minimum Monthly Payment, Late Payment Interest, and any other sums due. The Developer\u2019s ownership of all Foreground IP not vested in the Purchaser pursuant to Clause 5.4 shall continue notwithstanding termination.'
+));
+
+children.push(subHeading('9.5  Sunset Date and Reversion of Rights'));
+
+children.push(clause('9.5',
+  'Sunset Date. The Parties acknowledge that the Developer\u2019s deferral of the Purchase Consideration is contingent upon timely payment through Revenue Share, Minimum Monthly Payment, and any top-up payments. The full Purchase Consideration must be paid in full by the Sunset Date (being the date falling thirty-six (36) months after the Effective Date). If the full Purchase Consideration has not been paid by the Sunset Date, the Developer shall be entitled, at her sole discretion and upon thirty (30) days\u2019 written notice to the Purchaser, to: (a) terminate the exclusive licence granted under Clause 4; (b) terminate this Agreement; (c) retain ownership of the Software and all associated Intellectual Property Rights, free from any claim by the Purchaser; (d) retain all payments received to date (including the Earnest Money) as consideration for the licence period; and (e) re-enter into possession of the Software and exploit it independently or with any third party. The Purchaser shall, within fourteen (14) days of such notice, return or permanently delete all copies of the Software and certify such deletion in writing. This Clause 9.5 is in addition to, and does not limit, the Developer\u2019s other rights and remedies.'
+));
+
 // ============================================================================
 // 10. WARRANTIES AND LIABILITY
 // ============================================================================
@@ -957,7 +988,7 @@ children.push(clause('10.2',
 ));
 
 children.push(clause('10.3',
-  'Warranty Against Disabling and Metering Code. The Developer represents, warrants, and covenants that the Software is delivered free of any malware, trojan horses, worms, logic bombs, time bombs, kill-switches, or backdoors. The Developer further warrants that the Software does not contain any code, routine, or mechanism designed to track, meter, restrict, or disable functionality based on usage thresholds, elapsed time, or payment status. The Software must function entirely independently of any developer-controlled servers or verification checks, except for routine update mechanisms expressly disclosed to and approved by the Purchaser.'
+  'Warranty Against Malicious Code; Reservation of Disable Rights. The Developer represents, warrants, and covenants that the Software as delivered is free of any malware, trojan horses, worms, logic bombs, or backdoors that would cause unauthorised damage to the Purchaser\u2019s systems or unauthorised access to user data. The Developer expressly reserves the right to implement usage metering, rate limiting, licence verification, and remote disabling mechanisms (including kill-switches) that activate upon material payment default by the Purchaser, provided that: (a) such mechanisms are disclosed in writing to the Purchaser upon request; (b) such mechanisms do not cause loss of, or unauthorised access to, user data; and (c) such mechanisms are reversible upon cure of the payment default. The Purchaser acknowledges that the Developer\u2019s right to disable the Software upon payment default is a fundamental protection of the Developer\u2019s intellectual property and economic interests, given the deferred payment structure of this Agreement. The Developer shall not be liable for any business losses arising from the legitimate exercise of such disable rights following a payment default.'
 ));
 
 children.push(clause('10.4',
@@ -965,7 +996,7 @@ children.push(clause('10.4',
 ));
 
 children.push(clause('10.5',
-  'The Purchaser\u2019s total aggregate liability under this Agreement, other than for payment of the Purchase Consideration, shall not exceed the total Revenue Share payments actually made to the Developer in the twelve (12) months preceding the event giving rise to the claim.'
+  'Liability Cap and Carve-Outs. The Purchaser\u2019s total aggregate liability under this Agreement, other than for payment of the Purchase Consideration, shall not exceed the greater of (a) the total Revenue Share and Minimum Monthly Payment payments actually made to the Developer in the twelve (12) months preceding the event giving rise to the claim, or (b) INR Rs. 20,00,000/- (Rupees Twenty Lakhs Only). The liability cap in this Clause 10.5 shall NOT apply to: (i) the Purchaser\u2019s obligation to pay the Purchase Consideration, Earnest Money, Revenue Share, Minimum Monthly Payment, or any top-up payment; (ii) claims arising from the Purchaser\u2019s unauthorised use of the Software or Foreground IP beyond the scope of the licence granted under Clause 4 or 5; (iii) claims arising from breach of the confidentiality obligations under Clause 8; (iv) claims arising from the Purchaser\u2019s infringement of the Developer\u2019s Intellectual Property Rights; (v) the Purchaser\u2019s indemnity obligations under Clause 11; or (vi) claims arising from the Purchaser\u2019s fraud, wilful misconduct, or gross negligence. The Developer\u2019s total aggregate liability under this Agreement shall not exceed the total fees received from the Purchaser in the twelve (12) months preceding the event giving rise to the claim, except for claims arising from the Developer\u2019s fraud, wilful misconduct, or gross negligence.'
 ));
 
 // ============================================================================
@@ -987,7 +1018,7 @@ children.push(letteredClause('b',
 ));
 
 children.push(letteredClause('c',
-  'The Developer remains solely responsible for all tax obligations, social security contributions, and national insurance requirements under the laws of India or any other applicable jurisdiction. The Developer shall fully indemnify and hold harmless the Purchaser against any taxes, penalties, interest, or statutory claims arising from a determination that the Developer is not an independent contractor.'
+  'The Developer remains solely responsible for all tax obligations arising from fees received under this Agreement, under the laws of India. The Purchaser shall be solely responsible for any tax obligations arising from its receipt of the Software and Technical Services, including any UK VAT, sales tax, or similar levies. Each Party shall indemnify the other against tax liabilities arising from the indemnifying Party\u2019s failure to comply with its own tax obligations. The Developer\u2019s indemnity under this clause shall be capped at the total fees received from the Purchaser in the twelve (12) months preceding the relevant tax assessment. The Parties acknowledge that the Purchaser\u2019s classification of the Developer as an independent contractor does not bind any tax authority, and that any reclassification by a tax authority shall not constitute a breach of this Agreement by either Party.'
 ));
 
 // ============================================================================
@@ -1001,7 +1032,7 @@ children.push(clause('12.1',
 ));
 
 children.push(clause('12.2',
-  'Non-Competition and Alternative Exploitation. The Developer acknowledges that during the course of this engagement, the Developer will gain exclusive technical access to Verso\u2019s proprietary diagnostic framework (the Sales Wellbeing Map), scoring matrices, and commercial strategy. The Developer agrees that during the term of this Agreement and for a period of twenty-four (24) months following its termination or expiry, the Developer shall not \u2014 directly or indirectly, anywhere in the world \u2014 develop, market, license, sell, or distribute any software platform, diagnostic tool, or digital assessment that competes directly with the integrated Verso + Optimism Engine product, nor utilise any portion of the Foreground IP or source code developed under this Agreement to build software for any third party.'
+  'Non-Competition and Alternative Exploitation. The Developer acknowledges that during the course of this engagement, the Developer will gain access to Verso\u2019s proprietary diagnostic framework (the Sales Wellbeing Map), scoring matrices, and commercial strategy. The Developer agrees that during the term of this Agreement and for a period of twelve (12) months following its termination or expiry, the Developer shall not \u2014 directly or indirectly, in any country where Verso actively markets or sells the integrated Verso + Optimism Engine product as of the termination date \u2014 develop, market, license, sell, or distribute any software platform that directly competes with the integrated Verso + Optimism Engine product. The Developer shall not utilise any portion of the Foreground IP, Background IP, or Verso\u2019s confidential information to build software for any third party. Nothing in this clause shall prevent the Developer from: (a) developing general-purpose AI tools, mental wellbeing applications, or diagnostic platforms that do not incorporate Verso\u2019s proprietary Sales Wellbeing Map, Foreground IP, or Verso\u2019s confidential information; (b) working for any employer or client in a role that does not involve the direct development of a directly competing sales-wellbeing product; or (c) using general software engineering skills and knowledge acquired prior to this Agreement. The Parties acknowledge that this restriction is reasonable in scope, geography, and duration, and is necessary to protect Verso\u2019s legitimate business interests.'
 ));
 
 // ============================================================================
@@ -1019,7 +1050,7 @@ children.push(clause('13.2',
 ));
 
 children.push(clause('13.3',
-  'If the dispute cannot be resolved by negotiation, the Parties agree to submit to binding arbitration under the Rules of the London Court of International Arbitration (LCIA), with the seat of arbitration in London and proceedings conducted in English.'
+  'If the dispute cannot be resolved by negotiation, the Parties agree to submit to binding arbitration under the Rules of the Singapore International Arbitration Centre (SIAC), with the seat of arbitration in Singapore and proceedings conducted in English. The number of arbitrators shall be one (1), unless the amount in dispute exceeds USD 200,000, in which case the number shall be three (3). The Parties agree that the costs of arbitration (including arbitrator fees and administrative fees) shall be borne equally between the Parties, regardless of outcome. Each Party shall bear its own legal fees, except that the prevailing Party shall be entitled to recover its reasonable legal fees from the non-prevailing Party, capped at the lesser of (a) the amount in dispute or (b) USD 50,000. The award shall be final and binding on the Parties, and may be enforced in any court of competent jurisdiction, including the courts of India and England pursuant to the New York Convention.'
 ));
 
 children.push(clause('13.4',
@@ -1102,7 +1133,7 @@ children.push(scheduleTable([
 children.push(blankLine());
 
 children.push(body(
-  'Note: This Schedule forms an integral part of the Agreement. The modules listed above are the components of the Software being purchased under Clause 3 and licensed under Clause 4. Any future modules, enhancements, or derivative works developed by the Developer under the Technical Services in Clause 7 shall be treated as Foreground IP and shall vest in the Purchaser in accordance with Clause 5.4. The Purchaser and Developer shall, prior to signing, confirm in writing that the Software as delivered matches the description in this Schedule.',
+  'Note: This Schedule forms an integral part of the Agreement. The modules listed above are the components of the Software being purchased under Clause 3 and licensed under Clause 4. Any future modules, enhancements, or derivative works developed by the Developer under the Technical Services in Clause 7 shall be treated as Foreground IP and shall vest in the Purchaser in accordance with Clause 5.4 (conditional upon acceptance and payment). The Purchaser and Developer shall, prior to signing, confirm in writing that the Software as delivered matches the description in this Schedule.',
   { noIndent: false, after: 240 }
 ));
 
@@ -1114,7 +1145,7 @@ const doc = new Document({
   creator: 'Verso',
   title: 'Software Purchase, Assignment, Exclusive Licence, Revenue Sharing and Technical Services Agreement',
   subject: 'Verso x Developer — Optimism Engine Acquisition',
-  description: 'Legal agreement for the purchase and assignment of THE OPTIMISM ENGINE AI platform from the Developer to Verso, with deferred payment via revenue share and ongoing technical services.',
+  description: 'Legal agreement for the purchase and assignment of THE OPTIMISM ENGINE AI platform from the Developer to Verso, with non-refundable earnest money, deferred payment via revenue share with minimum monthly payment, 36-month sunset date, and ongoing technical services. Revised to protect the Developer\u2019s rights, time, and money.',
   styles: {
     default: {
       document: {
