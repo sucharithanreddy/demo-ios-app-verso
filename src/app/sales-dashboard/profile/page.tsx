@@ -57,24 +57,45 @@ interface DiagnosticResults {
 // Duplicated here as a local type so we don't pull the heavy question bank
 // into the profile bundle.
 type ArchetypeKey = 'driver' | 'strategist' | 'connector' | 'reactor';
-type SubDimensionKey =
-  | 'achievement' | 'pace' | 'pressure_response' | 'recovery'
-  | 'motivation' | 'decision_making' | 'confidence' | 'relationships';
+type DimensionCodeKey =
+  | 'D1' | 'D2' | 'D3' | 'D4'
+  | 'S1' | 'S2' | 'S3' | 'S4'
+  | 'C1' | 'C2' | 'C3' | 'C4'
+  | 'R1' | 'R2' | 'R3' | 'R4';
+type DimensionBandKey = 'low' | 'mild' | 'moderate' | 'strong' | 'very_strong';
+type SustainabilityBandKey = 'strongly_sustainable' | 'generally_sustainable' | 'mixed' | 'several_pressure_points' | 'significant_pressure';
+type WellbeingPressureLevelKey = 'low' | 'emerging' | 'moderate' | 'elevated';
+type ProfileClassificationKey = 'strong_primary' | 'blended' | 'balanced' | 'flexible';
 
 interface FullDiagnosticResults {
   archetypeScores: Record<ArchetypeKey, number>;
   primaryArchetype: ArchetypeKey;
   secondaryArchetype: ArchetypeKey;
-  confidence: 'strong' | 'moderate' | 'blended';
-  subDimensionScores: Partial<Record<SubDimensionKey, number>>;
-  wellbeingIndicators: {
+  profileClassification: ProfileClassificationKey;
+  profileSummaryText: string;
+  dimensionScores: Record<DimensionCodeKey, number>;
+  dimensionBands: Record<DimensionCodeKey, DimensionBandKey>;
+  derivedMeasures: {
     confidenceStability: number;
     energySustainability: number;
-    responseToRejection: number;
+    recoveryCapacity: number;
+    boundarySustainability: number;
     toleranceOfUncertainty: number;
-    overallSalesWellbeingIndex: number;
+    behaviouralStability: number;
+    setbackRecovery: number;
+    relationshipOrientation: number;
+    emotionalLabourLoad: number;
+    abilityToSwitchOff: number;
+    needForCertainty: number;
+    responseToPressure: { action: number; analysis: number; connection: number; emotional: number };
+    decisionStyle: { fast: number; analytical: number; collaborative: number; emotionallyInfluenced: number };
   };
+  salesWellbeingSustainabilityIndex: number;
+  sustainabilityBand: SustainabilityBandKey;
+  wellbeingPressureIndicator: WellbeingPressureLevelKey;
+  responseQuality: { fastCompletion: boolean; straightLining: boolean; excessiveNeutrality: boolean; hasFlags: boolean; completionTimeSeconds: number };
   completedAt: string;
+  assessmentVersion?: string;
 }
 
 const FULL_ARCHETYPE_CONFIG: Record<ArchetypeKey, {
@@ -91,27 +112,77 @@ const FULL_ARCHETYPE_CONFIG: Record<ArchetypeKey, {
   reactor: { name: 'Reactor', icon: Zap, color: 'text-amber-500', bgColor: 'bg-amber-500/10', gradient: 'from-amber-500 to-yellow-500', description: 'Emotional sensitivity to outcomes' },
 };
 
-const SUB_DIMENSION_LABELS: Record<SubDimensionKey, string> = {
-  achievement: 'Achievement',
-  pace: 'Pace',
-  pressure_response: 'Pressure Response',
-  recovery: 'Recovery',
-  motivation: 'Motivation',
-  decision_making: 'Decision-Making',
-  confidence: 'Confidence',
-  relationships: 'Relationships',
+// Friendly labels for the 16 dimensions, keyed by dimension code.
+const DIMENSION_LABELS: Record<DimensionCodeKey, string> = {
+  D1: 'Action and urgency',
+  D2: 'Momentum and achievement',
+  D3: 'Intensification under pressure',
+  D4: 'Boundaries and recovery',
+  S1: 'Need for clarity',
+  S2: 'Analysis and mental processing',
+  S3: 'Planning and control',
+  S4: 'Standards, risk and completion',
+  C1: 'External processing and support-seeking',
+  C2: 'Relationship priority',
+  C3: 'Emotional attunement and labour',
+  C4: 'Harmony and personal boundaries',
+  R1: 'Confidence volatility',
+  R2: 'Emotional sensitivity to outcomes',
+  R3: 'Recovery and rumination',
+  R4: 'Behavioural reactivity',
 };
 
-const WELLBEING_INDICATOR_META: Array<{
-  key: keyof FullDiagnosticResults['wellbeingIndicators'];
+const DIMENSION_ARCHETYPE: Record<DimensionCodeKey, ArchetypeKey> = {
+  D1: 'driver', D2: 'driver', D3: 'driver', D4: 'driver',
+  S1: 'strategist', S2: 'strategist', S3: 'strategist', S4: 'strategist',
+  C1: 'connector', C2: 'connector', C3: 'connector', C4: 'connector',
+  R1: 'reactor', R2: 'reactor', R3: 'reactor', R4: 'reactor',
+};
+
+const DIMENSION_BAND_LABELS: Record<DimensionBandKey, string> = {
+  low: 'Low',
+  mild: 'Mild',
+  moderate: 'Moderate',
+  strong: 'Strong',
+  very_strong: 'Very strong',
+};
+
+const SUSTAINABILITY_BAND_LABELS: Record<SustainabilityBandKey, string> = {
+  strongly_sustainable: 'Strongly sustainable',
+  generally_sustainable: 'Generally sustainable',
+  mixed: 'Mixed sustainability',
+  several_pressure_points: 'Several pressure points',
+  significant_pressure: 'Significant pressure',
+};
+
+const PRESSURE_LABELS: Record<WellbeingPressureLevelKey, string> = {
+  low: 'Low',
+  emerging: 'Emerging',
+  moderate: 'Moderate',
+  elevated: 'Elevated',
+};
+
+const CLASSIFICATION_LABELS: Record<ProfileClassificationKey, string> = {
+  strong_primary: 'Strong primary',
+  blended: 'Blended',
+  balanced: 'Balanced',
+  flexible: 'Flexible',
+};
+
+// Six key derived measures surfaced on the profile summary (full set
+// is on /diagnostic/full/results).
+const KEY_DERIVED_MEASURES: Array<{
+  key: keyof FullDiagnosticResults['derivedMeasures'];
   label: string;
   description: string;
   icon: typeof Target;
 }> = [
   { key: 'confidenceStability', label: 'Confidence Stability', description: 'How stable your self-belief is under varying outcomes', icon: Shield },
-  { key: 'energySustainability', label: 'Energy Sustainability', description: 'Whether your current pace is sustainable without burnout', icon: Activity },
-  { key: 'responseToRejection', label: 'Response to Rejection', description: 'How deeply setbacks and "no"s affect you emotionally', icon: Heart },
+  { key: 'energySustainability', label: 'Energy Sustainability', description: 'Whether your current pace is sustainable without depletion', icon: Activity },
+  { key: 'recoveryCapacity', label: 'Recovery Capacity', description: 'How effectively you recover from setbacks', icon: Heart },
+  { key: 'boundarySustainability', label: 'Boundary Sustainability', description: 'How well you protect recovery and personal capacity', icon: Shield },
   { key: 'toleranceOfUncertainty', label: 'Tolerance of Uncertainty', description: 'Your comfort acting without complete information', icon: TrendingUp },
+  { key: 'behaviouralStability', label: 'Behavioural Stability', description: 'How consistently you behave under pressure', icon: Activity },
 ];
 
 const ARCHETYPE_INFO = {
@@ -268,8 +339,9 @@ export default function SalesProfilePage() {
           typeof parsed.primaryArchetype === 'string' &&
           parsed.archetypeScores &&
           typeof parsed.archetypeScores === 'object' &&
-          parsed.wellbeingIndicators &&
-          typeof parsed.wellbeingIndicators.overallSalesWellbeingIndex === 'number'
+          typeof parsed.salesWellbeingSustainabilityIndex === 'number' &&
+          parsed.dimensionScores &&
+          parsed.derivedMeasures
         ) {
           setHasFullDiagnostic(true);
           setFullResults(parsed);
@@ -679,7 +751,7 @@ export default function SalesProfilePage() {
                         <SecondaryIcon className="w-3 h-3" /> Secondary: {secondary.name}
                       </span>
                       <span className="px-3 py-1 rounded-full text-xs font-medium bg-secondary/50 text-muted-foreground">
-                        {fullResults.confidence} match
+                        {CLASSIFICATION_LABELS[fullResults.profileClassification] ?? 'Profile'}
                       </span>
                     </>
                   );
@@ -718,7 +790,7 @@ export default function SalesProfilePage() {
               </div>
             </motion.div>
 
-            {/* Layer 2: Sub-dimension scores (8 chips) */}
+            {/* Layer 2: 16 dimension scores */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -729,39 +801,48 @@ export default function SalesProfilePage() {
                 <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
                   <Layers className="w-4 h-4 text-primary" />
                 </div>
-                <h3 className="font-semibold text-foreground">Layer 2: Sub-Dimension Drill-Down</h3>
+                <h3 className="font-semibold text-foreground">Layer 2: 16 Underlying Dimensions</h3>
               </div>
               <p className="text-xs text-muted-foreground mb-4">
-                Finer-grained patterns aggregated across all 4 archetypes. Higher = more pronounced.
+                Four dimensions per archetype. Higher = more pronounced.
               </p>
               <div className="grid sm:grid-cols-2 gap-3">
-                {(Object.entries(fullResults.subDimensionScores || {}) as [SubDimensionKey, number][]).map(([sd, score]) => {
-                  const label = SUB_DIMENSION_LABELS[sd] ?? sd;
+                {(Object.entries(fullResults.dimensionScores || {}) as [DimensionCodeKey, number][]).map(([dim, score]) => {
+                  const label = DIMENSION_LABELS[dim] ?? dim;
+                  const band = fullResults.dimensionBands?.[dim];
                   const safeScore = Math.max(0, Math.min(100, Number(score) || 0));
-                  const hue = safeScore >= 67 ? 'high' : safeScore >= 33 ? 'mid' : 'low';
-                  const colorClass =
-                    hue === 'high' ? 'from-green-500 to-emerald-500'
-                    : hue === 'mid' ? 'from-amber-500 to-yellow-500'
-                    : 'from-red-500 to-orange-500';
+                  const hue = safeScore >= 75 ? 'very_strong' : safeScore >= 60 ? 'strong' : safeScore >= 45 ? 'moderate' : safeScore >= 25 ? 'mild' : 'low';
+                  const barColor =
+                    hue === 'very_strong' ? 'bg-red-400'
+                    : hue === 'strong' ? 'bg-orange-400'
+                    : hue === 'moderate' ? 'bg-amber-400'
+                    : hue === 'mild' ? 'bg-blue-400'
+                    : 'bg-slate-400';
                   return (
-                    <div key={sd} className="p-3 rounded-xl bg-secondary/30 border border-border/50">
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-xs font-medium text-foreground">{label}</span>
+                    <div key={dim} className="p-3 rounded-xl bg-secondary/30 border border-border/50">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[10px] font-mono text-muted-foreground">{dim}</span>
                         <span className="text-xs font-bold text-foreground">{safeScore}</span>
                       </div>
+                      <p className="text-xs font-medium text-foreground mb-1.5 leading-tight">{label}</p>
                       <div className="h-1.5 rounded-full bg-secondary overflow-hidden">
                         <div
-                          className={cn('h-full bg-gradient-to-r transition-all duration-500', colorClass)}
+                          className={cn('h-full transition-all duration-500', barColor)}
                           style={{ width: `${safeScore}%` }}
                         />
                       </div>
+                      {band && (
+                        <span className="text-[10px] text-muted-foreground mt-1 inline-block">
+                          {DIMENSION_BAND_LABELS[band]}
+                        </span>
+                      )}
                     </div>
                   );
                 })}
               </div>
             </motion.div>
 
-            {/* Layer 3: Wellbeing indicators (overall index + 4 indicators) */}
+            {/* Layer 3: Sustainability Index + Pressure Indicator + key derived measures */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -772,45 +853,38 @@ export default function SalesProfilePage() {
                 <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
                   <Heart className="w-4 h-4 text-primary" />
                 </div>
-                <h3 className="font-semibold text-foreground">Layer 3: Wellbeing Indicators</h3>
+                <h3 className="font-semibold text-foreground">Layer 3: Derived Wellbeing Measures</h3>
               </div>
 
-              {/* Overall index hero */}
-              <div className="mb-4 p-4 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Overall Sales Wellbeing Index</p>
+              {/* Sustainability Index + Pressure Indicator hero row */}
+              <div className="grid sm:grid-cols-2 gap-3 mb-4">
+                <div className="p-3 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Sustainability Index</p>
+                  <div className="flex items-baseline gap-2">
                     <p className="text-2xl font-bold text-foreground">
-                      {Math.round(fullResults.wellbeingIndicators.overallSalesWellbeingIndex)}
-                      <span className="text-base text-muted-foreground">/100</span>
+                      {Math.round(fullResults.salesWellbeingSustainabilityIndex)}
+                      <span className="text-sm text-muted-foreground">/100</span>
                     </p>
                   </div>
-                  <div className={cn(
-                    'w-12 h-12 rounded-2xl flex items-center justify-center',
-                    fullResults.wellbeingIndicators.overallSalesWellbeingIndex >= 67
-                      ? 'bg-green-500/20'
-                      : fullResults.wellbeingIndicators.overallSalesWellbeingIndex >= 33
-                        ? 'bg-amber-500/20'
-                        : 'bg-red-500/20'
-                  )}>
-                    <Activity className={cn(
-                      'w-6 h-6',
-                      fullResults.wellbeingIndicators.overallSalesWellbeingIndex >= 67
-                        ? 'text-green-500'
-                        : fullResults.wellbeingIndicators.overallSalesWellbeingIndex >= 33
-                          ? 'text-amber-500'
-                          : 'text-red-500'
-                    )} />
-                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                    {SUSTAINABILITY_BAND_LABELS[fullResults.sustainabilityBand] ?? ''}
+                  </p>
+                </div>
+                <div className="p-3 rounded-xl bg-secondary/30 border border-border/50">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Pressure Indicator</p>
+                  <p className="text-lg font-bold text-foreground">
+                    {PRESSURE_LABELS[fullResults.wellbeingPressureIndicator] ?? '—'}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">Non-clinical development indicator</p>
                 </div>
               </div>
 
-              {/* 4 individual indicators */}
+              {/* 6 key derived measures */}
               <div className="grid sm:grid-cols-2 gap-3">
-                {WELLBEING_INDICATOR_META.map(({ key, label, description, icon: Icon }) => {
-                  const score = fullResults.wellbeingIndicators[key];
+                {KEY_DERIVED_MEASURES.map(({ key, label, description, icon: Icon }) => {
+                  const score = (fullResults.derivedMeasures as any)[key] as number;
                   const safeScore = Math.max(0, Math.min(100, Number(score) || 0));
-                  const hue = safeScore >= 67 ? 'good' : safeScore >= 33 ? 'ok' : 'risk';
+                  const hue = safeScore >= 67 ? 'good' : safeScore >= 40 ? 'ok' : 'risk';
                   return (
                     <div key={key} className="p-3 rounded-xl bg-secondary/30 border border-border/50">
                       <div className="flex items-start gap-2 mb-2">
@@ -881,7 +955,7 @@ export default function SalesProfilePage() {
                   Go deeper with the Full Wellbeing Map
                 </h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  This profile is based on the 16-question Snapshot. The full 64-question Sales Wellbeing Map unlocks 8 sub-dimension scores, 4 cross-archetype wellbeing indicators, and an overall wellbeing index — your AI Companion uses all of it to personalize advice.
+                  This profile is based on the 16-question Snapshot. The full 64-question Sales Wellbeing Map unlocks 16 underlying dimensions, 12 derived wellbeing measures, and a Sales Wellbeing Sustainability Index — your AI Companion uses all of it to personalize advice.
                 </p>
                 <Link
                   href="/diagnostic/full"

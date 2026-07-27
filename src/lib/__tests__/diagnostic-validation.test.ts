@@ -16,10 +16,16 @@ import {
   clampScore,
   normalizePrimaryProfile,
   normalizeSecondaryProfile,
+  normalizeAttemptSource,
+  normalizeClassification,
+  coerceOptionalInt,
+  coerceOptionalJson,
   sanitizeAnswers,
   validateDiagnosticBody,
   projectToUserProfile,
   VALID_PROFILES,
+  VALID_ATTEMPT_SOURCES,
+  VALID_CLASSIFICATIONS,
 } from '../diagnostic-validation';
 
 // ─────────────────────────────────────────────────────────────────
@@ -372,6 +378,260 @@ describe('validateDiagnosticBody', () => {
   test('handles undefined body gracefully', () => {
     const result = validateDiagnosticBody(undefined);
     expect(result.valid).toBe(false);
+  });
+
+  // ─── Full Map (64Q) — Verso Sales Wellbeing Map v1.0 fields ──────
+
+  test('accepts attemptSource = "full_map" and normalizes case', () => {
+    const result = validateDiagnosticBody({ ...validBody, attemptSource: 'FULL_MAP' });
+    expect(result.valid).toBe(true);
+    expect(result.attemptSource).toBe('full_map');
+  });
+
+  test('accepts attemptSource = "snapshot"', () => {
+    const result = validateDiagnosticBody({ ...validBody, attemptSource: 'snapshot' });
+    expect(result.valid).toBe(true);
+    expect(result.attemptSource).toBe('snapshot');
+  });
+
+  test('returns null for invalid attemptSource', () => {
+    const result = validateDiagnosticBody({ ...validBody, attemptSource: 'something_else' });
+    expect(result.valid).toBe(true);
+    expect(result.attemptSource).toBeNull();
+  });
+
+  test('accepts assessmentVersion string', () => {
+    const result = validateDiagnosticBody({ ...validBody, assessmentVersion: 'verso-swm-v1.0' });
+    expect(result.valid).toBe(true);
+    expect(result.assessmentVersion).toBe('verso-swm-v1.0');
+  });
+
+  test('truncates over-long assessmentVersion to 64 chars', () => {
+    const longVersion = 'v'.repeat(100);
+    const result = validateDiagnosticBody({ ...validBody, assessmentVersion: longVersion });
+    expect(result.valid).toBe(true);
+    expect(result.assessmentVersion?.length).toBe(64);
+  });
+
+  test('accepts dimensionScores as a JSON object', () => {
+    const dims = { D1: 62, D2: 71, R4: 45 };
+    const result = validateDiagnosticBody({ ...validBody, dimensionScores: dims });
+    expect(result.valid).toBe(true);
+    expect(result.dimensionScores).toEqual(dims);
+  });
+
+  test('accepts derivedMeasures as a JSON object', () => {
+    const dm = { confidenceStability: 50, energySustainability: 60 };
+    const result = validateDiagnosticBody({ ...validBody, derivedMeasures: dm });
+    expect(result.valid).toBe(true);
+    expect(result.derivedMeasures).toEqual(dm);
+  });
+
+  test('accepts sustainabilityIndex as a non-negative int', () => {
+    const result = validateDiagnosticBody({ ...validBody, sustainabilityIndex: 67 });
+    expect(result.valid).toBe(true);
+    expect(result.sustainabilityIndex).toBe(67);
+  });
+
+  test('rejects negative sustainabilityIndex (returns null)', () => {
+    const result = validateDiagnosticBody({ ...validBody, sustainabilityIndex: -5 });
+    expect(result.valid).toBe(true);
+    expect(result.sustainabilityIndex).toBeNull();
+  });
+
+  test('accepts valid profileClassification', () => {
+    VALID_CLASSIFICATIONS.forEach(c => {
+      const result = validateDiagnosticBody({ ...validBody, profileClassification: c });
+      expect(result.valid).toBe(true);
+      expect(result.profileClassification).toBe(c);
+    });
+  });
+
+  test('returns null for invalid profileClassification', () => {
+    const result = validateDiagnosticBody({ ...validBody, profileClassification: 'unknown' });
+    expect(result.valid).toBe(true);
+    expect(result.profileClassification).toBeNull();
+  });
+
+  test('accepts blendedArchetypes string', () => {
+    const result = validateDiagnosticBody({ ...validBody, blendedArchetypes: 'Driver+Strategist' });
+    expect(result.valid).toBe(true);
+    expect(result.blendedArchetypes).toBe('Driver+Strategist');
+  });
+
+  test('accepts responseQualityFlags as a JSON object', () => {
+    const flags = { fastCompletion: false, straightLining: false, excessiveNeutrality: false, hasFlags: false, completionTimeSeconds: 600 };
+    const result = validateDiagnosticBody({ ...validBody, responseQualityFlags: flags });
+    expect(result.valid).toBe(true);
+    expect(result.responseQualityFlags).toEqual(flags);
+  });
+
+  test('accepts completionTimeSeconds as a non-negative int', () => {
+    const result = validateDiagnosticBody({ ...validBody, completionTimeSeconds: 480 });
+    expect(result.valid).toBe(true);
+    expect(result.completionTimeSeconds).toBe(480);
+  });
+
+  test('defaults all new Full Map fields to null when absent', () => {
+    const result = validateDiagnosticBody(validBody);
+    expect(result.valid).toBe(true);
+    expect(result.attemptSource).toBeNull();
+    expect(result.assessmentVersion).toBeNull();
+    expect(result.dimensionScores).toBeNull();
+    expect(result.derivedMeasures).toBeNull();
+    expect(result.sustainabilityIndex).toBeNull();
+    expect(result.profileClassification).toBeNull();
+    expect(result.blendedArchetypes).toBeNull();
+    expect(result.responseQualityFlags).toBeNull();
+    expect(result.completionTimeSeconds).toBeNull();
+  });
+
+  test('accepts a full Full Map payload with all new fields populated', () => {
+    const fullMapBody = {
+      ...validBody,
+      isPaid: true,
+      attemptSource: 'full_map',
+      assessmentVersion: 'verso-swm-v1.0',
+      dimensionScores: { D1: 62, D2: 71, D3: 80, D4: 45 },
+      derivedMeasures: { confidenceStability: 50, energySustainability: 60 },
+      sustainabilityIndex: 65,
+      profileClassification: 'strong_primary',
+      blendedArchetypes: null,
+      responseQualityFlags: { fastCompletion: false, straightLining: false, excessiveNeutrality: false, hasFlags: false, completionTimeSeconds: 480 },
+      completionTimeSeconds: 480,
+    };
+    const result = validateDiagnosticBody(fullMapBody);
+    expect(result.valid).toBe(true);
+    expect(result.isPaid).toBe(true);
+    expect(result.attemptSource).toBe('full_map');
+    expect(result.assessmentVersion).toBe('verso-swm-v1.0');
+    expect(result.sustainabilityIndex).toBe(65);
+    expect(result.profileClassification).toBe('strong_primary');
+    expect(result.completionTimeSeconds).toBe(480);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────
+// normalizeAttemptSource
+// ─────────────────────────────────────────────────────────────────
+
+describe('normalizeAttemptSource', () => {
+  test('accepts valid attempt sources (case-insensitive)', () => {
+    expect(normalizeAttemptSource('snapshot')).toBe('snapshot');
+    expect(normalizeAttemptSource('SNAPSHOT')).toBe('snapshot');
+    expect(normalizeAttemptSource('full_map')).toBe('full_map');
+    expect(normalizeAttemptSource('Full_Map')).toBe('full_map');
+  });
+
+  test('returns null for invalid input', () => {
+    expect(normalizeAttemptSource('invalid')).toBeNull();
+    expect(normalizeAttemptSource('')).toBeNull();
+    expect(normalizeAttemptSource(null)).toBeNull();
+    expect(normalizeAttemptSource(undefined)).toBeNull();
+    expect(normalizeAttemptSource(42)).toBeNull();
+  });
+
+  test('covers all values in VALID_ATTEMPT_SOURCES', () => {
+    VALID_ATTEMPT_SOURCES.forEach(src => {
+      expect(normalizeAttemptSource(src)).toBe(src);
+    });
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────
+// normalizeClassification
+// ─────────────────────────────────────────────────────────────────
+
+describe('normalizeClassification', () => {
+  test('accepts valid classifications (case-insensitive)', () => {
+    expect(normalizeClassification('strong_primary')).toBe('strong_primary');
+    expect(normalizeClassification('BLENDED')).toBe('blended');
+    expect(normalizeClassification('Balanced')).toBe('balanced');
+    expect(normalizeClassification('flexible')).toBe('flexible');
+  });
+
+  test('returns null for invalid input', () => {
+    expect(normalizeClassification('unknown')).toBeNull();
+    expect(normalizeClassification('')).toBeNull();
+    expect(normalizeClassification(null)).toBeNull();
+    expect(normalizeClassification(42)).toBeNull();
+  });
+
+  test('covers all values in VALID_CLASSIFICATIONS', () => {
+    VALID_CLASSIFICATIONS.forEach(c => {
+      expect(normalizeClassification(c)).toBe(c);
+    });
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────
+// coerceOptionalInt
+// ─────────────────────────────────────────────────────────────────
+
+describe('coerceOptionalInt', () => {
+  test('returns the integer for valid numbers', () => {
+    expect(coerceOptionalInt(0)).toBe(0);
+    expect(coerceOptionalInt(42)).toBe(42);
+    expect(coerceOptionalInt(67.4)).toBe(67); // rounds
+    expect(coerceOptionalInt(67.6)).toBe(68);
+  });
+
+  test('parses numeric strings', () => {
+    expect(coerceOptionalInt('42')).toBe(42);
+    expect(coerceOptionalInt('0')).toBe(0);
+  });
+
+  test('returns null for null/undefined', () => {
+    expect(coerceOptionalInt(null)).toBeNull();
+    expect(coerceOptionalInt(undefined)).toBeNull();
+  });
+
+  test('returns null for negative numbers (used for non-negative Int? fields)', () => {
+    expect(coerceOptionalInt(-1)).toBeNull();
+    expect(coerceOptionalInt(-100)).toBeNull();
+  });
+
+  test('returns null for non-numeric input', () => {
+    expect(coerceOptionalInt('not a number')).toBeNull();
+    expect(coerceOptionalInt(NaN)).toBeNull();
+    expect(coerceOptionalInt({})).toBeNull();
+    expect(coerceOptionalInt([1, 2])).toBeNull();
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────
+// coerceOptionalJson
+// ─────────────────────────────────────────────────────────────────
+
+describe('coerceOptionalJson', () => {
+  test('returns the object for valid plain objects', () => {
+    expect(coerceOptionalJson({ a: 1 })).toEqual({ a: 1 });
+    expect(coerceOptionalJson({})).toEqual({});
+  });
+
+  test('parses JSON strings', () => {
+    expect(coerceOptionalJson('{"a":1}')).toEqual({ a: 1 });
+    expect(coerceOptionalJson('{}')).toEqual({});
+  });
+
+  test('returns null for null/undefined', () => {
+    expect(coerceOptionalJson(null)).toBeNull();
+    expect(coerceOptionalJson(undefined)).toBeNull();
+  });
+
+  test('returns null for arrays (we want plain objects, not arrays)', () => {
+    expect(coerceOptionalJson([1, 2, 3])).toBeNull();
+  });
+
+  test('returns null for invalid JSON strings', () => {
+    expect(coerceOptionalJson('not json')).toBeNull();
+    expect(coerceOptionalJson('{invalid')).toBeNull();
+  });
+
+  test('returns null for primitives', () => {
+    expect(coerceOptionalJson(42)).toBeNull();
+    expect(coerceOptionalJson('hello')).toBeNull();
+    expect(coerceOptionalJson(true)).toBeNull();
   });
 });
 

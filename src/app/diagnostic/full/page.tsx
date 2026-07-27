@@ -1,112 +1,63 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft,
-  ArrowRight,
   Moon,
   Sun,
   Loader2,
-  Target,
-  Lightbulb,
-  Users,
-  AlertTriangle,
   CheckCircle2,
   ListChecks,
+  Lock,
+  Sparkles,
+  Crown,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useSafeUser } from '@/lib/safe-auth';
+import { useSubscription } from '@/hooks/use-subscription';
 import { MobileHeader } from '@/components/MobileHeader';
 import { cn } from '@/lib/utils';
 import {
   fullDiagnosticQuestions,
+  shuffleQuestions,
   calculateFullResults,
-  type Archetype,
-  type SubDimension,
+  RESPONSE_SCALE,
+  ASSESSMENT_VERSION,
+  type FullDiagnosticQuestion,
 } from '@/lib/full-diagnostic-questions';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
 
-// Response scale — same as the Snapshot, "Strongly Agree" = 5
-const RESPONSE_SCALE = [
-  { value: 5, label: 'Strongly Agree' },
-  { value: 4, label: 'Agree' },
-  { value: 3, label: 'Neutral' },
-  { value: 2, label: 'Disagree' },
-  { value: 1, label: 'Strongly Disagree' },
-];
-
-// Display metadata for each archetype (mirrors the snapshot page so the
-// UI feels consistent across both flows).
-const ARCHETYPE_INFO: Record<
-  Archetype,
-  { name: string; icon: typeof Target; color: string; bgColor: string; description: string }
-> = {
-  driver: {
-    name: 'Driver',
-    icon: Target,
-    color: 'text-red-500',
-    bgColor: 'bg-red-500/10',
-    description: 'Action, momentum, achievement',
-  },
-  strategist: {
-    name: 'Strategist',
-    icon: Lightbulb,
-    color: 'text-blue-500',
-    bgColor: 'bg-blue-500/10',
-    description: 'Clarity, planning, analysis',
-  },
-  connector: {
-    name: 'Connector',
-    icon: Users,
-    color: 'text-green-500',
-    bgColor: 'bg-green-500/10',
-    description: 'Relationships, trust, communication',
-  },
-  reactor: {
-    name: 'Reactor',
-    icon: AlertTriangle,
-    color: 'text-amber-500',
-    bgColor: 'bg-amber-500/10',
-    description: 'Emotional sensitivity to outcomes',
-  },
-};
-
-// Friendly labels for the 8 sub-dimensions (used in the progress breakdown
-// and on the results page).
-const SUB_DIMENSION_LABELS: Record<SubDimension, string> = {
-  achievement: 'Achievement',
-  pace: 'Pace',
-  pressure_response: 'Pressure Response',
-  recovery: 'Recovery',
-  motivation: 'Motivation',
-  decision_making: 'Decision-Making',
-  confidence: 'Confidence',
-  relationships: 'Relationships',
-};
+// 5-point Likert scale per PDF spec §4 (Strongly disagree → Strongly agree).
+// We render options in the natural reading order (1 → 5), unlike the older
+// version which rendered Strongly Agree first.
+const SCALE_OPTIONS = RESPONSE_SCALE;
 
 export default function FullDiagnosticPage() {
   const router = useRouter();
   const { isSignedIn, isLoaded } = useSafeUser();
+  const { canAccessProFeatures, isLoading: subLoading } = useSubscription();
+
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDark, setIsDark] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  // Shuffle questions once on mount so the 16 per-archetype blocks aren't
-  // presented in a predictable order. (Same Fisher-Yates approach as the
-  // snapshot page.)
-  const randomizedQuestions = useMemo(() => {
-    const shuffled = [...fullDiagnosticQuestions];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    return shuffled;
+  // Track when the user started the assessment (for the fast-completion
+  // response-quality flag — PDF spec §20). Recorded on first interaction
+  // rather than page load so the timer doesn't run while the user is on
+  // the intro screen.
+  const startTimeRef = useRef<number | null>(null);
+
+  // Shuffle questions once on mount using the constrained shuffle
+  // (PDF spec §6: max 2 same-archetype consecutive, no adjacent
+  // reverse-pair, no clustering of reverse items).
+  const randomizedQuestions = useMemo<FullDiagnosticQuestion[]>(() => {
+    return shuffleQuestions(Date.now());
   }, []);
 
   useEffect(() => {
@@ -137,6 +88,10 @@ export default function FullDiagnosticPage() {
   const progressPercent = Math.round((answeredCount / totalQuestions) * 100);
 
   const handleAnswer = (value: number) => {
+    // Start the timer on the first answer
+    if (startTimeRef.current === null) {
+      startTimeRef.current = Date.now();
+    }
     setAnswers({ ...answers, [currentQ.id]: value });
     // Auto-advance after a short delay (same UX as snapshot)
     setTimeout(() => {
@@ -158,59 +113,53 @@ export default function FullDiagnosticPage() {
     }
   };
 
-  const canSubmit = answeredCount >= totalQuestions * 0.8; // require 80% answered
+  // Require 100% of questions answered for the paid assessment (stricter
+  // than the previous 80% threshold — the spec wants a complete result
+  // so all 16 dimensions have full data). Users can still skip back and
+  // fill in skipped items before submitting.
+  const canSubmit = answeredCount === totalQuestions;
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
     setIsSubmitting(true);
 
+    // Calculate completion time (PDF spec §20). If the timer never
+    // started (user somehow submitted without answering), default to 0
+    // which disables the fast-completion flag.
+    const completionTimeSeconds = startTimeRef.current
+      ? Math.round((Date.now() - startTimeRef.current) / 1000)
+      : 0;
+
     // Build the answers array in the shape calculateFullResults expects.
-    // Unanswered questions are omitted (the scoring function handles
-    // partial results gracefully — Layer 2/3 indicators just get less
-    // precise with fewer data points).
     const answersArray = Object.entries(answers).map(([qid, score]) => ({
       questionId: Number(qid),
       score,
     }));
 
-    // Calculate the 3-layer result (archetype scores, sub-dimensions,
-    // wellbeing indicators) using the shared scoring function from
-    // full-diagnostic-questions.ts.
-    const fullResult = calculateFullResults(answersArray);
+    // Calculate the full multi-layer result (archetype scores, 16 dimension
+    // scores, 12 derived measures, sustainability index, pressure indicator,
+    // response quality flags).
+    const fullResult = calculateFullResults(answersArray, completionTimeSeconds);
 
     // Title-case the primary/secondary archetypes for DB storage
-    // (DiagnosticResult.primaryProfile is "Driver" | "Strategist" | etc.)
     const titleCase = (a: string) => a.charAt(0).toUpperCase() + a.slice(1);
     const primaryProfileTitleCase = titleCase(fullResult.primaryArchetype);
     const secondaryProfileTitleCase = titleCase(fullResult.secondaryArchetype);
 
-    // Store the full result (including sub-dimension + wellbeing indicator
-    // data) in localStorage for the results page to read. The results
-    // page reads from localStorage first (offline-friendly), then optionally
-    // hydrates from the DB.
+    // Build the blended-archetypes string (e.g. "Driver+Strategist")
+    const blendedArchetypes = fullResult.blendedArchetypes
+      ? fullResult.blendedArchetypes.map(titleCase).join('+')
+      : null;
+
+    // Store the full result in localStorage for the results page to read.
     localStorage.setItem(
       'fullDiagnosticResults',
       JSON.stringify(fullResult)
     );
 
-    // Persist a DiagnosticResult row to the DB so the manager dashboards
-    // and AI engine can read it. We send the standard fields the API
-    // expects, plus the sub-dimension scores in `strengths` (the closest
-    // existing field — the API accepts any string array here). A future
-    // schema migration can add a dedicated `subDimensionScores` JSON
-    // column; for now this preserves the data without a migration.
-    const subDimensionSummary = Object.entries(fullResult.subDimensionScores).map(
-      ([sd, score]) => `${SUB_DIMENSION_LABELS[sd as SubDimension] ?? sd}: ${score}`
-    );
-
-    const wellbeingSummary = [
-      `Overall Wellbeing Index: ${fullResult.wellbeingIndicators.overallSalesWellbeingIndex}`,
-      `Confidence Stability: ${fullResult.wellbeingIndicators.confidenceStability}`,
-      `Energy Sustainability: ${fullResult.wellbeingIndicators.energySustainability}`,
-      `Response to Rejection: ${fullResult.wellbeingIndicators.responseToRejection}`,
-      `Tolerance of Uncertainty: ${fullResult.wellbeingIndicators.toleranceOfUncertainty}`,
-    ];
-
+    // Persist a DiagnosticResult row to the DB with the new structured
+    // fields so the dashboard, AI engine, and manager views can hydrate
+    // without re-running the scorer.
     try {
       await fetch('/api/diagnostic', {
         method: 'POST',
@@ -223,11 +172,19 @@ export default function FullDiagnosticPage() {
           primaryProfile: primaryProfileTitleCase,
           secondaryProfile: secondaryProfileTitleCase,
           answers: answersArray,
-          strengths: subDimensionSummary,
-          wellbeingRisks: wellbeingSummary,
+          strengths: [],
+          wellbeingRisks: [],
           recommendations: [],
-          isPaid: true, // full assessment is a paid-tier feature
+          isPaid: true,
           attemptSource: 'full_map',
+          assessmentVersion: ASSESSMENT_VERSION,
+          dimensionScores: fullResult.dimensionScores,
+          derivedMeasures: fullResult.derivedMeasures,
+          sustainabilityIndex: fullResult.salesWellbeingSustainabilityIndex,
+          profileClassification: fullResult.profileClassification,
+          blendedArchetypes,
+          responseQualityFlags: fullResult.responseQuality,
+          completionTimeSeconds,
         }),
       });
     } catch (err) {
@@ -256,12 +213,89 @@ export default function FullDiagnosticPage() {
     return null; // useEffect will redirect
   }
 
-  // ─── Submit screen ──────────────────────────────────────────────
-  if (currentQuestion >= totalQuestions - 1 && answeredCount >= totalQuestions * 0.8) {
-    const archetypeInfo = ARCHETYPE_INFO[currentQ.archetype];
+  // ─── Subscription gate (PDF spec payment tier) ──────────────────
+  // The 64-question Full Map is a paid-tier feature. Users without an
+  // active PRO or ENTERPRISE subscription see a paywall instead of the
+  // assessment. We wait for subLoading to settle so we don't flash the
+  // paywall on initial render before the subscription status comes back.
+  if (!subLoading && !canAccessProFeatures) {
     return (
       <div className="min-h-screen bg-background">
-        <MobileHeader />
+        <MobileHeader title="Full Sales Wellbeing Map" subtitle="Premium assessment" icon="target" />
+        <div className="max-w-2xl mx-auto px-4 py-8 md:py-16">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center mb-8"
+          >
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/10 border border-amber-500/20 mb-6">
+              <Lock className="w-4 h-4 text-amber-500" />
+              <span className="text-sm font-medium text-amber-500">Premium assessment</span>
+            </div>
+            <h1 className="text-3xl font-bold text-foreground mb-3">
+              The full 64-question Sales Wellbeing Map
+            </h1>
+            <p className="text-muted-foreground max-w-lg mx-auto">
+              The full assessment goes beyond the free Snapshot to reveal all 16 underlying dimensions, 12 derived wellbeing measures, your Sales Wellbeing Sustainability Index, and a personalised dashboard.
+            </p>
+          </motion.div>
+
+          <div className="glass rounded-2xl border border-border/50 p-6 md:p-8 mb-6">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
+                <Crown className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-foreground">Verso Pro</p>
+                <p className="text-xs text-muted-foreground">Unlock the full Map + AI Companion</p>
+              </div>
+            </div>
+
+            <ul className="space-y-3 mb-6">
+              {[
+                'Full 64-question assessment across 16 dimensions',
+                '12 derived dashboard measures (Confidence Stability, Recovery Capacity, etc.)',
+                'Sales Wellbeing Sustainability Index',
+                'Response-quality checks (fast-completion, straight-lining)',
+                'AI Companion trained on your full profile',
+              ].map((feature, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm text-foreground">
+                  <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                  <span>{feature}</span>
+                </li>
+              ))}
+            </ul>
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Link
+                href="/pricing"
+                className="flex-1 px-6 py-3 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 font-medium"
+              >
+                <Crown className="w-4 h-4" />
+                Upgrade to Pro
+              </Link>
+              <Link
+                href="/diagnostic"
+                className="flex-1 px-6 py-3 rounded-xl border border-border/50 text-foreground hover:bg-secondary/50 transition-colors flex items-center justify-center gap-2"
+              >
+                Try the free Snapshot
+              </Link>
+            </div>
+          </div>
+
+          <p className="text-xs text-muted-foreground text-center">
+            Already have an unlock code? Visit your <Link href="/sales-dashboard/profile" className="underline">profile</Link> to redeem it.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── Submit screen ──────────────────────────────────────────────
+  if (currentQuestion >= totalQuestions - 1 && canSubmit) {
+    return (
+      <div className="min-h-screen bg-background">
+        <MobileHeader title="Full Sales Wellbeing Map" subtitle="Almost there" icon="target" />
         <div className="max-w-2xl mx-auto px-4 py-8 md:py-16">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -276,7 +310,7 @@ export default function FullDiagnosticPage() {
               Ready to see your results?
             </h1>
             <p className="text-muted-foreground">
-              You've answered {answeredCount} of {totalQuestions} questions. Your 3-layer Sales Wellbeing Map is ready to generate.
+              You've answered all {totalQuestions} questions. Your personalised Sales Wellbeing Map is ready to generate.
             </p>
           </motion.div>
 
@@ -291,11 +325,6 @@ export default function FullDiagnosticPage() {
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
-            {answeredCount < totalQuestions && (
-              <p className="text-xs text-muted-foreground mt-3">
-                You can still submit with {answeredCount}/{totalQuestions} answered — unanswered questions will be treated as neutral.
-              </p>
-            )}
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3">
@@ -330,12 +359,13 @@ export default function FullDiagnosticPage() {
   }
 
   // ─── Question screen ────────────────────────────────────────────
-  const archetypeInfo = ARCHETYPE_INFO[currentQ.archetype];
-  const Icon = archetypeInfo.icon;
+  // Per the spec §6, the archetype/dimension being measured should NOT
+  // be visible to the user during the assessment. We deliberately don't
+  // show the archetype badge or section indicator here.
 
   return (
     <div className="min-h-screen bg-background">
-      <MobileHeader />
+      <MobileHeader title="Full Sales Wellbeing Map" subtitle={`Question ${currentQuestion + 1} of ${totalQuestions}`} icon="target" />
 
       {/* Top nav */}
       <div className="max-w-2xl mx-auto px-4 pt-4 flex items-center justify-between">
@@ -383,25 +413,13 @@ export default function FullDiagnosticPage() {
             transition={{ duration: 0.2 }}
             className="glass rounded-2xl border border-border/50 p-6 md:p-8"
           >
-            {/* Archetype badge (informational — user doesn't need to know
-                which archetype each question maps to, but the color coding
-                gives subtle visual variety across the 64 questions) */}
-            <div className="flex items-center gap-2 mb-6">
-              <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center', archetypeInfo.bgColor)}>
-                <Icon className={cn('w-4 h-4', archetypeInfo.color)} />
-              </div>
-              <span className="text-xs text-muted-foreground">
-                Section {Math.floor(currentQuestion / 16) + 1} of 4
-              </span>
-            </div>
-
             <h2 className="text-xl md:text-2xl font-semibold text-foreground leading-relaxed mb-8">
               {currentQ.text}
             </h2>
 
-            {/* Response options */}
+            {/* Response options — 5-point Likert scale, Strongly disagree → Strongly agree */}
             <div className="space-y-2">
-              {RESPONSE_SCALE.map((option) => {
+              {SCALE_OPTIONS.map((option) => {
                 const isSelected = answers[currentQ.id] === option.value;
                 return (
                   <button
@@ -435,41 +453,26 @@ export default function FullDiagnosticPage() {
                 <ArrowLeft className="w-4 h-4" />
                 Back
               </button>
-              <button
-                onClick={handleSkip}
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Skip →
-              </button>
+              {currentQuestion < totalQuestions - 1 && (
+                <button
+                  onClick={handleSkip}
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Skip →
+                </button>
+              )}
             </div>
           </motion.div>
         </AnimatePresence>
 
-        {/* Quick jump dots — lets users see their progress through the 4 sections */}
-        <div className="mt-8 flex items-center justify-center gap-2">
-          {Array.from({ length: 4 }).map((_, sectionIdx) => {
-            const sectionStart = sectionIdx * 16;
-            const sectionEnd = sectionStart + 16;
-            const sectionAnswered = Object.keys(answers).filter(qid => {
-              const q = fullDiagnosticQuestions.find(q => q.id === Number(qid));
-              return q && q.id >= sectionStart + 1 && q.id <= sectionEnd;
-            }).length;
-            const sectionComplete = sectionAnswered === 16;
-            const isCurrentSection =
-              currentQuestion >= sectionStart && currentQuestion < sectionEnd;
-
-            return (
-              <div
-                key={sectionIdx}
-                className={cn(
-                  'h-1.5 rounded-full transition-all',
-                  isCurrentSection ? 'w-8 bg-primary' : sectionComplete ? 'w-4 bg-primary/60' : 'w-4 bg-secondary'
-                )}
-                title={`Section ${sectionIdx + 1}: ${sectionAnswered}/16 answered`}
-              />
-            );
-          })}
-        </div>
+        {/* Inline notice if the user has skipped questions — encourages them to go back */}
+        {answeredCount < totalQuestions && currentQuestion === totalQuestions - 1 && (
+          <div className="mt-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20">
+            <p className="text-sm text-amber-600 dark:text-amber-400">
+              You've answered {answeredCount} of {totalQuestions} questions. To generate your full Map, please go back and answer any skipped items.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -19,6 +19,19 @@ export const VALID_PROFILES = ['Driver', 'Strategist', 'Connector', 'Reactor'] a
 export type ValidProfile = (typeof VALID_PROFILES)[number];
 
 /**
+ * Valid attempt sources — distinguishes the free 16-question Snapshot
+ * from the paid 64-question Full Map.
+ */
+export const VALID_ATTEMPT_SOURCES = ['snapshot', 'full_map'] as const;
+export type ValidAttemptSource = (typeof VALID_ATTEMPT_SOURCES)[number];
+
+/**
+ * Valid profile classifications (PDF spec §8) — only set on Full Map
+ * attempts.
+ */
+export const VALID_CLASSIFICATIONS = ['strong_primary', 'blended', 'balanced', 'flexible'] as const;
+
+/**
  * Clamp a score to the 0-100 range. Handles:
  *  - numbers already in range (passthrough)
  *  - numbers out of range (clamp)
@@ -68,6 +81,30 @@ export function normalizeSecondaryProfile(input: unknown): ValidProfile | null {
 }
 
 /**
+ * Normalize an attemptSource string. Returns null for invalid/missing
+ * input — the caller treats null as "use the default" (snapshot).
+ */
+export function normalizeAttemptSource(input: unknown): ValidAttemptSource | null {
+  if (typeof input !== 'string') return null;
+  const trimmed = input.trim().toLowerCase();
+  return (VALID_ATTEMPT_SOURCES as readonly string[]).includes(trimmed)
+    ? (trimmed as ValidAttemptSource)
+    : null;
+}
+
+/**
+ * Normalize a profileClassification string. Returns null for invalid
+ * input — the caller treats null as "not set" (only used by Full Map).
+ */
+export function normalizeClassification(input: unknown): string | null {
+  if (typeof input !== 'string') return null;
+  const trimmed = input.trim().toLowerCase();
+  return (VALID_CLASSIFICATIONS as readonly string[]).includes(trimmed)
+    ? trimmed
+    : null;
+}
+
+/**
  * A single answer in the diagnostic payload.
  * questionId is 1-indexed per the question bank.
  * score is 1-5 (Likert scale).
@@ -106,6 +143,35 @@ export function sanitizeAnswers(input: unknown): SanitizedAnswer[] | null {
 }
 
 /**
+ * Coerce a value to a non-negative integer. Used for optional Int?
+ * fields like completionTimeSeconds and sustainabilityIndex. Returns
+ * null for missing/invalid input.
+ */
+export function coerceOptionalInt(v: unknown): number | null {
+  if (v == null) return null;
+  const n = typeof v === 'number' ? v : Number(v);
+  if (!Number.isFinite(n) || n < 0) return null;
+  return Math.round(n);
+}
+
+/**
+ * Coerce a value to a JSON-serialisable object. Used for optional Json?
+ * fields like dimensionScores, derivedMeasures, responseQualityFlags.
+ * Returns null for missing/non-object input. Strings are parsed if
+ * they look like JSON.
+ */
+export function coerceOptionalJson(v: unknown): Record<string, unknown> | null {
+  if (v == null) return null;
+  if (typeof v === 'string') {
+    try { return JSON.parse(v); } catch { return null; }
+  }
+  if (typeof v === 'object' && !Array.isArray(v)) {
+    return v as Record<string, unknown>;
+  }
+  return null;
+}
+
+/**
  * Result of validating the full diagnostic POST body.
  * On success, `valid` is true and the fields are populated.
  * On failure, `valid` is false and `error` is a user-facing message.
@@ -124,6 +190,17 @@ export interface DiagnosticValidationResult {
   wellbeingRisks?: string[] | null;
   recommendations?: string[] | null;
   isPaid?: boolean;
+  attemptSource?: ValidAttemptSource | null;
+  assessmentVersion?: string | null;
+
+  // Full Map (64Q) — Verso Sales Wellbeing Map v1.0 fields
+  dimensionScores?: Record<string, unknown> | null;
+  derivedMeasures?: Record<string, unknown> | null;
+  sustainabilityIndex?: number | null;
+  profileClassification?: string | null;
+  blendedArchetypes?: string | null;
+  responseQualityFlags?: Record<string, unknown> | null;
+  completionTimeSeconds?: number | null;
 }
 
 /**
@@ -173,6 +250,27 @@ export function validateDiagnosticBody(body: any): DiagnosticValidationResult {
   // isPaid — defaults to false
   const isPaid = Boolean(body?.isPaid);
 
+  // attemptSource — optional, defaults to null (DB column is nullable)
+  const attemptSource = normalizeAttemptSource(body?.attemptSource);
+
+  // assessmentVersion — optional string
+  const assessmentVersion =
+    typeof body?.assessmentVersion === 'string' && body.assessmentVersion.trim()
+      ? body.assessmentVersion.trim().slice(0, 64) // cap length for DB safety
+      : null;
+
+  // Full Map fields — all optional, only set when attemptSource === 'full_map'
+  const dimensionScores = coerceOptionalJson(body?.dimensionScores);
+  const derivedMeasures = coerceOptionalJson(body?.derivedMeasures);
+  const sustainabilityIndex = coerceOptionalInt(body?.sustainabilityIndex);
+  const profileClassification = normalizeClassification(body?.profileClassification);
+  const blendedArchetypes =
+    typeof body?.blendedArchetypes === 'string' && body.blendedArchetypes.trim()
+      ? body.blendedArchetypes.trim().slice(0, 64)
+      : null;
+  const responseQualityFlags = coerceOptionalJson(body?.responseQualityFlags);
+  const completionTimeSeconds = coerceOptionalInt(body?.completionTimeSeconds);
+
   return {
     valid: true,
     primaryProfile,
@@ -186,6 +284,15 @@ export function validateDiagnosticBody(body: any): DiagnosticValidationResult {
     wellbeingRisks,
     recommendations,
     isPaid,
+    attemptSource,
+    assessmentVersion,
+    dimensionScores,
+    derivedMeasures,
+    sustainabilityIndex,
+    profileClassification,
+    blendedArchetypes,
+    responseQualityFlags,
+    completionTimeSeconds,
   };
 }
 

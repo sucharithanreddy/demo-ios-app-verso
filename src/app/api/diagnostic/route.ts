@@ -139,6 +139,17 @@ export async function POST(request: NextRequest) {
         wellbeingRisks: validation.wellbeingRisks ?? null,
         recommendations: validation.recommendations ?? null,
         isPaid: validation.isPaid ?? false,
+        attemptSource: validation.attemptSource ?? null,
+        assessmentVersion: validation.assessmentVersion ?? null,
+        // Full Map (64Q) structured fields — only populated when the
+        // client sends them (i.e. attemptSource === 'full_map').
+        dimensionScores: validation.dimensionScores ?? null,
+        derivedMeasures: validation.derivedMeasures ?? null,
+        sustainabilityIndex: validation.sustainabilityIndex ?? null,
+        profileClassification: validation.profileClassification ?? null,
+        blendedArchetypes: validation.blendedArchetypes ?? null,
+        responseQualityFlags: validation.responseQualityFlags ?? null,
+        completionTimeSeconds: validation.completionTimeSeconds ?? null,
       },
       select: {
         id: true,
@@ -149,6 +160,10 @@ export async function POST(request: NextRequest) {
         connectorScore: true,
         reactorScore: true,
         isPaid: true,
+        attemptSource: true,
+        assessmentVersion: true,
+        sustainabilityIndex: true,
+        profileClassification: true,
         createdAt: true,
       },
     });

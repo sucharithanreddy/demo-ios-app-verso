@@ -12,26 +12,40 @@ import {
   Users,
   AlertTriangle,
   CheckCircle2,
-  TrendingUp,
-  Share2,
   RefreshCcw,
   Sparkles,
   Layers,
   Activity,
   Heart,
   Shield,
+  TrendingUp,
+  Brain,
+  Gauge,
+  Zap,
+  AlertCircle,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useSafeUser } from '@/lib/safe-auth';
 import { MobileHeader } from '@/components/MobileHeader';
 import { cn } from '@/lib/utils';
-import type { FullDiagnosticResult, Archetype, SubDimension } from '@/lib/full-diagnostic-questions';
+import {
+  type FullDiagnosticResult,
+  type Archetype,
+  type DimensionCode,
+  type DimensionBand,
+  type SustainabilityBand,
+  type WellbeingPressureLevel,
+  DIMENSION_META,
+  BAND_LABELS,
+  SUSTAINABILITY_LABELS,
+  PRESSURE_LABELS,
+} from '@/lib/full-diagnostic-questions';
 
 export const dynamic = 'force-dynamic';
 
 const ARCHETYPE_CONFIG: Record<
   Archetype,
-  { name: string; icon: typeof Target; color: string; bgColor: string; gradient: string }
+  { name: string; icon: typeof Target; color: string; bgColor: string; gradient: string; description: string }
 > = {
   driver: {
     name: 'Driver',
@@ -39,6 +53,7 @@ const ARCHETYPE_CONFIG: Record<
     color: 'text-red-500',
     bgColor: 'bg-red-500/10',
     gradient: 'from-red-500 to-red-600',
+    description: 'Prioritises action, momentum and visible progress.',
   },
   strategist: {
     name: 'Strategist',
@@ -46,6 +61,7 @@ const ARCHETYPE_CONFIG: Record<
     color: 'text-blue-500',
     bgColor: 'bg-blue-500/10',
     gradient: 'from-blue-500 to-blue-600',
+    description: 'Prioritises clarity, structure and understanding.',
   },
   connector: {
     name: 'Connector',
@@ -53,6 +69,7 @@ const ARCHETYPE_CONFIG: Record<
     color: 'text-green-500',
     bgColor: 'bg-green-500/10',
     gradient: 'from-green-500 to-green-600',
+    description: 'Prioritises relationships, trust and emotional harmony.',
   },
   reactor: {
     name: 'Reactor',
@@ -60,46 +77,61 @@ const ARCHETYPE_CONFIG: Record<
     color: 'text-amber-500',
     bgColor: 'bg-amber-500/10',
     gradient: 'from-amber-500 to-amber-600',
+    description: 'Experiences outcomes with noticeable emotional intensity.',
   },
 };
 
-const SUB_DIMENSION_LABELS: Record<SubDimension, string> = {
-  achievement: 'Achievement',
-  pace: 'Pace',
-  pressure_response: 'Pressure Response',
-  recovery: 'Recovery',
-  motivation: 'Motivation',
-  decision_making: 'Decision-Making',
-  confidence: 'Confidence',
-  relationships: 'Relationships',
+const CLASSIFICATION_LABELS: Record<string, string> = {
+  strong_primary: 'Strong primary pattern',
+  blended: 'Blended profile',
+  balanced: 'Balanced profile',
+  flexible: 'Flexible profile',
 };
 
-const WELLBEING_INDICATOR_CONFIG = [
-  {
-    key: 'confidenceStability' as const,
-    label: 'Confidence Stability',
-    description: 'How stable your self-belief is under varying outcomes',
-    icon: Shield,
-  },
-  {
-    key: 'energySustainability' as const,
-    label: 'Energy Sustainability',
-    description: 'Whether your current pace is sustainable without burnout',
-    icon: Activity,
-  },
-  {
-    key: 'responseToRejection' as const,
-    label: 'Response to Rejection',
-    description: 'How deeply setbacks and "no"s affect you emotionally',
-    icon: Heart,
-  },
-  {
-    key: 'toleranceOfUncertainty' as const,
-    label: 'Tolerance of Uncertainty',
-    description: 'Your comfort acting without complete information',
-    icon: TrendingUp,
-  },
-];
+const BAND_COLOR_CLASSES: Record<DimensionBand, { bar: string; chip: string; text: string }> = {
+  low:         { bar: 'bg-slate-400',   chip: 'bg-slate-500/10 text-slate-600 dark:text-slate-300',   text: 'text-slate-500' },
+  mild:        { bar: 'bg-blue-400',    chip: 'bg-blue-500/10 text-blue-600 dark:text-blue-300',     text: 'text-blue-500' },
+  moderate:    { bar: 'bg-amber-400',   chip: 'bg-amber-500/10 text-amber-600 dark:text-amber-300',  text: 'text-amber-500' },
+  strong:      { bar: 'bg-orange-400',  chip: 'bg-orange-500/10 text-orange-600 dark:text-orange-300', text: 'text-orange-500' },
+  very_strong: { bar: 'bg-red-400',     chip: 'bg-red-500/10 text-red-600 dark:text-red-300',         text: 'text-red-500' },
+};
+
+const SUSTAINABILITY_COLOR: Record<SustainabilityBand, string> = {
+  strongly_sustainable:   'text-green-500',
+  generally_sustainable:  'text-emerald-500',
+  mixed:                  'text-amber-500',
+  several_pressure_points: 'text-orange-500',
+  significant_pressure:   'text-red-500',
+};
+
+const PRESSURE_COLOR: Record<WellbeingPressureLevel, string> = {
+  low:      'text-green-500',
+  emerging: 'text-emerald-500',
+  moderate: 'text-amber-500',
+  elevated: 'text-red-500',
+};
+
+// Helper: classify a 0-100 "higher = healthier" measure into a coloured band.
+function healthHue(score: number): 'good' | 'ok' | 'risk' {
+  return score >= 67 ? 'good' : score >= 40 ? 'ok' : 'risk';
+}
+
+// Helper: classify a 0-100 "higher = more pressure" measure (like Emotional Labour Load).
+function pressureHue(score: number): 'good' | 'ok' | 'risk' {
+  return score <= 40 ? 'good' : score <= 60 ? 'ok' : 'risk';
+}
+
+const HEALTH_COLOR = {
+  good: { icon: 'text-green-500', bg: 'bg-green-500/10', bar: 'bg-green-500' },
+  ok:   { icon: 'text-amber-500', bg: 'bg-amber-500/10', bar: 'bg-amber-500' },
+  risk: { icon: 'text-red-500',   bg: 'bg-red-500/10',   bar: 'bg-red-500' },
+};
+
+const PRESSURE_COLOR_MAP = {
+  good: { icon: 'text-green-500', bg: 'bg-green-500/10', bar: 'bg-green-500' },
+  ok:   { icon: 'text-amber-500', bg: 'bg-amber-500/10', bar: 'bg-amber-500' },
+  risk: { icon: 'text-red-500',   bg: 'bg-red-500/10',   bar: 'bg-red-500' },
+};
 
 export default function FullDiagnosticResultsPage() {
   const router = useRouter();
@@ -175,24 +207,19 @@ export default function FullDiagnosticResultsPage() {
   const secondaryConfig = ARCHETYPE_CONFIG[result.secondaryArchetype];
   const PrimaryIcon = primaryConfig.icon;
   const SecondaryIcon = secondaryConfig.icon;
-
-  const confidenceLabel = {
-    strong: 'Strong primary pattern',
-    moderate: 'Moderate primary pattern with secondary blend',
-    blended: 'Blended patterns — no single dominant archetype',
-  }[result.confidence];
+  const classificationLabel = CLASSIFICATION_LABELS[result.profileClassification] ?? 'Profile';
 
   return (
     <div className="min-h-screen bg-background">
-      <MobileHeader />
+      <MobileHeader title="Your Sales Wellbeing Map" subtitle="Full results" icon="target" />
 
       {/* Top nav */}
       <div className="max-w-4xl mx-auto px-4 pt-4 flex items-center justify-between">
         <Link
-          href="/diagnostic"
+          href="/sales-dashboard"
           className="text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
-          ← Back to Diagnostic
+          ← Back to Dashboard
         </Link>
         <button
           onClick={toggleDark}
@@ -215,14 +242,38 @@ export default function FullDiagnosticResultsPage() {
             <span className="text-sm font-medium text-primary">Full Sales Wellbeing Map</span>
           </div>
           <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
-            Your 3-Layer Sales Wellbeing Map
+            Your Sales Wellbeing Map
           </h1>
           <p className="text-muted-foreground max-w-xl mx-auto">
-            A 64-question deep dive into how you experience sales pressure — across 4 archetypes, 8 sub-dimensions, and 4 wellbeing indicators.
+            A 64-question deep dive across 4 archetypes, 16 dimensions, and 12 derived wellbeing measures.
           </p>
         </motion.div>
 
-        {/* ─── Layer 1: Primary + Secondary Archetype ──────────────────── */}
+        {/* ─── Response quality notice (PDF spec §20) ─────────────────── */}
+        {result.responseQuality.hasFlags && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20"
+          >
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-amber-600 dark:text-amber-400 mb-1">
+                  Your responses produced a less differentiated profile
+                </p>
+                <p className="text-xs text-amber-600 dark:text-amber-400/80">
+                  You may find it helpful to retake the assessment when you have time to respond more instinctively.
+                  {result.responseQuality.fastCompletion && ' · Completed in under 4 minutes.'}
+                  {result.responseQuality.straightLining && ' · Many answers used the same option.'}
+                  {result.responseQuality.excessiveNeutrality && ' · Many answers were neutral.'}
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* ─── Layer 1: Primary + Secondary Archetype ─────────────────── */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -233,7 +284,7 @@ export default function FullDiagnosticResultsPage() {
             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
               <Target className="w-4 h-4 text-primary" />
             </div>
-            <h2 className="text-lg font-semibold text-foreground">Layer 1: Your Archetype Pattern</h2>
+            <h2 className="text-lg font-semibold text-foreground">Your Archetype Pattern</h2>
           </div>
 
           <div className="grid md:grid-cols-2 gap-4 mb-6">
@@ -248,7 +299,11 @@ export default function FullDiagnosticResultsPage() {
                   <p className="text-xl font-bold text-foreground">{primaryConfig.name}</p>
                 </div>
               </div>
-              <p className="text-sm text-muted-foreground">{primaryConfig.description}</p>
+              <p className="text-sm text-muted-foreground mb-2">{primaryConfig.description}</p>
+              <p className="text-2xl font-bold text-foreground">
+                {Math.round(result.archetypeScores[result.primaryArchetype])}
+                <span className="text-sm text-muted-foreground">/100</span>
+              </p>
             </div>
 
             {/* Secondary */}
@@ -262,14 +317,23 @@ export default function FullDiagnosticResultsPage() {
                   <p className="text-xl font-bold text-foreground">{secondaryConfig.name}</p>
                 </div>
               </div>
-              <p className="text-sm text-muted-foreground">{secondaryConfig.description}</p>
+              <p className="text-sm text-muted-foreground mb-2">{secondaryConfig.description}</p>
+              <p className="text-2xl font-bold text-foreground">
+                {Math.round(result.archetypeScores[result.secondaryArchetype])}
+                <span className="text-sm text-muted-foreground">/100</span>
+              </p>
             </div>
           </div>
 
-          {/* Confidence badge */}
-          <div className="flex items-center gap-2 p-3 rounded-lg bg-secondary/30">
-            <Sparkles className="w-4 h-4 text-primary" />
-            <span className="text-sm text-foreground">{confidenceLabel}</span>
+          {/* Profile classification summary */}
+          <div className="flex items-center gap-2 p-3 rounded-lg bg-secondary/30 mb-4">
+            <Sparkles className="w-4 h-4 text-primary flex-shrink-0" />
+            <span className="text-sm text-foreground">{result.profileSummaryText}</span>
+          </div>
+
+          {/* Classification badge */}
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20">
+            <span className="text-xs font-medium text-primary">{classificationLabel}</span>
           </div>
 
           {/* Archetype score bars */}
@@ -286,7 +350,7 @@ export default function FullDiagnosticResultsPage() {
                   <div className="flex-1">
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-sm font-medium text-foreground">{config.name}</span>
-                      <span className="text-sm text-muted-foreground">{score}/100</span>
+                      <span className="text-sm text-muted-foreground">{Math.round(score)}/100</span>
                     </div>
                     <div className="h-2 rounded-full bg-secondary overflow-hidden">
                       <div
@@ -301,145 +365,282 @@ export default function FullDiagnosticResultsPage() {
           </div>
         </motion.div>
 
-        {/* ─── Layer 2: Sub-Dimension Drill-Down ────────────────────────── */}
+        {/* ─── Sustainability Index + Pressure Indicator (hero row) ──── */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="grid md:grid-cols-2 gap-4 mb-6"
+        >
+          {/* Sales Wellbeing Sustainability Index */}
+          <div className="glass rounded-2xl border border-border/50 p-6">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <Gauge className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-0.5">Sales Wellbeing Sustainability Index</p>
+                <p className="text-xs text-muted-foreground">Composite of confidence, energy, recovery, boundary, tolerance and behavioural measures.</p>
+              </div>
+            </div>
+            <div className="flex items-end justify-between mb-3">
+              <p className={cn('text-4xl font-bold', SUSTAINABILITY_COLOR[result.sustainabilityBand])}>
+                {result.salesWellbeingSustainabilityIndex}
+                <span className="text-lg text-muted-foreground">/100</span>
+              </p>
+              <span className={cn('text-xs font-medium px-2 py-1 rounded-full', SUSTAINABILITY_COLOR[result.sustainabilityBand], 'bg-current/10')}>
+                {SUSTAINABILITY_LABELS[result.sustainabilityBand]}
+              </span>
+            </div>
+            <div className="h-2 rounded-full bg-secondary overflow-hidden">
+              <div
+                className={cn('h-full transition-all duration-500', SUSTAINABILITY_COLOR[result.sustainabilityBand].replace('text-', 'bg-'))}
+                style={{ width: `${result.salesWellbeingSustainabilityIndex}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Wellbeing Pressure Indicator */}
+          <div className="glass rounded-2xl border border-border/50 p-6">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <Activity className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-0.5">Wellbeing Pressure Indicator</p>
+                <p className="text-xs text-muted-foreground">A non-clinical indicator of combined pressure within your current profile.</p>
+              </div>
+            </div>
+            <div className="flex items-end justify-between mb-3">
+              <p className={cn('text-4xl font-bold', PRESSURE_COLOR[result.wellbeingPressureIndicator])}>
+                {PRESSURE_LABELS[result.wellbeingPressureIndicator]}
+              </p>
+              <span className={cn('text-xs px-2 py-1 rounded-full bg-current/10', PRESSURE_COLOR[result.wellbeingPressureIndicator])}>
+                Current pattern
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              This is a development indicator, not a clinical assessment of mental health risk.
+            </p>
+          </div>
+        </motion.div>
+
+        {/* ─── Layer 2: 16 Dimension Scores ──────────────────────────── */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
           className="glass rounded-2xl border border-border/50 p-6 md:p-8 mb-6"
         >
-          <div className="flex items-center gap-2 mb-6">
+          <div className="flex items-center gap-2 mb-2">
             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
               <Layers className="w-4 h-4 text-primary" />
             </div>
-            <h2 className="text-lg font-semibold text-foreground">Layer 2: Sub-Dimension Drill-Down</h2>
+            <h2 className="text-lg font-semibold text-foreground">16 Underlying Dimensions</h2>
           </div>
-
           <p className="text-sm text-muted-foreground mb-6">
-            Within each archetype, your responses reveal finer-grained patterns across 8 sub-dimensions. These are aggregated across all 4 archetypes — a high score in "Recovery" means you recover well regardless of which archetype triggered the stress.
+            Each archetype contains four underlying dimensions. Higher scores indicate a more pronounced expression of that dimension.
           </p>
 
-          <div className="grid sm:grid-cols-2 gap-4">
-            {(Object.entries(result.subDimensionScores) as [SubDimension, number][]).map(([sd, score]) => {
-              const label = SUB_DIMENSION_LABELS[sd] ?? sd;
-              const hue = score >= 67 ? 'high' : score >= 33 ? 'mid' : 'low';
-              const colorClass =
-                hue === 'high'
-                  ? 'from-green-500 to-emerald-500'
-                  : hue === 'mid'
-                    ? 'from-amber-500 to-yellow-500'
-                    : 'from-red-500 to-orange-500';
+          <div className="grid sm:grid-cols-2 gap-3">
+            {(Object.entries(result.dimensionScores) as [DimensionCode, number][]).map(([dim, score]) => {
+              const meta = DIMENSION_META[dim];
+              const band = result.dimensionBands[dim];
+              const colors = BAND_COLOR_CLASSES[band];
               return (
-                <div key={sd} className="p-4 rounded-xl bg-secondary/30 border border-border/50">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-foreground">{label}</span>
-                    <span className="text-sm font-bold text-foreground">{score}</span>
+                <div key={dim} className="p-4 rounded-xl bg-secondary/30 border border-border/50">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="min-w-0 flex-1 pr-2">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="text-[10px] font-mono text-muted-foreground">{dim}</span>
+                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                          {meta.archetype}
+                        </span>
+                      </div>
+                      <p className="text-xs font-medium text-foreground leading-tight">{meta.label}</p>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p className="text-sm font-bold text-foreground">{Math.round(score)}</p>
+                    </div>
                   </div>
-                  <div className="h-1.5 rounded-full bg-secondary overflow-hidden">
+                  <div className="h-1.5 rounded-full bg-secondary overflow-hidden mb-2">
                     <div
-                      className={cn('h-full bg-gradient-to-r transition-all duration-500', colorClass)}
+                      className={cn('h-full transition-all duration-500', colors.bar)}
                       style={{ width: `${score}%` }}
                     />
                   </div>
+                  <span className={cn('inline-block text-[10px] px-1.5 py-0.5 rounded', colors.chip)}>
+                    {BAND_LABELS[band]}
+                  </span>
                 </div>
               );
             })}
           </div>
         </motion.div>
 
-        {/* ─── Layer 3: Wellbeing Indicators ─────────────────────────────── */}
+        {/* ─── Layer 3: Derived Wellbeing Measures ───────────────────── */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
           className="glass rounded-2xl border border-border/50 p-6 md:p-8 mb-6"
         >
-          <div className="flex items-center gap-2 mb-6">
+          <div className="flex items-center gap-2 mb-2">
             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
               <Heart className="w-4 h-4 text-primary" />
             </div>
-            <h2 className="text-lg font-semibold text-foreground">Layer 3: Cross-Archetype Wellbeing Indicators</h2>
+            <h2 className="text-lg font-semibold text-foreground">Derived Wellbeing Measures</h2>
           </div>
-
           <p className="text-sm text-muted-foreground mb-6">
-            These indicators cut across all 4 archetypes to surface sales-specific wellbeing risks. Each is a 0-100 score where higher = healthier. These are initial heuristics pending psychometric sign-off.
+            These indicators cut across all four archetypes to surface sales-specific wellbeing patterns. Higher = healthier (except Emotional Labour Load, where higher = more effort/cost).
           </p>
 
-          {/* Overall index — hero number */}
-          <div className="mb-6 p-5 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Overall Sales Wellbeing Index</p>
-                <p className="text-3xl font-bold text-foreground">
-                  {result.wellbeingIndicators.overallSalesWellbeingIndex}
-                  <span className="text-lg text-muted-foreground">/100</span>
-                </p>
-              </div>
-              <div className={cn(
-                'w-14 h-14 rounded-2xl flex items-center justify-center',
-                result.wellbeingIndicators.overallSalesWellbeingIndex >= 67
-                  ? 'bg-green-500/20'
-                  : result.wellbeingIndicators.overallSalesWellbeingIndex >= 33
-                    ? 'bg-amber-500/20'
-                    : 'bg-red-500/20'
-              )}>
-                <Activity className={cn(
-                  'w-7 h-7',
-                  result.wellbeingIndicators.overallSalesWellbeingIndex >= 67
-                    ? 'text-green-500'
-                    : result.wellbeingIndicators.overallSalesWellbeingIndex >= 33
-                      ? 'text-amber-500'
-                      : 'text-red-500'
-                )} />
-              </div>
-            </div>
-          </div>
-
-          {/* Individual indicators */}
-          <div className="grid sm:grid-cols-2 gap-4">
-            {WELLBEING_INDICATOR_CONFIG.map(({ key, label, description, icon: Icon }) => {
-              const score = result.wellbeingIndicators[key];
-              const hue = score >= 67 ? 'good' : score >= 33 ? 'ok' : 'risk';
-              return (
-                <div key={key} className="p-4 rounded-xl bg-secondary/30 border border-border/50">
-                  <div className="flex items-start gap-3 mb-3">
-                    <div className={cn(
-                      'w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0',
-                      hue === 'good' ? 'bg-green-500/10' : hue === 'ok' ? 'bg-amber-500/10' : 'bg-red-500/10'
-                    )}>
-                      <Icon className={cn(
-                        'w-4 h-4',
-                        hue === 'good' ? 'text-green-500' : hue === 'ok' ? 'text-amber-500' : 'text-red-500'
-                      )} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-0.5">
-                        <span className="text-sm font-medium text-foreground">{label}</span>
-                        <span className="text-sm font-bold text-foreground">{score}</span>
-                      </div>
-                      <p className="text-xs text-muted-foreground">{description}</p>
-                    </div>
-                  </div>
-                  <div className="h-1.5 rounded-full bg-secondary overflow-hidden">
-                    <div
-                      className={cn(
-                        'h-full transition-all duration-500',
-                        hue === 'good' ? 'bg-green-500' : hue === 'ok' ? 'bg-amber-500' : 'bg-red-500'
-                      )}
-                      style={{ width: `${score}%` }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
+          <div className="grid sm:grid-cols-2 gap-3">
+            {/* Confidence Stability */}
+            <DerivedMeasureCard
+              icon={Shield}
+              label="Confidence Stability"
+              description="How stable your self-belief is under varying outcomes."
+              score={result.derivedMeasures.confidenceStability}
+              direction="health"
+            />
+            {/* Energy Sustainability */}
+            <DerivedMeasureCard
+              icon={Activity}
+              label="Energy Sustainability"
+              description="Whether your current pace is sustainable without depletion."
+              score={result.derivedMeasures.energySustainability}
+              direction="health"
+            />
+            {/* Recovery Capacity */}
+            <DerivedMeasureCard
+              icon={Heart}
+              label="Recovery Capacity"
+              description="How effectively you recover from setbacks."
+              score={result.derivedMeasures.recoveryCapacity}
+              direction="health"
+            />
+            {/* Boundary Sustainability */}
+            <DerivedMeasureCard
+              icon={Shield}
+              label="Boundary Sustainability"
+              description="How well you protect recovery, workload and personal capacity."
+              score={result.derivedMeasures.boundarySustainability}
+              direction="health"
+            />
+            {/* Tolerance of Uncertainty */}
+            <DerivedMeasureCard
+              icon={Brain}
+              label="Tolerance of Uncertainty"
+              description="Comfort acting without complete information."
+              score={result.derivedMeasures.toleranceOfUncertainty}
+              direction="health"
+            />
+            {/* Behavioural Stability */}
+            <DerivedMeasureCard
+              icon={Gauge}
+              label="Behavioural Stability"
+              description="How consistently you behave under pressure."
+              score={result.derivedMeasures.behaviouralStability}
+              direction="health"
+            />
+            {/* Setback Recovery */}
+            <DerivedMeasureCard
+              icon={TrendingUp}
+              label="Setback Recovery"
+              description="Recovery speed after difficult outcomes."
+              score={result.derivedMeasures.setbackRecovery}
+              direction="health"
+            />
+            {/* Relationship Orientation */}
+            <DerivedMeasureCard
+              icon={Users}
+              label="Relationship Orientation"
+              description="How strongly relationships shape your decisions."
+              score={result.derivedMeasures.relationshipOrientation}
+              direction="health"
+              invertMeaning={true}
+            />
+            {/* Ability to Switch Off */}
+            <DerivedMeasureCard
+              icon={Moon}
+              label="Ability to Switch Off"
+              description="How well you disconnect from work outside hours."
+              score={result.derivedMeasures.abilityToSwitchOff}
+              direction="health"
+            />
+            {/* Emotional Labour Load (higher = more cost) */}
+            <DerivedMeasureCard
+              icon={Heart}
+              label="Emotional Labour Load"
+              description="Personal cost of managing others' emotions."
+              score={result.derivedMeasures.emotionalLabourLoad}
+              direction="pressure"
+            />
+            {/* Need for Certainty (higher = more rigid) */}
+            <DerivedMeasureCard
+              icon={Brain}
+              label="Need for Certainty"
+              description="How much certainty you need before acting."
+              score={result.derivedMeasures.needForCertainty}
+              direction="pressure"
+            />
           </div>
         </motion.div>
 
-        {/* ─── What happens next + actions ──────────────────────────────── */}
+        {/* ─── Response to Pressure (4 sub-scores) ──────────────────── */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35 }}
+          className="glass rounded-2xl border border-border/50 p-6 md:p-8 mb-6"
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Zap className="w-4 h-4 text-primary" />
+            </div>
+            <h2 className="text-lg font-semibold text-foreground">Response to Pressure</h2>
+          </div>
+          <p className="text-sm text-muted-foreground mb-6">
+            Under pressure, different patterns drive your response. These four scores show the relative strength of each.
+          </p>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <PressureSubCard label="Action response" description="Increase pace and personal effort" score={result.derivedMeasures.responseToPressure.action} />
+            <PressureSubCard label="Analysis response" description="Seek clarity through analysis" score={result.derivedMeasures.responseToPressure.analysis} />
+            <PressureSubCard label="Connection response" description="Turn to others for support" score={result.derivedMeasures.responseToPressure.connection} />
+            <PressureSubCard label="Emotional response" description="Process emotionally" score={result.derivedMeasures.responseToPressure.emotional} />
+          </div>
+        </motion.div>
+
+        {/* ─── Decision Style (4 sub-scores) ────────────────────────── */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
+          className="glass rounded-2xl border border-border/50 p-6 md:p-8 mb-6"
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Brain className="w-4 h-4 text-primary" />
+            </div>
+            <h2 className="text-lg font-semibold text-foreground">Decision Style</h2>
+          </div>
+          <p className="text-sm text-muted-foreground mb-6">
+            How you tend to make decisions. The strongest style is your primary tendency — but all four contribute.
+          </p>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <PressureSubCard label="Fast / instinctive" description="Act quickly on instinct" score={result.derivedMeasures.decisionStyle.fast} />
+            <PressureSubCard label="Analytical / considered" description="Analyse and consider before acting" score={result.derivedMeasures.decisionStyle.analytical} />
+            <PressureSubCard label="Collaborative" description="Decide with others" score={result.derivedMeasures.decisionStyle.collaborative} />
+            <PressureSubCard label="Emotionally influenced" description="Decisions shaped by emotional investment" score={result.derivedMeasures.decisionStyle.emotionallyInfluenced} />
+          </div>
+        </motion.div>
+
+        {/* ─── What happens next ─────────────────────────────────────── */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.45 }}
           className="glass rounded-2xl border border-border/50 p-6 md:p-8 mb-6"
         >
           <div className="flex items-start gap-3 mb-4">
@@ -449,7 +650,7 @@ export default function FullDiagnosticResultsPage() {
             <div>
               <h2 className="text-lg font-semibold text-foreground mb-1">Your AI Companion now knows your pattern</h2>
               <p className="text-sm text-muted-foreground">
-                Your archetype profile has been saved. When you use the Reflect AI tool, your responses will be personalized based on how YOUR pattern tends to experience sales pressure — not generic advice.
+                Your full profile has been saved. When you use the Reflect AI tool, your responses will be personalised based on how YOUR pattern tends to experience sales pressure — not generic advice.
               </p>
             </div>
           </div>
@@ -485,6 +686,93 @@ export default function FullDiagnosticResultsPage() {
             Retake Full Assessment
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Sub-components
+// ---------------------------------------------------------------------------
+
+function DerivedMeasureCard({
+  icon: Icon,
+  label,
+  description,
+  score,
+  direction,
+  invertMeaning = false,
+}: {
+  icon: typeof Shield;
+  label: string;
+  description: string;
+  score: number;
+  direction: 'health' | 'pressure';
+  invertMeaning?: boolean;
+}) {
+  // For 'health' direction: higher = healthier.
+  // For 'pressure' direction: higher = more pressure/cost.
+  // invertMeaning flips the rendering interpretation (e.g. Relationship
+  // Orientation is presented as a strength even though it's not strictly
+  // "health" — we just don't flag it as a risk at high values).
+  const safeScore = Math.max(0, Math.min(100, Math.round(Number(score) || 0)));
+  const hue = direction === 'pressure' ? pressureHue(safeScore) : healthHue(safeScore);
+  const colors = direction === 'pressure' ? PRESSURE_COLOR_MAP[hue] : HEALTH_COLOR[hue];
+
+  return (
+    <div className="p-4 rounded-xl bg-secondary/30 border border-border/50">
+      <div className="flex items-start gap-3 mb-3">
+        <div className={cn('w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0', colors.bg)}>
+          <Icon className={cn('w-4 h-4', colors.icon)} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between mb-0.5">
+            <span className="text-sm font-medium text-foreground">{label}</span>
+            <span className="text-sm font-bold text-foreground">{safeScore}</span>
+          </div>
+          <p className="text-xs text-muted-foreground leading-tight">{description}</p>
+        </div>
+      </div>
+      <div className="h-1.5 rounded-full bg-secondary overflow-hidden">
+        <div
+          className={cn('h-full transition-all duration-500', colors.bar)}
+          style={{ width: `${safeScore}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function PressureSubCard({
+  label,
+  description,
+  score,
+}: {
+  label: string;
+  description: string;
+  score: number;
+}) {
+  const safeScore = Math.max(0, Math.min(100, Math.round(Number(score) || 0)));
+  // For pressure/decision sub-scores, higher = more pronounced pattern
+  // (not necessarily good or bad). Use a neutral→warm gradient.
+  const hue: 'low' | 'mid' | 'high' = safeScore >= 67 ? 'high' : safeScore >= 33 ? 'mid' : 'low';
+  const colorClass =
+    hue === 'high' ? 'bg-orange-500'
+    : hue === 'mid' ? 'bg-amber-500'
+    : 'bg-slate-400';
+
+  return (
+    <div className="p-4 rounded-xl bg-secondary/30 border border-border/50">
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-sm font-medium text-foreground">{label}</span>
+        <span className="text-sm font-bold text-foreground">{safeScore}</span>
+      </div>
+      <p className="text-xs text-muted-foreground mb-2 leading-tight">{description}</p>
+      <div className="h-1.5 rounded-full bg-secondary overflow-hidden">
+        <div
+          className={cn('h-full transition-all duration-500', colorClass)}
+          style={{ width: `${safeScore}%` }}
+        />
       </div>
     </div>
   );
