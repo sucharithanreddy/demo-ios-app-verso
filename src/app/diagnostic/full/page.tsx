@@ -157,21 +157,36 @@ export default function FullDiagnosticPage() {
       JSON.stringify(fullResult)
     );
 
-    // Persist a DiagnosticResult row to the DB with the new structured
-    // fields so the dashboard, AI engine, and manager views can hydrate
-    // without re-running the scorer.
+    // Persist a DiagnosticResult row to the DB.
+    //
+    // NOTE: As of v1.0.1, the server recomputes ALL scores from `answers`
+    // server-side and ignores the computed fields we send here (driverScore,
+    // dimensionScores, sustainabilityIndex, etc.). We still send them for
+    // backward compatibility with older API builds, but the persisted DB
+    // row is always the server's computation — never the client's. This
+    // closes the integrity hole where a user could tamper with scores
+    // via DevTools before submission.
+    //
+    // The client's local computation (fullResult) is still used to render
+    // the immediate results page from localStorage. If the server's
+    // computation differs (e.g. due to a scoring bug fix), the server's
+    // version wins and is what dashboards/AI/manager views will see.
     try {
-      await fetch('/api/diagnostic', {
+      const response = await fetch('/api/diagnostic', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          // Raw answers — server uses these as the source of truth
+          answers: answersArray,
+          // Computed fields below are ignored by the server (kept for
+          // backward compat with older builds that don't yet have
+          // server-side scoring)
           driverScore: fullResult.archetypeScores.driver,
           strategistScore: fullResult.archetypeScores.strategist,
           connectorScore: fullResult.archetypeScores.connector,
           reactorScore: fullResult.archetypeScores.reactor,
           primaryProfile: primaryProfileTitleCase,
           secondaryProfile: secondaryProfileTitleCase,
-          answers: answersArray,
           strengths: [],
           wellbeingRisks: [],
           recommendations: [],
@@ -187,6 +202,36 @@ export default function FullDiagnosticPage() {
           completionTimeSeconds,
         }),
       });
+
+      // If the server echoed back its computed scores and they differ
+      // from our local computation, refresh localStorage so the results
+      // page shows the canonical (server) version. This handles the
+      // case where the server has a newer scoring algorithm than the
+      // client bundle.
+      if (response.ok) {
+        const body = await response.json();
+        if (body?.serverComputed) {
+          const sc = body.serverComputed;
+          const local = fullResult.archetypeScores;
+          if (
+            sc.driverScore !== local.driver ||
+            sc.strategistScore !== local.strategist ||
+            sc.connectorScore !== local.connector ||
+            sc.reactorScore !== local.reactor ||
+            sc.sustainabilityIndex !== fullResult.salesWellbeingSustainabilityIndex
+          ) {
+            // Server differs — log and refresh localStorage from server.
+            // We don't have the full server result here (just the
+            // summary echo), so we leave the local render as-is and
+            // rely on the next GET /api/diagnostic to surface the
+            // canonical row.
+            console.info(
+              '[diagnostic] Server scores differ from local — server is canonical',
+              { server: sc, local: { ...local, sustainabilityIndex: fullResult.salesWellbeingSustainabilityIndex } },
+            );
+          }
+        }
+      }
     } catch (err) {
       // Non-fatal — localStorage already has the full result
       console.warn('Failed to persist full diagnostic result to DB:', err);

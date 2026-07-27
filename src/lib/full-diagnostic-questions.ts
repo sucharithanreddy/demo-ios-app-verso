@@ -494,15 +494,35 @@ export function calculateFullResults(
   const minScore = sorted[3][1];
 
   // ---- Profile classification (PDF spec §8) ----
+  //
+  // The spec defines three "softening" rules plus a default:
+  //   1. Blended: top two within 5pp OR both > 75
+  //   2. Balanced: top-min < 15 AND top ≤ 70
+  //   3. Flexible: when no archetype > 55, "avoid applying a highly
+  //      definitive label" — language: "Your responses suggest a
+  //      flexible profile without one strongly dominant pattern."
+  //   4. Strong primary: default
+  //
+  // ORDERING DECISION
+  //   The spec's "flexible" rule is an absolute softener: "When no
+  //   archetype score exceeds 55, the output should avoid applying a
+  //   highly definitive label." This means even if the top two are
+  //   within 5pp (which would otherwise trigger "blended"), if the
+  //   top is ≤ 55 we should use flexible language instead — because
+  //   "blended" tone says "Your profile combines STRONG X and Y
+  //   patterns" which is wrong when nothing is actually strong.
+  //
+  //   So the precedence is:
+  //     flexible  →  blended  →  balanced  →  strong_primary
   let profileClassification: ProfileClassification;
   let blendedArchetypes: [Archetype, Archetype] | undefined;
-  if (topScore - secondScore <= 5 || (topScore > 75 && secondScore > 75)) {
+  if (topScore <= 55) {
+    profileClassification = 'flexible';
+  } else if (topScore - secondScore <= 5 || (topScore > 75 && secondScore > 75)) {
     profileClassification = 'blended';
     blendedArchetypes = [primaryArchetype, secondaryArchetype];
   } else if (topScore - minScore < 15 && topScore <= 70) {
     profileClassification = 'balanced';
-  } else if (topScore <= 55) {
-    profileClassification = 'flexible';
   } else {
     profileClassification = 'strong_primary';
   }
@@ -526,7 +546,17 @@ export function calculateFullResults(
   const toleranceOfUncertainty = clampPct(100 - needForCertainty);
   const setbackRecovery = clampPct(100 - mean(dim('R1'), dim('R2'), dim('R3')));
   const relationshipOrientation = clampPct(mean(dim('C1'), dim('C2'), dim('C3'), dim('C4')));
-  const boundarySustainability = clampPct(100 - mean(dim('D4'), dim('C4')));
+
+  // Boundary Sustainability (PDF spec §10):
+  //   "inverse of the mean of D4, C4 and selected R3 items"
+  // The spec names R3.2 (replaying difficult conversations) and R3.3
+  // (slow to feel like myself after setback) as the R3 items most
+  // directly tied to boundary pressure. We use those two as the
+  // "selected R3 items" — they capture the inability to mentally
+  // disengage that defines boundary failure.
+  const boundarySustainability = clampPct(
+    100 - mean(dim('D4'), dim('C4'), qScoredPct('R3.2'), qScoredPct('R3.3'))
+  );
 
   // Recovery Capacity: 0.6*R3 + 0.2*D4 + 0.1*R1.2 + 0.1*R4.2
   const recoveryCapacity = clampPct(

@@ -3,6 +3,12 @@ import { auth } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
 import { checkDatabaseConnection } from '@/lib/api-utils';
 import { validateDiagnosticBody } from '@/lib/diagnostic-validation';
+import {
+  scoreFullMapServerSide,
+  scoreSnapshotServerSide,
+  recomputeFromStoredAnswers,
+  ScoringError,
+} from '@/lib/diagnostic-server-scoring';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -37,7 +43,49 @@ export async function GET() {
       take: 50,
     });
 
-    return NextResponse.json({ results });
+    // -----------------------------------------------------------------
+    // SELF-HEALING READ (PDF spec §5 + §21)
+    //
+    // Every stored row carries the user's raw answers. On read, we
+    // re-derive the scores from those answers and OVERWRITE the row's
+    // stored computed fields. This means:
+    //
+    //   1. If a row was tampered with at write time (e.g. via an older
+    //      API build that trusted client-supplied scores), it self-
+    //      heals the first time anyone reads it.
+    //   2. If we ever fix a scoring bug server-side, every existing
+    //      row automatically picks up the fix on next read.
+    //   3. Dashboards, the AI Companion, and manager reports always
+    //      see canonical scores — never stale or tampered values.
+    //
+    // Rows whose answers are missing/unparseable (e.g. very old rows
+    // from before answers were persisted) pass through unchanged.
+    // -----------------------------------------------------------------
+    const healedResults = results.map(row => {
+      const recomputed = recomputeFromStoredAnswers(
+        row.answers,
+        row.completionTimeSeconds ?? 0,
+      );
+      if (!recomputed) return row;
+      return {
+        ...row,
+        driverScore: recomputed.driverScore,
+        strategistScore: recomputed.strategistScore,
+        connectorScore: recomputed.connectorScore,
+        reactorScore: recomputed.reactorScore,
+        primaryProfile: recomputed.primaryProfile,
+        secondaryProfile: recomputed.secondaryProfile,
+        dimensionScores: recomputed.dimensionScores,
+        derivedMeasures: recomputed.derivedMeasures,
+        sustainabilityIndex: recomputed.sustainabilityIndex,
+        profileClassification: recomputed.profileClassification,
+        blendedArchetypes: recomputed.blendedArchetypes,
+        responseQualityFlags: recomputed.responseQualityFlags,
+        assessmentVersion: recomputed.assessmentVersion,
+      };
+    });
+
+    return NextResponse.json({ results: healedResults });
   } catch (error) {
     console.error('GET /api/diagnostic error:', error);
     return NextResponse.json({ results: [], error: 'Failed to load' }, { status: 500 });
@@ -125,30 +173,64 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // -----------------------------------------------------------------
+    // SERVER-SIDE SCORING (source of truth)
+    //
+    // For a PAID test, client-supplied scores are an integrity hole.
+    // We re-derive every score from the raw answers server-side and
+    // IGNORE every computed field the client sent (driverScore,
+    // dimensionScores, sustainabilityIndex, etc.). The client still
+    // computes locally for its immediate results-page render, but the
+    // persisted DB row is always the server's computation.
+    //
+    // If server-side scoring fails (e.g. fewer than 64 answers for a
+    // Full Map), we 400 — the client must fix and resubmit.
+    // -----------------------------------------------------------------
+    const isFullMap = validation.attemptSource === 'full_map';
+    let scored;
+    try {
+      scored = isFullMap
+        ? scoreFullMapServerSide(
+            validation.answers,
+            validation.completionTimeSeconds ?? 0,
+            validation.attemptSource,
+          )
+        : scoreSnapshotServerSide(
+            validation.answers,
+            validation.completionTimeSeconds ?? 0,
+          );
+    } catch (err) {
+      const msg = err instanceof ScoringError
+        ? err.message
+        : 'Server-side scoring failed';
+      return NextResponse.json({ error: msg }, { status: 400 });
+    }
+
     const result = await db.diagnosticResult.create({
       data: {
         userId: user.id,
-        driverScore: validation.driverScore!,
-        strategistScore: validation.strategistScore!,
-        connectorScore: validation.connectorScore!,
-        reactorScore: validation.reactorScore!,
-        primaryProfile: validation.primaryProfile!,
-        secondaryProfile: validation.secondaryProfile ?? null,
+        // Server-computed archetype scores (title-cased primary/secondary)
+        driverScore: scored.driverScore,
+        strategistScore: scored.strategistScore,
+        connectorScore: scored.connectorScore,
+        reactorScore: scored.reactorScore,
+        primaryProfile: scored.primaryProfile,
+        secondaryProfile: scored.secondaryProfile,
+        // Raw answers preserved (PDF spec §5 — retain original responses)
         answers: validation.answers!,
         strengths: validation.strengths ?? null,
         wellbeingRisks: validation.wellbeingRisks ?? null,
         recommendations: validation.recommendations ?? null,
         isPaid: validation.isPaid ?? false,
-        attemptSource: validation.attemptSource ?? null,
-        assessmentVersion: validation.assessmentVersion ?? null,
-        // Full Map (64Q) structured fields — only populated when the
-        // client sends them (i.e. attemptSource === 'full_map').
-        dimensionScores: validation.dimensionScores ?? null,
-        derivedMeasures: validation.derivedMeasures ?? null,
-        sustainabilityIndex: validation.sustainabilityIndex ?? null,
-        profileClassification: validation.profileClassification ?? null,
-        blendedArchetypes: validation.blendedArchetypes ?? null,
-        responseQualityFlags: validation.responseQualityFlags ?? null,
+        attemptSource: scored.attemptSource,
+        assessmentVersion: scored.assessmentVersion,
+        // Server-computed Full Map structured fields
+        dimensionScores: scored.dimensionScores,
+        derivedMeasures: scored.derivedMeasures,
+        sustainabilityIndex: scored.sustainabilityIndex,
+        profileClassification: scored.profileClassification,
+        blendedArchetypes: scored.blendedArchetypes,
+        responseQualityFlags: scored.responseQualityFlags,
         completionTimeSeconds: validation.completionTimeSeconds ?? null,
       },
       select: {
@@ -171,6 +253,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       result,
+      // Echo the server-computed scores back so the client can verify
+      // its local computation matches (and refresh its localStorage
+      // cache if it doesn't).
+      serverComputed: {
+        driverScore: scored.driverScore,
+        strategistScore: scored.strategistScore,
+        connectorScore: scored.connectorScore,
+        reactorScore: scored.reactorScore,
+        sustainabilityIndex: scored.sustainabilityIndex,
+        profileClassification: scored.profileClassification,
+      },
       message: 'Diagnostic result persisted to database',
     });
   } catch (error) {
