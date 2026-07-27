@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
   Check,
@@ -13,6 +14,7 @@ import {
   Sun,
   CreditCard,
   Wallet,
+  Loader2,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -80,8 +82,40 @@ const PLANS = {
 };
 
 export default function PricingPage() {
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [isDark, setIsDark] = useState(false);
+  const [upgradingPlan, setUpgradingPlan] = useState<string | null>(null);
+  const [upgradeError, setUpgradeError] = useState<string | null>(null);
+
+  // Test-mode upgrade handler. Calls /api/subscription/upgrade which
+  // flips the user's subscriptionPlan + subscriptionStatus to ACTIVE.
+  // This is a temporary shortcut until real Stripe + PayPal are wired
+  // — see the comment in src/app/api/subscription/upgrade/route.ts.
+  const handleUpgrade = async (planKey: 'PRO' | 'ENTERPRISE', redirectTarget?: string) => {
+    setUpgradingPlan(planKey);
+    setUpgradeError(null);
+    try {
+      const res = await fetch('/api/subscription/upgrade', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan: planKey }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.error || `Upgrade failed (${res.status})`);
+      }
+      // Clear any stale client-side subscription cache so the diagnostic
+      // page's useSubscription hook refetches from the server.
+      localStorage.removeItem('verso_full_access');
+      // Redirect to the requested target, or /diagnostic/full by default
+      // (since that's the main paid-tier feature being tested).
+      router.push(redirectTarget || '/diagnostic/full');
+    } catch (err) {
+      setUpgradeError(err instanceof Error ? err.message : 'Upgrade failed');
+      setUpgradingPlan(null);
+    }
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -236,12 +270,29 @@ export default function PricingPage() {
                 </Link>
               ) : (
                 <div className="space-y-2">
-                  <Button className={cn('w-full shadow-premium', plan.popular && 'glow-primary')}>
-                    <CreditCard className="w-4 h-4 mr-2" />
-                    Pay with Card
+                  <Button
+                    className={cn('w-full shadow-premium', plan.popular && 'glow-primary')}
+                    disabled={upgradingPlan === key}
+                    onClick={() => handleUpgrade(key)}
+                  >
+                    {upgradingPlan === key ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <CreditCard className="w-4 h-4 mr-2" />
+                    )}
+                    {upgradingPlan === key ? 'Processing...' : 'Pay with Card'}
                   </Button>
-                  <Button variant="outline" className="w-full border-border/50">
-                    <Wallet className="w-4 h-4 mr-2" />
+                  <Button
+                    variant="outline"
+                    className="w-full border-border/50"
+                    disabled={upgradingPlan === key}
+                    onClick={() => handleUpgrade(key)}
+                  >
+                    {upgradingPlan === key ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Wallet className="w-4 h-4 mr-2" />
+                    )}
                     Pay with PayPal
                   </Button>
                 </div>
@@ -251,6 +302,18 @@ export default function PricingPage() {
         </div>
 
         {/* Payment Info */}
+        {upgradeError && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="glass rounded-2xl border border-red-500/30 bg-red-500/5 p-4 mb-4 text-center"
+          >
+            <p className="text-sm text-red-500 font-medium">{upgradeError}</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Make sure you are signed in, then try again. If the problem persists, check the server logs.
+            </p>
+          </motion.div>
+        )}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
