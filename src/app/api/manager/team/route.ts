@@ -154,56 +154,7 @@ export async function GET(request: NextRequest) {
     }).catch(err => console.error('Audit log failed:', err));
 
     // ============================================================
-    // PRIVACY: Minimum team size enforcement
-    // Below MIN_TEAM_SIZE, manager sees aggregate counts only —
-    // no individual profiles (even anonymized). This prevents
-    // re-identification in small teams.
-    // ============================================================
-    const MIN_TEAM_SIZE = 8;
-
-    if (visibleTeamMembers.length < MIN_TEAM_SIZE) {
-      return NextResponse.json({
-        manager: {
-          id: manager.id,
-          name: manager.name || manager.email,
-          email: manager.email,
-          designation: manager.designation,
-          managerCode: manager.managerCode,
-        },
-        team: {
-          totalMembers: visibleTeamMembers.length,
-          members: [],
-          averages: { mood: 0, energy: 0, confidence: 0, overall: 0 },
-          nps: {
-            score: 0,
-            distribution: {
-              thriving: { count: 0, percentage: 0, label: 'Thriving', description: '', color: 'green' },
-              stable: { count: 0, percentage: 0, label: 'Stable', description: '', color: 'amber' },
-              needsSupport: { count: 0, percentage: 0, label: 'Needs Support', description: '', color: 'red' },
-            },
-            label: 'Insufficient data',
-            trend: 'stable',
-          },
-          participation: {
-            rate: 0,
-            activeMembers: 0,
-            optimalCheckIns: 10,
-            description: '',
-          },
-          riskDistribution: { green: 0, yellow: 0, red: 0 },
-          archetypeDistribution: { Driver: 0, Strategist: 0, Connector: 0, Reactor: 0, Unknown: 0 },
-          privacy: {
-            minTeamSizeRequired: MIN_TEAM_SIZE,
-            currentTeamSize: visibleTeamMembers.length,
-            individualProfilesHidden: true,
-            reason: 'Individual profiles are hidden until your team has at least 8 members with visible data. This protects team member privacy.',
-          },
-        },
-      });
-    }
-
-    // ============================================================
-    // Build team member list with privacy applied
+    // PRIVACY: Build team member list with privacy applied
     // - NAMED members: show real name + email
     // - ANONYMOUS members: replace name with "Anonymous team member",
     //   redact email entirely
@@ -390,7 +341,6 @@ export async function GET(request: NextRequest) {
 
         // Privacy metadata
         privacy: {
-          minTeamSizeRequired: 8,
           currentTeamSize: teamMembers.length,
           individualProfilesHidden: false,
           anonymousMemberCount: teamMembers.filter(m => m.isAnonymous).length,

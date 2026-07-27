@@ -52,10 +52,8 @@ interface TeamData {
   totalMembers: number;
   members: TeamMember[];
   privacy?: {
-    minTeamSizeRequired: number;
     currentTeamSize: number;
     individualProfilesHidden: boolean;
-    reason?: string;
     anonymousMemberCount?: number;
     notice?: string;
   };
@@ -174,33 +172,8 @@ export default function ManagerTeamPage() {
           <p className="text-muted-foreground">Individual mental health insights for each team member</p>
         </div>
 
-        {/* Privacy locked view: team too small */}
-        {teamData?.privacy?.individualProfilesHidden && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="glass rounded-2xl border border-amber-500/20 p-8 text-center mb-6"
-          >
-            <div className="w-16 h-16 rounded-2xl bg-amber-500/10 flex items-center justify-center mx-auto mb-4">
-              <Shield className="w-8 h-8 text-amber-500" />
-            </div>
-            <h2 className="text-xl font-bold text-foreground mb-2">
-              Individual profiles are hidden
-            </h2>
-            <p className="text-sm text-muted-foreground max-w-md mx-auto mb-4">
-              {teamData.privacy.reason || 'To protect team member privacy, individual profiles are only visible when your team has at least 8 members with visible data.'}
-            </p>
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-secondary/50 text-sm">
-              <span className="text-muted-foreground">Current team size:</span>
-              <span className="font-semibold text-foreground">{teamData.privacy.currentTeamSize}</span>
-              <span className="text-muted-foreground">/</span>
-              <span className="font-semibold text-foreground">{teamData.privacy.minTeamSizeRequired} required</span>
-            </div>
-          </motion.div>
-        )}
-
-        {/* Privacy notice banner (when profiles ARE shown) */}
-        {!teamData?.privacy?.individualProfilesHidden && teamData?.privacy && (
+        {/* Privacy notice banner */}
+        {teamData?.privacy && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -222,8 +195,7 @@ export default function ManagerTeamPage() {
           </motion.div>
         )}
 
-        {/* Search & Filter — only show if profiles are visible */}
-        {!teamData?.privacy?.individualProfilesHidden && (
+        {/* Search & Filter */}
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
@@ -258,10 +230,8 @@ export default function ManagerTeamPage() {
             ))}
           </div>
         </div>
-        )}
 
         {/* Team Members List */}
-        {!teamData?.privacy?.individualProfilesHidden && (
         <div className="space-y-4">
           {filteredMembers.map((member, index) => {
             const categoryBadge = getCategoryBadge(member.category);
@@ -422,9 +392,8 @@ export default function ManagerTeamPage() {
             );
           })}
         </div>
-        )}
 
-        {filteredMembers.length === 0 && !teamData?.privacy?.individualProfilesHidden && (
+        {filteredMembers.length === 0 && (
           <div className="text-center py-12">
             <Users className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
             <p className="text-muted-foreground">No team members found</p>
