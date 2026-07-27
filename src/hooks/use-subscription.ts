@@ -8,7 +8,13 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useUser } from '@clerk/nextjs';
+// Use the safe wrapper instead of Clerk's useUser directly.
+// Clerk's useUser throws "useUser can only be used within the <ClerkProvider />
+// component" when called during SSR or outside ClerkProvider — which crashes
+// prerendering for any page that imports this hook (e.g. /diagnostic/full).
+// useSafeUser returns { isLoaded: false, isSignedIn: false, user: null } in
+// those contexts, which is the correct "not yet loaded" state.
+import { useSafeUser } from '@/lib/safe-auth';
 
 export interface SubscriptionData {
   status: 'FREE' | 'ACTIVE' | 'CANCELLED' | 'EXPIRED';
@@ -31,7 +37,7 @@ export interface UseSubscriptionReturn {
 }
 
 export function useSubscription(): UseSubscriptionReturn {
-  const { isSignedIn, isLoaded } = useUser();
+  const { isSignedIn, isLoaded } = useSafeUser();
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
