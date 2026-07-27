@@ -895,6 +895,32 @@ export default function SalesProfilePage() {
           </motion.div>
         )}
 
+        {/* Privacy & Manager Visibility */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="mb-6"
+        >
+          <Link
+            href="/sales-dashboard/profile/privacy"
+            className="glass rounded-2xl border border-border/50 p-5 flex items-center justify-between ios-tap cursor-pointer hover:border-primary/30 transition-all block"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Shield className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <p className="font-semibold text-foreground">Privacy &amp; Manager Visibility</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Choose whether your manager sees your name or &ldquo;Anonymous team member&rdquo;
+                </p>
+              </div>
+            </div>
+            <ArrowRight className="w-5 h-5 text-muted-foreground" />
+          </Link>
+        </motion.div>
+
         {/* Retake Assessment */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
