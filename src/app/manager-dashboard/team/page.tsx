@@ -27,8 +27,9 @@ import { cn } from '@/lib/utils';
 interface TeamMember {
   id: string;
   name: string;
-  email: string;
-  avatarUrl?: string;
+  email: string | null;
+  avatarUrl?: string | null;
+  isAnonymous?: boolean;
   archetype: string | null;
   streak: number;
   scores: {
@@ -50,6 +51,14 @@ interface TeamMember {
 interface TeamData {
   totalMembers: number;
   members: TeamMember[];
+  privacy?: {
+    minTeamSizeRequired: number;
+    currentTeamSize: number;
+    individualProfilesHidden: boolean;
+    reason?: string;
+    anonymousMemberCount?: number;
+    notice?: string;
+  };
 }
 
 const ARCHETYPE_ICONS: Record<string, any> = {
@@ -117,8 +126,16 @@ export default function ManagerTeamPage() {
   }, []);
 
   const filteredMembers = teamData?.members.filter((member) => {
-    const matchesSearch = member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          member.email.toLowerCase().includes(searchQuery.toLowerCase());
+    const searchLower = searchQuery.toLowerCase();
+    // Anonymous members can only be found by archetype, not name/email
+    if (member.isAnonymous) {
+      const matchesSearch = !searchQuery ||
+                            (member.archetype?.toLowerCase().includes(searchLower) ?? false);
+      const matchesFilter = filterCategory === 'all' || member.category === filterCategory;
+      return matchesSearch && matchesFilter;
+    }
+    const matchesSearch = member.name.toLowerCase().includes(searchLower) ||
+                          (member.email?.toLowerCase().includes(searchLower) ?? false);
     const matchesFilter = filterCategory === 'all' || member.category === filterCategory;
     return matchesSearch && matchesFilter;
   }) || [];
@@ -157,7 +174,56 @@ export default function ManagerTeamPage() {
           <p className="text-muted-foreground">Individual mental health insights for each team member</p>
         </div>
 
-        {/* Search & Filter */}
+        {/* Privacy locked view: team too small */}
+        {teamData?.privacy?.individualProfilesHidden && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="glass rounded-2xl border border-amber-500/20 p-8 text-center mb-6"
+          >
+            <div className="w-16 h-16 rounded-2xl bg-amber-500/10 flex items-center justify-center mx-auto mb-4">
+              <Shield className="w-8 h-8 text-amber-500" />
+            </div>
+            <h2 className="text-xl font-bold text-foreground mb-2">
+              Individual profiles are hidden
+            </h2>
+            <p className="text-sm text-muted-foreground max-w-md mx-auto mb-4">
+              {teamData.privacy.reason || 'To protect team member privacy, individual profiles are only visible when your team has at least 8 members with visible data.'}
+            </p>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-secondary/50 text-sm">
+              <span className="text-muted-foreground">Current team size:</span>
+              <span className="font-semibold text-foreground">{teamData.privacy.currentTeamSize}</span>
+              <span className="text-muted-foreground">/</span>
+              <span className="font-semibold text-foreground">{teamData.privacy.minTeamSizeRequired} required</span>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Privacy notice banner (when profiles ARE shown) */}
+        {!teamData?.privacy?.individualProfilesHidden && teamData?.privacy && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="glass rounded-xl border border-blue-500/20 p-4 mb-6"
+          >
+            <div className="flex items-start gap-3">
+              <Shield className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm text-foreground">
+                  {teamData.privacy.notice || 'Individual results are for development support only and should not be used for performance management, promotion, or disciplinary decisions.'}
+                </p>
+                {teamData.privacy.anonymousMemberCount && teamData.privacy.anonymousMemberCount > 0 ? (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {teamData.privacy.anonymousMemberCount} team {teamData.privacy.anonymousMemberCount === 1 ? 'member has' : 'members have'} chosen to display their profile as &ldquo;Anonymous team member.&rdquo;
+                  </p>
+                ) : null}
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Search & Filter — only show if profiles are visible */}
+        {!teamData?.privacy?.individualProfilesHidden && (
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
@@ -165,7 +231,7 @@ export default function ManagerTeamPage() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by name or email..."
+              placeholder="Search by name or archetype..."
               className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-secondary/50 border border-border/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 outline-none text-foreground placeholder:text-muted-foreground/60"
             />
           </div>
@@ -192,13 +258,16 @@ export default function ManagerTeamPage() {
             ))}
           </div>
         </div>
+        )}
 
         {/* Team Members List */}
+        {!teamData?.privacy?.individualProfilesHidden && (
         <div className="space-y-4">
           {filteredMembers.map((member, index) => {
             const categoryBadge = getCategoryBadge(member.category);
             const ArchetypeIcon = member.archetype ? ARCHETYPE_ICONS[member.archetype] : Users;
             const CategoryIcon = categoryBadge.icon;
+            const isAnonymous = !!member.isAnonymous;
 
             return (
               <motion.div
@@ -206,27 +275,44 @@ export default function ManagerTeamPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
-                className="glass rounded-xl border border-border/50 p-5 hover:border-primary/30 transition-all"
+                className={cn(
+                  'glass rounded-xl border p-5 transition-all',
+                  isAnonymous
+                    ? 'border-dashed border-border/50 opacity-90'
+                    : 'border-border/50 hover:border-primary/30'
+                )}
               >
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   {/* Member Info */}
                   <div className="flex items-center gap-4">
                     <div className={cn(
-                      'w-12 h-12 rounded-full flex items-center justify-center text-white font-semibold text-lg bg-gradient-to-br',
+                      'w-12 h-12 rounded-full flex items-center justify-center text-white font-semibold text-lg bg-gradient-to-br relative',
                       categoryBadge.gradient
                     )}>
-                      {member.name.charAt(0)}
+                      {isAnonymous ? (
+                        <Users className="w-5 h-5" />
+                      ) : (
+                        <>{member.name.charAt(0)}</>
+                      )}
                     </div>
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="font-semibold text-foreground">{member.name}</h3>
+                        {isAnonymous && (
+                          <span className="px-2 py-0.5 rounded-full text-xs font-medium border bg-muted/30 text-muted-foreground border-border/50 flex items-center gap-1">
+                            <Shield className="w-3 h-3" />
+                            Anonymous
+                          </span>
+                        )}
                         <span className={cn('px-2 py-0.5 rounded-full text-xs font-medium border flex items-center gap-1', categoryBadge.color)}>
                           <CategoryIcon className="w-3 h-3" />
                           {categoryBadge.label}
                         </span>
                       </div>
                       <div className="flex items-center gap-3 mt-1 flex-wrap">
-                        <span className="text-sm text-muted-foreground">{member.email}</span>
+                        {!isAnonymous && member.email && (
+                          <span className="text-sm text-muted-foreground">{member.email}</span>
+                        )}
                         {member.archetype && (
                           <span className="text-xs text-muted-foreground flex items-center gap-1">
                             <ArchetypeIcon className="w-3 h-3" />
@@ -336,8 +422,9 @@ export default function ManagerTeamPage() {
             );
           })}
         </div>
+        )}
 
-        {filteredMembers.length === 0 && (
+        {filteredMembers.length === 0 && !teamData?.privacy?.individualProfilesHidden && (
           <div className="text-center py-12">
             <Users className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
             <p className="text-muted-foreground">No team members found</p>

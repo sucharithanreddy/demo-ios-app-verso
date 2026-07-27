@@ -13,6 +13,7 @@ import {
   Zap,
   Target,
   Brain,
+  Shield,
 } from 'lucide-react';
 import { SafeUserButton } from '@/lib/safe-auth';
 import Link from 'next/link';
@@ -227,6 +228,22 @@ export default function ProfilePage() {
                 <div>
                   <p className="font-medium text-foreground">The Lab</p>
                   <p className="text-xs text-muted-foreground">Train your mind</p>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-muted-foreground" />
+            </div>
+          </Link>
+
+          {/* Privacy Settings Link */}
+          <Link href="/profile/privacy">
+            <div className="glass rounded-xl border border-border/50 p-4 flex items-center justify-between ios-tap cursor-pointer">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <Shield className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-medium text-foreground">Privacy &amp; Manager Visibility</p>
+                  <p className="text-xs text-muted-foreground">Control how your manager sees your data</p>
                 </div>
               </div>
               <ChevronRight className="w-5 h-5 text-muted-foreground" />

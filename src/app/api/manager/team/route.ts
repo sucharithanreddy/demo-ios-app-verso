@@ -117,8 +117,98 @@ export async function GET(request: NextRequest) {
       }, { status: 403 });
     }
 
-    // Calculate team stats with time-decay weighting
-    const teamMembers = manager.teamMembers.map(member => {
+    // ============================================================
+    // PRIVACY: Filter out team members who have a pending or approved
+    // objection (right to object under GDPR Article 21). These users
+    // must not appear in any manager view, even anonymized.
+    // ============================================================
+    const memberIds = manager.teamMembers.map(m => m.id);
+    const objections = memberIds.length > 0
+      ? await prisma.managerVisibilityObjection.findMany({
+          where: {
+            userId: { in: memberIds },
+            status: { in: ['PENDING', 'APPROVED'] },
+          },
+          select: { userId: true },
+        })
+      : [];
+    const objectedUserIds = new Set(objections.map(o => o.userId));
+    const visibleTeamMembers = manager.teamMembers.filter(m => !objectedUserIds.has(m.id));
+
+    // Count anonymous members (for audit log)
+    const anonymousCount = visibleTeamMembers.filter(m => m.managerVisibility === 'ANONYMOUS').length;
+
+    // ============================================================
+    // PRIVACY: Log this manager view (GDPR accountability, Article 30)
+    // ============================================================
+    await prisma.managerViewAudit.create({
+      data: {
+        managerId: manager.id,
+        view: 'team_list',
+        teamSize: visibleTeamMembers.length,
+        anonymousCount,
+        filtersJson: null, // No filters on default view
+        ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || null,
+        userAgent: request.headers.get('user-agent')?.slice(0, 500) || null,
+      },
+    }).catch(err => console.error('Audit log failed:', err));
+
+    // ============================================================
+    // PRIVACY: Minimum team size enforcement
+    // Below MIN_TEAM_SIZE, manager sees aggregate counts only —
+    // no individual profiles (even anonymized). This prevents
+    // re-identification in small teams.
+    // ============================================================
+    const MIN_TEAM_SIZE = 8;
+
+    if (visibleTeamMembers.length < MIN_TEAM_SIZE) {
+      return NextResponse.json({
+        manager: {
+          id: manager.id,
+          name: manager.name || manager.email,
+          email: manager.email,
+          designation: manager.designation,
+          managerCode: manager.managerCode,
+        },
+        team: {
+          totalMembers: visibleTeamMembers.length,
+          members: [],
+          averages: { mood: 0, energy: 0, confidence: 0, overall: 0 },
+          nps: {
+            score: 0,
+            distribution: {
+              thriving: { count: 0, percentage: 0, label: 'Thriving', description: '', color: 'green' },
+              stable: { count: 0, percentage: 0, label: 'Stable', description: '', color: 'amber' },
+              needsSupport: { count: 0, percentage: 0, label: 'Needs Support', description: '', color: 'red' },
+            },
+            label: 'Insufficient data',
+            trend: 'stable',
+          },
+          participation: {
+            rate: 0,
+            activeMembers: 0,
+            optimalCheckIns: 10,
+            description: '',
+          },
+          riskDistribution: { green: 0, yellow: 0, red: 0 },
+          archetypeDistribution: { Driver: 0, Strategist: 0, Connector: 0, Reactor: 0, Unknown: 0 },
+          privacy: {
+            minTeamSizeRequired: MIN_TEAM_SIZE,
+            currentTeamSize: visibleTeamMembers.length,
+            individualProfilesHidden: true,
+            reason: 'Individual profiles are hidden until your team has at least 8 members with visible data. This protects team member privacy.',
+          },
+        },
+      });
+    }
+
+    // ============================================================
+    // Build team member list with privacy applied
+    // - NAMED members: show real name + email
+    // - ANONYMOUS members: replace name with "Anonymous team member",
+    //   redact email entirely
+    // ============================================================
+    const teamMembers = visibleTeamMembers.map(member => {
       const recentCheckIns = member.salesCheckIns || [];
       
       // Use time-decay weighted average instead of simple average
@@ -161,11 +251,21 @@ export async function GET(request: NextRequest) {
       // Participation weight
       const participationWeight = getParticipationWeight(recentCheckIns.length);
 
+      // ============================================================
+      // PRIVACY: Apply manager visibility preference
+      // ============================================================
+      const isAnonymous = member.managerVisibility === 'ANONYMOUS';
+      const displayName = isAnonymous ? 'Anonymous team member' : (member.name || member.email);
+      const displayEmail = isAnonymous ? null : member.email;
+      const displayInitial = isAnonymous ? '?' : (displayName.charAt(0) || '?');
+      const displayAvatar = isAnonymous ? null : member.avatarUrl;
+
       return {
         id: member.id,
-        name: member.name || member.email,
-        email: member.email,
-        avatarUrl: member.avatarUrl,
+        name: displayName,
+        email: displayEmail,
+        avatarUrl: displayAvatar,
+        isAnonymous,
         archetype: member.diagnosticResults[0]?.primaryProfile || null,
         streak: member.userStreak?.currentStreak || 0,
         checkIns: {
@@ -287,6 +387,15 @@ export async function GET(request: NextRequest) {
         // Legacy support
         riskDistribution,
         archetypeDistribution,
+
+        // Privacy metadata
+        privacy: {
+          minTeamSizeRequired: 8,
+          currentTeamSize: teamMembers.length,
+          individualProfilesHidden: false,
+          anonymousMemberCount: teamMembers.filter(m => m.isAnonymous).length,
+          notice: 'Individual results are for development support only and should not be used for performance management, promotion, or disciplinary decisions.',
+        },
       },
     });
 
