@@ -29,6 +29,13 @@ enum UserType {
   SALES_MANAGER   // Sales manager within an organization
 }
 
+// Manager visibility preference for team members
+// Controls whether the manager sees the user's name or an anonymous label
+enum ManagerVisibility {
+  NAMED     // Manager sees the user's real name + profile (default)
+  ANONYMOUS // Manager sees profile labeled as "Anonymous team member"
+}
+
 model User {
   id                String           @id @default(cuid())
   clerkId           String           @unique
@@ -98,6 +105,11 @@ model User {
   // Manager Discussion Features
   initiatedDiscussions  ManagerDiscussion[] @relation("ManagerInitiated")
   receivedDiscussions   ManagerDiscussion[] @relation("MemberReceived")
+
+  // Privacy: Manager visibility preference
+  // NAMED = manager sees the user's real name with their profile (default)
+  // ANONYMOUS = manager sees the user's profile labeled as "Anonymous team member"
+  managerVisibility    ManagerVisibility @default(NAMED)
 
   @@index([subscriptionStatus])
   @@index([stripeCustomerId])
@@ -520,5 +532,50 @@ model DiscussionMessage {
 
   @@index([discussionId])
   @@index([senderId])
+  @@index([createdAt])
+}
+
+// ============================================================
+// PRIVACY: Manager View Audit Log
+// ============================================================
+// Logs every time a manager views the team dashboard, team list,
+// or any individual team-member data. Required for GDPR
+// accountability (Article 30 ROPA) and to detect misuse.
+//
+// Retention: 12 months rolling, then auto-deleted.
+// ============================================================
+model ManagerViewAudit {
+  id              String   @id @default(cuid())
+  managerId       String   // The manager who viewed
+  view            String   // Which view: 'dashboard' | 'team_list' | 'patterns' | 'risk' | 'discussions'
+  teamSize        Int      // Team size at time of view (for audit context)
+  anonymousCount  Int      // How many members were anonymous at time of view
+  filtersJson     String?  // JSON-stringified filters applied (search, category, etc.)
+  ipAddress       String?  // For security audit
+  userAgent       String?  // For security audit
+  viewedAt        DateTime @default(now())
+
+  @@index([managerId])
+  @@index([viewedAt])
+}
+
+// ============================================================
+// PRIVACY: Manager Visibility Objection Request
+// ============================================================
+// When a user clicks "Object to manager visibility entirely"
+// (the buried third option in privacy settings), a request is
+// created here for admin review. Until resolved, the user's
+// data is hidden from all manager views as a precaution.
+// ============================================================
+model ManagerVisibilityObjection {
+  id              String   @id @default(cuid())
+  userId          String   @unique // The user objecting
+  reason          String?  // Optional: user's reason
+  status          String   @default("PENDING") // PENDING | APPROVED | DENIED | WITHDRAWN
+  adminNotes      String?  // Notes from admin review
+  createdAt       DateTime @default(now())
+  resolvedAt      DateTime?
+
+  @@index([status])
   @@index([createdAt])
 }
