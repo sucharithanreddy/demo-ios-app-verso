@@ -28,6 +28,7 @@ import {
 import { SalesDashboardLayout } from '@/components/dashboard/SalesDashboardLayout';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { WellbeingDashboard } from '@/components/wellbeing-dashboard/WellbeingDashboard';
 
 interface DiagnosticResults {
   primaryProfile: string;
@@ -440,7 +441,12 @@ export default function SalesProfilePage() {
 
   return (
     <SalesDashboardLayout>
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-5xl mx-auto">
+        {/* ── Snapshot summary (16-question) — only shown when no full diagnostic exists ──
+            When the user has taken the 64-question Full Map, the interactive
+            <WellbeingDashboard /> below replaces this entire snapshot block. */}
+        {!hasFullDiagnostic && (
+        <>
         {/* Archetype Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -601,6 +607,8 @@ export default function SalesProfilePage() {
             </div>
           </div>
         </motion.div>
+        </>
+        )}
 
         {/* Manager Link Section */}
         <motion.div
@@ -706,7 +714,7 @@ export default function SalesProfilePage() {
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                    <h3 className="font-semibold text-foreground">Your Full Wellbeing Map</h3>
+                    <h3 className="font-semibold text-foreground">Your Interactive Wellbeing Dashboard</h3>
                     <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/20 text-emerald-600 inline-flex items-center gap-1">
                       <CheckCircle2 className="w-3 h-3" /> Completed
                     </span>
@@ -716,227 +724,21 @@ export default function SalesProfilePage() {
                     {fullResults.completedAt
                       ? new Date(fullResults.completedAt).toLocaleDateString()
                       : 'N/A'}
-                    . Layers 1–3 below; visit the full results page for the complete breakdown.
+                    . Tap between archetypes and switch tabs to explore your full profile.
                   </p>
                 </div>
               </div>
             </motion.div>
 
-            {/* Layer 1: Archetype scores (4 bars + primary/secondary) */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.45 }}
-              className="glass rounded-2xl border border-border/50 p-6 mb-4"
-            >
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Target className="w-4 h-4 text-primary" />
-                </div>
-                <h3 className="font-semibold text-foreground">Layer 1: Archetype Scores</h3>
-              </div>
-
-              <div className="flex flex-wrap gap-2 mb-4">
-                {(() => {
-                  const primary = FULL_ARCHETYPE_CONFIG[fullResults.primaryArchetype];
-                  const secondary = FULL_ARCHETYPE_CONFIG[fullResults.secondaryArchetype];
-                  const PrimaryIcon = primary.icon;
-                  const SecondaryIcon = secondary.icon;
-                  return (
-                    <>
-                      <span className={cn('inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium', primary.bgColor, primary.color)}>
-                        <PrimaryIcon className="w-3 h-3" /> Primary: {primary.name}
-                      </span>
-                      <span className={cn('inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium', secondary.bgColor, secondary.color)}>
-                        <SecondaryIcon className="w-3 h-3" /> Secondary: {secondary.name}
-                      </span>
-                      <span className="px-3 py-1 rounded-full text-xs font-medium bg-secondary/50 text-muted-foreground">
-                        {CLASSIFICATION_LABELS[fullResults.profileClassification] ?? 'Profile'}
-                      </span>
-                    </>
-                  );
-                })()}
-              </div>
-
-              <div className="space-y-3">
-                {(Object.entries(fullResults.archetypeScores) as [ArchetypeKey, number][]).map(([archetype, score]) => {
-                  const config = FULL_ARCHETYPE_CONFIG[archetype];
-                  const Icon = config.icon;
-                  const isPrimary = archetype === fullResults.primaryArchetype;
-                  const safeScore = Math.max(0, Math.min(100, Number(score) || 0));
-                  return (
-                    <div key={archetype} className="flex items-center gap-3">
-                      <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0', config.bgColor)}>
-                        <Icon className={cn('w-4 h-4', config.color)} />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className={cn('text-sm font-medium', isPrimary && 'text-primary')}>
-                            {config.name}
-                            {isPrimary && ' (Primary)'}
-                          </span>
-                          <span className="text-sm text-muted-foreground">{safeScore}/100</span>
-                        </div>
-                        <div className="h-2 rounded-full bg-secondary overflow-hidden">
-                          <div
-                            className={cn('h-full bg-gradient-to-r transition-all duration-500', config.gradient)}
-                            style={{ width: `${safeScore}%` }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </motion.div>
-
-            {/* Layer 2: 16 dimension scores */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-              className="glass rounded-2xl border border-border/50 p-6 mb-4"
-            >
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Layers className="w-4 h-4 text-primary" />
-                </div>
-                <h3 className="font-semibold text-foreground">Layer 2: 16 Underlying Dimensions</h3>
-              </div>
-              <p className="text-xs text-muted-foreground mb-4">
-                Four dimensions per archetype. Higher = more pronounced.
-              </p>
-              <div className="grid sm:grid-cols-2 gap-3">
-                {(Object.entries(fullResults.dimensionScores || {}) as [DimensionCodeKey, number][]).map(([dim, score]) => {
-                  const label = DIMENSION_LABELS[dim] ?? dim;
-                  const band = fullResults.dimensionBands?.[dim];
-                  const safeScore = Math.max(0, Math.min(100, Number(score) || 0));
-                  const hue = safeScore >= 75 ? 'very_strong' : safeScore >= 60 ? 'strong' : safeScore >= 45 ? 'moderate' : safeScore >= 25 ? 'mild' : 'low';
-                  const barColor =
-                    hue === 'very_strong' ? 'bg-red-400'
-                    : hue === 'strong' ? 'bg-orange-400'
-                    : hue === 'moderate' ? 'bg-amber-400'
-                    : hue === 'mild' ? 'bg-blue-400'
-                    : 'bg-slate-400';
-                  return (
-                    <div key={dim} className="p-3 rounded-xl bg-secondary/30 border border-border/50">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-[10px] font-mono text-muted-foreground">{dim}</span>
-                        <span className="text-xs font-bold text-foreground">{safeScore}</span>
-                      </div>
-                      <p className="text-xs font-medium text-foreground mb-1.5 leading-tight">{label}</p>
-                      <div className="h-1.5 rounded-full bg-secondary overflow-hidden">
-                        <div
-                          className={cn('h-full transition-all duration-500', barColor)}
-                          style={{ width: `${safeScore}%` }}
-                        />
-                      </div>
-                      {band && (
-                        <span className="text-[10px] text-muted-foreground mt-1 inline-block">
-                          {DIMENSION_BAND_LABELS[band]}
-                        </span>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </motion.div>
-
-            {/* Layer 3: Sustainability Index + Pressure Indicator + key derived measures */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.55 }}
-              className="glass rounded-2xl border border-border/50 p-6 mb-4"
-            >
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Heart className="w-4 h-4 text-primary" />
-                </div>
-                <h3 className="font-semibold text-foreground">Layer 3: Derived Wellbeing Measures</h3>
-              </div>
-
-              {/* Sustainability Index + Pressure Indicator hero row */}
-              <div className="grid sm:grid-cols-2 gap-3 mb-4">
-                <div className="p-3 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Sustainability Index</p>
-                  <div className="flex items-baseline gap-2">
-                    <p className="text-2xl font-bold text-foreground">
-                      {Math.round(fullResults.salesWellbeingSustainabilityIndex)}
-                      <span className="text-sm text-muted-foreground">/100</span>
-                    </p>
-                  </div>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">
-                    {SUSTAINABILITY_BAND_LABELS[fullResults.sustainabilityBand] ?? ''}
-                  </p>
-                </div>
-                <div className="p-3 rounded-xl bg-secondary/30 border border-border/50">
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Pressure Indicator</p>
-                  <p className="text-lg font-bold text-foreground">
-                    {PRESSURE_LABELS[fullResults.wellbeingPressureIndicator] ?? '—'}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">Non-clinical development indicator</p>
-                </div>
-              </div>
-
-              {/* 6 key derived measures */}
-              <div className="grid sm:grid-cols-2 gap-3">
-                {KEY_DERIVED_MEASURES.map(({ key, label, description, icon: Icon }) => {
-                  const score = (fullResults.derivedMeasures as any)[key] as number;
-                  const safeScore = Math.max(0, Math.min(100, Number(score) || 0));
-                  const hue = safeScore >= 67 ? 'good' : safeScore >= 40 ? 'ok' : 'risk';
-                  return (
-                    <div key={key} className="p-3 rounded-xl bg-secondary/30 border border-border/50">
-                      <div className="flex items-start gap-2 mb-2">
-                        <div className={cn(
-                          'w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0',
-                          hue === 'good' ? 'bg-green-500/10' : hue === 'ok' ? 'bg-amber-500/10' : 'bg-red-500/10'
-                        )}>
-                          <Icon className={cn(
-                            'w-3.5 h-3.5',
-                            hue === 'good' ? 'text-green-500' : hue === 'ok' ? 'text-amber-500' : 'text-red-500'
-                          )} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-0.5">
-                            <span className="text-xs font-medium text-foreground">{label}</span>
-                            <span className="text-xs font-bold text-foreground">{safeScore}</span>
-                          </div>
-                          <p className="text-[10px] text-muted-foreground leading-tight">{description}</p>
-                        </div>
-                      </div>
-                      <div className="h-1.5 rounded-full bg-secondary overflow-hidden">
-                        <div
-                          className={cn(
-                            'h-full transition-all duration-500',
-                            hue === 'good' ? 'bg-green-500' : hue === 'ok' ? 'bg-amber-500' : 'bg-red-500'
-                          )}
-                          style={{ width: `${safeScore}%` }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Link to full standalone results page */}
-              <div className="mt-5 flex flex-wrap gap-2">
-                <Link
-                  href="/diagnostic/full/results"
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium transition-colors"
-                >
-                  <BookOpen className="w-4 h-4" />
-                  View Full Results Page
-                </Link>
-                <Link
-                  href="/diagnostic/full"
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-border/50 text-foreground hover:bg-secondary/50 text-sm font-medium transition-colors"
-                >
-                  <RefreshCcw className="w-4 h-4" />
-                  Retake Full Assessment
-                </Link>
-              </div>
-            </motion.div>
+            {/* The new interactive dashboard — replaces the old Layer 1/2/3 cards */}
+            <WellbeingDashboard
+              result={fullResults}
+              onViewFullResults={() => window.location.href = '/diagnostic/full/results'}
+              onRetake={() => {
+                localStorage.removeItem('fullDiagnosticResults');
+                window.location.href = '/diagnostic/full';
+              }}
+            />
           </>
         ) : (
           /* No full diagnostic yet — show the upsell CTA card. */
@@ -995,7 +797,9 @@ export default function SalesProfilePage() {
           </Link>
         </motion.div>
 
-        {/* Retake Assessment */}
+        {/* Retake Assessment (snapshot) — hidden when full diagnostic is present,
+            the dashboard already provides its own retake action */}
+        {!hasFullDiagnostic && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -1012,6 +816,7 @@ export default function SalesProfilePage() {
             </Button>
           </Link>
         </motion.div>
+        )}
       </div>
     </SalesDashboardLayout>
   );
