@@ -511,8 +511,8 @@ function ArchetypeHero({
           <div className="flex justify-center md:justify-start">
             <CircularGauge
               value={score}
-              size={180}
-              stroke={14}
+              size={240}
+              stroke={16}
               color={selected.color}
               label={selected.name}
               sublabel={selected.tagline}
@@ -522,12 +522,12 @@ function ArchetypeHero({
                 <div
                   className="rounded-2xl flex items-center justify-center"
                   style={{
-                    width: 44, height: 44,
+                    width: 40, height: 40,
                     background: selected.color,
                     color: 'white',
                   }}
                 >
-                  <SelectedIcon className="w-6 h-6" />
+                  <SelectedIcon className="w-5 h-5" />
                 </div>
               }
             />
@@ -700,8 +700,8 @@ function SustainabilityHero({ result }: { result: WellbeingDashboardResult }) {
           <div className="flex justify-center">
             <CircularGauge
               value={idx}
-              size={200}
-              stroke={16}
+              size={240}
+              stroke={18}
               color={meta.color}
               label={meta.label}
               sublabel="Sustainability"
@@ -711,9 +711,9 @@ function SustainabilityHero({ result }: { result: WellbeingDashboardResult }) {
               icon={
                 <div
                   className="rounded-full flex items-center justify-center"
-                  style={{ width: 36, height: 36, background: meta.color, color: 'white' }}
+                  style={{ width: 32, height: 32, background: meta.color, color: 'white' }}
                 >
-                  <Sparkles className="w-5 h-5" />
+                  <Sparkles className="w-4 h-4" />
                 </div>
               }
             />

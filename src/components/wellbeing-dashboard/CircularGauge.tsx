@@ -97,35 +97,45 @@ export function CircularGauge({
         />
       </svg>
 
-      {/* Centre label */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-2">
-        {icon && <div className="mb-0.5">{icon}</div>}
+      {/* Centre label - constrained to ~78% of the diameter so long taglines
+          wrap inside the ring instead of overflowing horizontally. */}
+      <div
+        className="absolute inset-0 flex flex-col items-center justify-center text-center px-2"
+        style={{ width: size }}
+      >
+        {icon && <div className="mb-0.5 flex-shrink-0">{icon}</div>}
         {showValue && (
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: delay + 0.3, duration: 0.4 }}
             className="font-bold leading-none"
-            style={{ color, fontSize: size * 0.22 }}
+            style={{ color, fontSize: size * 0.2 }}
           >
             {Math.round(safe)}
-            <span className="text-muted-foreground" style={{ fontSize: size * 0.1 }}>
+            <span className="text-muted-foreground" style={{ fontSize: size * 0.09 }}>
               {valueSuffix}
             </span>
           </motion.div>
         )}
         {label && (
           <div
-            className="font-medium text-foreground mt-0.5 leading-tight"
-            style={{ fontSize: size * 0.09 }}
+            className="font-medium text-foreground mt-0.5 leading-tight break-words"
+            style={{
+              fontSize: size * 0.085,
+              maxWidth: size * 0.78,
+            }}
           >
             {label}
           </div>
         )}
         {sublabel && (
           <div
-            className="text-muted-foreground leading-tight"
-            style={{ fontSize: size * 0.07 }}
+            className="text-muted-foreground leading-tight break-words"
+            style={{
+              fontSize: size * 0.065,
+              maxWidth: size * 0.78,
+            }}
           >
             {sublabel}
           </div>
