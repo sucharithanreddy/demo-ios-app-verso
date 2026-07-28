@@ -101,16 +101,16 @@ server: {
 
 ```
 optimism-engine/
-├── android/                 # Android native project
-│   ├── app/
-│   │   ├── src/main/
-│   │   │   ├── res/        # Icons, splash screens
-│   │   │   └── AndroidManifest.xml
-│   │   └── build.gradle
-│   └── gradlew
-├── ios/                     # iOS native project (after `npx cap add ios`)
-├── capacitor.config.ts      # Capacitor configuration
-└── package.json
+├-- android/                 # Android native project
+-   ├-- app/
+-   -   ├-- src/main/
+-   -   -   ├-- res/        # Icons, splash screens
+-   -   -   └-- AndroidManifest.xml
+-   -   └-- build.gradle
+-   └-- gradlew
+├-- ios/                     # iOS native project (after `npx cap add ios`)
+├-- capacitor.config.ts      # Capacitor configuration
+└-- package.json
 ```
 
 ## Troubleshooting

@@ -241,7 +241,7 @@ export default function FullDiagnosticPage() {
     router.push('/diagnostic/full/results');
   };
 
-  // ─── Loading / auth gate ────────────────────────────────────────
+  // --- Loading / auth gate ----------------------------------------
   if (!mounted || !isLoaded) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -258,7 +258,7 @@ export default function FullDiagnosticPage() {
     return null; // useEffect will redirect
   }
 
-  // ─── Subscription gate (PDF spec payment tier) ──────────────────
+  // --- Subscription gate (PDF spec payment tier) ------------------
   // The 64-question Full Map is a paid-tier feature. Users without an
   // active PRO or ENTERPRISE subscription see a paywall instead of the
   // assessment. We wait for subLoading to settle so we don't flash the
@@ -336,7 +336,7 @@ export default function FullDiagnosticPage() {
     );
   }
 
-  // ─── Submit screen ──────────────────────────────────────────────
+  // --- Submit screen ----------------------------------------------
   if (currentQuestion >= totalQuestions - 1 && canSubmit) {
     return (
       <div className="min-h-screen bg-background">
@@ -403,7 +403,7 @@ export default function FullDiagnosticPage() {
     );
   }
 
-  // ─── Question screen ────────────────────────────────────────────
+  // --- Question screen --------------------------------------------
   // Per the spec §6, the archetype/dimension being measured should NOT
   // be visible to the user during the assessment. We deliberately don't
   // show the archetype badge or section indicator here.

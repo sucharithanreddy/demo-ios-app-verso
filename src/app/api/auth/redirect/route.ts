@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
 
     console.log('[REDIRECT API POST] Is valid type:', isValidType);
 
-    // ─────────────────────────────────────────────────────────────────
+    // -----------------------------------------------------------------
     // REDIRECT-URL DETERMINATION (read this before touching the logic)
     //
     // For EXISTING users, the redirect MUST be based on their persisted
@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
     // For NEW users, we honor selectedUserType (or default to INDIVIDUAL).
     // Role switching for existing users is handled explicitly via
     // /complete-profile, NOT via this redirect flow.
-    // ─────────────────────────────────────────────────────────────────
+    // -----------------------------------------------------------------
     let redirectUrl: string;
     let effectiveUserType: 'INDIVIDUAL' | 'SALES_PERSON' | 'SALES_MANAGER';
 
@@ -129,12 +129,12 @@ export async function POST(request: NextRequest) {
       }
 
       if (existingUser) {
-        // ── EXISTING USER ──
+        // -- EXISTING USER --
         // Do NOT overwrite userType. Use the DB type for the redirect.
         effectiveUserType = existingUser.userType;
         console.log('[REDIRECT API POST] Using existing DB type:', effectiveUserType, '(selectedType ignored)');
       } else if (isValidType) {
-        // ── NEW USER with explicit type selection ──
+        // -- NEW USER with explicit type selection --
         effectiveUserType = selectedUserType as typeof effectiveUserType;
         console.log('[REDIRECT API POST] Creating new user with selected type:', effectiveUserType);
 
@@ -205,7 +205,7 @@ export async function POST(request: NextRequest) {
         }
         console.log('[REDIRECT API POST] User created/updated successfully');
       } else {
-        // ── NEW USER, no type selected - default to INDIVIDUAL ──
+        // -- NEW USER, no type selected - default to INDIVIDUAL --
         effectiveUserType = 'INDIVIDUAL';
         console.log('[REDIRECT API POST] No type selected, creating INDIVIDUAL');
 

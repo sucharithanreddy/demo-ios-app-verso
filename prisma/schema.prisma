@@ -319,7 +319,7 @@ model DiagnosticResult {
   attemptSource   String?   // "snapshot" | "full_map" - distinguishes the 16Q free Snapshot from the 64Q paid Map
   assessmentVersion String? // e.g. "verso-swm-v1.0" - pinned to the question bank version
 
-  // ─── Full Map (64Q) - Verso Sales Wellbeing Map v1.0 ────────────────────
+  // --- Full Map (64Q) - Verso Sales Wellbeing Map v1.0 --------------------
   // Populated only when attemptSource = "full_map". Stores the full
   // structured result so the dashboard, AI engine, and manager views can
   // hydrate without re-running the scorer. Shape mirrors

@@ -77,7 +77,7 @@ export const DIMENSION_META: Record<DimensionCode, { archetype: Archetype; label
 // The 16 Snapshot items are the ".1" of each dimension (one per dimension).
 // ---------------------------------------------------------------------------
 export const fullDiagnosticQuestions: FullDiagnosticQuestion[] = [
-  // ─── DRIVER ──────────────────────────────────────────────────────────────
+  // --- DRIVER --------------------------------------------------------------
   // D1: Action and urgency
   { id: 1,  code: 'D1.1', archetype: 'driver', dimension: 'D1', dimensionLabel: 'Action and urgency', isReverseScored: false, isSnapshot: true,  text: 'When things feel uncertain, I would rather act quickly than spend time trying to understand the situation fully.' },
   { id: 2,  code: 'D1.2', archetype: 'driver', dimension: 'D1', dimensionLabel: 'Action and urgency', isReverseScored: false, text: 'I find it very difficult to wait when I believe something could be moved forward immediately.' },
@@ -102,7 +102,7 @@ export const fullDiagnosticQuestions: FullDiagnosticQuestion[] = [
   { id: 15, code: 'D4.3', archetype: 'driver', dimension: 'D4', dimensionLabel: 'Boundaries and recovery', isReverseScored: false, text: 'I can become impatient with people whose pace feels slower than mine.' },
   { id: 16, code: 'D4.4', archetype: 'driver', dimension: 'D4', dimensionLabel: 'Boundaries and recovery', isReverseScored: true,  text: 'I am comfortable leaving a task unfinished until the next working day when continuing would come at the expense of rest or recovery.' },
 
-  // ─── STRATEGIST ───────────────────────────────────────────────────────────
+  // --- STRATEGIST -----------------------------------------------------------
   // S1: Need for clarity
   { id: 17, code: 'S1.1', archetype: 'strategist', dimension: 'S1', dimensionLabel: 'Need for clarity', isReverseScored: false, isSnapshot: true,  text: 'When things feel unclear, I would rather delay action than move forward without a clear understanding.' },
   { id: 18, code: 'S1.2', archetype: 'strategist', dimension: 'S1', dimensionLabel: 'Need for clarity', isReverseScored: false, text: 'I find it difficult to commit to a course of action when important information is still missing.' },
@@ -127,7 +127,7 @@ export const fullDiagnosticQuestions: FullDiagnosticQuestion[] = [
   { id: 31, code: 'S4.3', archetype: 'strategist', dimension: 'S4', dimensionLabel: 'Standards, risk and completion', isReverseScored: false, text: 'I often notice gaps, risks or inconsistencies that other people appear comfortable moving past.' },
   { id: 32, code: 'S4.4', archetype: 'strategist', dimension: 'S4', dimensionLabel: 'Standards, risk and completion', isReverseScored: true,  text: 'I am comfortable sharing work that is still rough if doing so helps maintain pace.' },
 
-  // ─── CONNECTOR ────────────────────────────────────────────────────────────
+  // --- CONNECTOR ------------------------------------------------------------
   // C1: External processing and support-seeking
   { id: 33, code: 'C1.1', archetype: 'connector', dimension: 'C1', dimensionLabel: 'External processing and support-seeking', isReverseScored: false, isSnapshot: true,  text: 'When work feels challenging, I instinctively turn to others rather than working through it alone.' },
   { id: 34, code: 'C1.2', archetype: 'connector', dimension: 'C1', dimensionLabel: 'External processing and support-seeking', isReverseScored: false, text: 'I find it difficult to move forward with something important if I have not had the chance to talk it through with someone.' },
@@ -152,7 +152,7 @@ export const fullDiagnosticQuestions: FullDiagnosticQuestion[] = [
   { id: 47, code: 'C4.3', archetype: 'connector', dimension: 'C4', dimensionLabel: 'Harmony and personal boundaries', isReverseScored: false, text: 'I find it difficult to say no when someone asks for my help, even when my own workload is already high.' },
   { id: 48, code: 'C4.4', archetype: 'connector', dimension: 'C4', dimensionLabel: 'Harmony and personal boundaries', isReverseScored: true,  text: 'I can set a firm boundary without feeling responsible for the other person\'s reaction.' },
 
-  // ─── REACTOR ─────────────────────────────────────────────────────────────
+  // --- REACTOR -------------------------------------------------------------
   // R1: Confidence volatility
   { id: 49, code: 'R1.1', archetype: 'reactor', dimension: 'R1', dimensionLabel: 'Confidence volatility', isReverseScored: false, isSnapshot: true,  text: 'My confidence is strongly influenced by how things are going at work.' },
   { id: 50, code: 'R1.2', archetype: 'reactor', dimension: 'R1', dimensionLabel: 'Confidence volatility', isReverseScored: false, text: 'A difficult result can make me question abilities that I felt confident about only recently.' },

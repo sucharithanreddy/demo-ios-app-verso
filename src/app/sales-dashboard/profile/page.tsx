@@ -53,10 +53,42 @@ interface DiagnosticResults {
   completedAt: string;
 }
 
-// ── Full (64-question) diagnostic result shape ───────────────────────────
+// -- Full (64-question) diagnostic result shape ----------------------------
 // Mirrors FullDiagnosticResult from src/lib/full-diagnostic-questions.ts.
 // Duplicated here as a local type so we don't pull the heavy question bank
 // into the profile bundle.
+
+/**
+ * Recursively walk a parsed JSON value and replace any em dash (U+2014),
+ * en dash (U+2013), or box-drawing horizontal (U+2500..U+2503, U+2507,
+ * U+2509, U+254C-U+254F) characters in string leaves with a plain hyphen.
+ *
+ * Why: the project-wide dash cleanup only fixed the source code. Diagnostic
+ * results written to localStorage BEFORE the cleanup still contain the old
+ * Unicode dashes in their narrative fields (summary, description, strengths[],
+ * wellbeingRisks[], etc.). Without this sanitiser, those stale strings would
+ * keep rendering with em dashes until the user re-took the diagnostic.
+ *
+ * Cheap to run: only walks strings, leaves numbers / booleans / null alone.
+ */
+function sanitizeDashesInPlace<T>(value: T): T {
+  if (typeof value === 'string') {
+    // Single global replace covering all four common Unicode horizontal
+    // line characters. Avoids four separate .replace() passes.
+    return value.replace(/[\u2014\u2013\u2500-\u2503\u2507\u2509\u254C-\u254F]/g, '-') as unknown as T;
+  }
+  if (Array.isArray(value)) {
+    return value.map(sanitizeDashesInPlace) as unknown as T;
+  }
+  if (value && typeof value === 'object') {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      out[k] = sanitizeDashesInPlace(v);
+    }
+    return out as unknown as T;
+  }
+  return value;
+}
 type ArchetypeKey = 'driver' | 'strategist' | 'connector' | 'reactor';
 type DimensionCodeKey =
   | 'D1' | 'D2' | 'D3' | 'D4'
@@ -295,10 +327,15 @@ export default function SalesProfilePage() {
     const stored = localStorage.getItem('diagnosticResults');
     if (stored) {
       try {
-        const parsed = JSON.parse(stored) as DiagnosticResults;
+        const raw = JSON.parse(stored) as DiagnosticResults;
+        // Sanitise any em/en/box dashes left over from before the project-wide
+        // dash cleanup, then persist the cleaned copy so we don't re-walk it
+        // on every page load.
+        const parsed = sanitizeDashesInPlace(raw);
         // Validate the parsed shape - a partial/garbage object can crash
         // the render. Require at least primaryProfile to be a string.
         if (parsed && typeof parsed.primaryProfile === 'string') {
+          localStorage.setItem('diagnosticResults', JSON.stringify(parsed));
           setResults(parsed);
         } else {
           // Stale or malformed - clear it so we don't keep crashing.
@@ -332,7 +369,11 @@ export default function SalesProfilePage() {
     const storedFull = localStorage.getItem('fullDiagnosticResults');
     if (storedFull) {
       try {
-        const parsed = JSON.parse(storedFull) as FullDiagnosticResults;
+        const raw = JSON.parse(storedFull) as FullDiagnosticResults;
+        // Sanitise any em/en/box dashes left over from before the project-wide
+        // dash cleanup, then persist the cleaned copy so we don't re-walk it
+        // on every page load.
+        const parsed = sanitizeDashesInPlace(raw);
         // Validate the minimum shape we render below.
         if (
           parsed &&
@@ -344,6 +385,7 @@ export default function SalesProfilePage() {
           parsed.dimensionScores &&
           parsed.derivedMeasures
         ) {
+          localStorage.setItem('fullDiagnosticResults', JSON.stringify(parsed));
           setHasFullDiagnostic(true);
           setFullResults(parsed);
         } else {
@@ -442,7 +484,7 @@ export default function SalesProfilePage() {
   return (
     <SalesDashboardLayout>
       <div className="max-w-5xl mx-auto">
-        {/* ── Snapshot summary (16-question) - only shown when no full diagnostic exists ──
+        {/* -- Snapshot summary (16-question) - only shown when no full diagnostic exists --
             When the user has taken the 64-question Full Map, the interactive
             <WellbeingDashboard /> below replaces this entire snapshot block. */}
         {!hasFullDiagnostic && (
@@ -698,7 +740,7 @@ export default function SalesProfilePage() {
           )}
         </motion.div>
 
-        {/* ─── Full Wellbeing Map (64-question) ─────────────────────────── */}
+        {/* --- Full Wellbeing Map (64-question) --------------------------- */}
         {fullResults ? (
           <>
             {/* Section header + completion badge */}

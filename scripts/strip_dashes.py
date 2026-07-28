@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 """
-Strip em dashes (-, U+2014) and en dashes (-, U+2013) from every text file
-under /home/z/my-project, replacing them with a plain ASCII hyphen (-).
+Strip em dashes (U+2014), en dashes (U+2013), and common Unicode box-drawing
+horizontal chars (U+2500-U+2503, U+2507, U+2509, U+254C-U+254F) from every
+text file under /home/z/my-project, replacing them with a plain ASCII hyphen.
 
 Strategy:
-  - Literal character swap:  - -> -   and   - -> -
+  - Literal character swap: each Unicode horizontal -> ASCII '-'.
   - This preserves surrounding whitespace, so:
-      * " - " (spaced em dash)   -> " - "   (spaced hyphen)
-      * "word-word"              -> "word-word"
-      * "80-100"                 -> "80-100"
-      * "Apr 2024 - Aug 2025"    -> "Apr 2024 - Aug 2025"
-  - All four common cases produce natural, idiomatic output without further
+      * spaced em dash        -> " - "
+      * "wordXword"           -> "word-word"
+      * "80X100"              -> "80-100"
+      * "XX Section XX"       -> "-- Section --"
+  - All common cases produce natural, idiomatic output without further
     post-processing.
 
 Skip rules:
@@ -125,29 +126,51 @@ def should_skip_path(path: Path) -> bool:
     return False
 
 
-def process_file(path: Path) -> tuple[int, int]:
-    """Return (em_dash_count, en_dash_count) replaced in this file."""
+# Characters we treat as "horizontal line" and swap to '-'.
+# Keyed by codepoint so we can count each kind separately for the report.
+TARGET_CHARS = {
+    "\u2014": "em_dash",       # em dash
+    "\u2013": "en_dash",       # en dash
+    "\u2500": "box_light",     # box drawings light horizontal
+    "\u2501": "box_heavy",     # box drawings heavy horizontal
+    "\u2502": "box_light_d",   # box drawings light double dash horizontal
+    "\u2503": "box_heavy_d",   # box drawings heavy double dash horizontal
+    "\u2507": "box_heavy_3d",  # box drawings heavy triple dash horizontal
+    "\u2509": "box_light_3d",  # box drawings light triple dash horizontal
+    "\u254c": "dash_light",    # box drawings light double dash horizontal
+    "\u254d": "dash_heavy",    # box drawings heavy double dash horizontal
+    "\u254e": "dash_light_v",  # box drawings light double dash vertical
+    "\u254f": "dash_heavy_v",  # box drawings heavy double dash vertical
+}
+
+
+def process_file(path: Path) -> dict[str, int]:
+    """Return a {char_name: count} dict of replacements made in this file."""
     try:
         original = path.read_text(encoding="utf-8")
     except (UnicodeDecodeError, OSError):
         # Binary file or unreadable - skip silently.
-        return (0, 0)
+        return {}
 
-    em_count = original.count("\u2014")
-    en_count = original.count("\u2013")
-    if em_count == 0 and en_count == 0:
-        return (0, 0)
+    counts: dict[str, int] = {}
+    new_content = original
+    for ch, name in TARGET_CHARS.items():
+        c = original.count(ch)
+        if c:
+            counts[name] = c
+            new_content = new_content.replace(ch, "-")
 
-    new_content = original.replace("\u2014", "-").replace("\u2013", "-")
+    if not counts:
+        return {}
+
     path.write_text(new_content, encoding="utf-8")
-    return (em_count, en_count)
+    return counts
 
 
 def main() -> int:
     total_files = 0
-    total_em = 0
-    total_en = 0
-    changed_files: list[tuple[str, int, int]] = []
+    totals: dict[str, int] = {}
+    changed_files: list[tuple[str, dict[str, int]]] = []
 
     for dirpath, dirnames, filenames in os.walk(ROOT):
         # Prune skipped dirs in-place so os.walk doesn't descend.
@@ -163,24 +186,25 @@ def main() -> int:
                 continue
             if not should_touch_file(file_path):
                 continue
-            em, en = process_file(file_path)
-            if em or en:
+            counts = process_file(file_path)
+            if counts:
                 total_files += 1
-                total_em += em
-                total_en += en
-                changed_files.append((str(file_path.relative_to(ROOT)), em, en))
+                for name, c in counts.items():
+                    totals[name] = totals.get(name, 0) + c
+                changed_files.append((str(file_path.relative_to(ROOT)), counts))
 
     # Report
     print("=" * 72)
-    print("Em/en dash replacement summary")
+    print("Unicode dash replacement summary")
     print("=" * 72)
-    print(f"Files changed:   {total_files}")
-    print(f"Em dashes (-):   {total_em}")
-    print(f"En dashes (-):   {total_en}")
-    print(f"Total replaced:  {total_em + total_en}")
+    print(f"Files changed:  {total_files}")
+    for name, c in sorted(totals.items()):
+        print(f"  {name:<18} {c}")
+    print(f"  {'TOTAL':<18} {sum(totals.values())}")
     print("-" * 72)
-    for rel, em, en in changed_files:
-        print(f"  {rel}  (-={em}, -={en})")
+    for rel, counts in changed_files:
+        summary = ", ".join(f"{k}={v}" for k, v in sorted(counts.items()))
+        print(f"  {rel}  ({summary})")
     print("=" * 72)
     return 0
 

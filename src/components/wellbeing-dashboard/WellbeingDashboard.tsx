@@ -335,9 +335,9 @@ export function WellbeingDashboard({ result, onRetake, onViewFullResults }: Well
 
   return (
     <div className="space-y-6">
-      {/* ───────────────────────────────────────────────────────────
+      {/* -----------------------------------------------------------
           1. RESPONSE QUALITY NOTICE (if flagged)
-          ─────────────────────────────────────────────────────────── */}
+          ----------------------------------------------------------- */}
       {result.responseQuality?.hasFlags && (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
@@ -360,9 +360,9 @@ export function WellbeingDashboard({ result, onRetake, onViewFullResults }: Well
         </motion.div>
       )}
 
-      {/* ───────────────────────────────────────────────────────────
+      {/* -----------------------------------------------------------
           2. ARCHETYPE HERO - primary archetype with circular gauge
-          ─────────────────────────────────────────────────────────── */}
+          ----------------------------------------------------------- */}
       <ArchetypeHero
         result={result}
         rankedArchetypes={rankedArchetypes}
@@ -370,14 +370,14 @@ export function WellbeingDashboard({ result, onRetake, onViewFullResults }: Well
         onSelectArchetype={setSelectedArchetype}
       />
 
-      {/* ───────────────────────────────────────────────────────────
+      {/* -----------------------------------------------------------
           3. SUSTAINABILITY INDEX HERO - the composite gauge
-          ─────────────────────────────────────────────────────────── */}
+          ----------------------------------------------------------- */}
       <SustainabilityHero result={result} />
 
-      {/* ───────────────────────────────────────────────────────────
+      {/* -----------------------------------------------------------
           4. TAB BAR - Overview / Dimensions / Pressure / Decision
-          ─────────────────────────────────────────────────────────── */}
+          ----------------------------------------------------------- */}
       <div className="sticky top-[64px] z-20 -mx-1 px-1 py-2 backdrop-blur-md">
         <div className="glass rounded-2xl border border-border/50 p-1.5 flex gap-1 overflow-x-auto">
           {([
@@ -403,9 +403,9 @@ export function WellbeingDashboard({ result, onRetake, onViewFullResults }: Well
         </div>
       </div>
 
-      {/* ───────────────────────────────────────────────────────────
+      {/* -----------------------------------------------------------
           5. TAB CONTENT
-          ─────────────────────────────────────────────────────────── */}
+          ----------------------------------------------------------- */}
       <AnimatePresence mode="wait">
         <motion.div
           key={activeTab}
@@ -421,9 +421,9 @@ export function WellbeingDashboard({ result, onRetake, onViewFullResults }: Well
         </motion.div>
       </AnimatePresence>
 
-      {/* ───────────────────────────────────────────────────────────
+      {/* -----------------------------------------------------------
           6. ACTION FOOTER
-          ─────────────────────────────────────────────────────────── */}
+          ----------------------------------------------------------- */}
       <div className="flex flex-wrap gap-3 justify-center pt-2">
         {onViewFullResults && (
           <button

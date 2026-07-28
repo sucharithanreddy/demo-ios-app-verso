@@ -249,7 +249,7 @@ export default function FullDiagnosticResultsPage() {
           </p>
         </motion.div>
 
-        {/* ─── Response quality notice (PDF spec §20) ─────────────────── */}
+        {/* --- Response quality notice (PDF spec §20) ------------------- */}
         {result.responseQuality.hasFlags && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -273,7 +273,7 @@ export default function FullDiagnosticResultsPage() {
           </motion.div>
         )}
 
-        {/* ─── Layer 1: Primary + Secondary Archetype ─────────────────── */}
+        {/* --- Layer 1: Primary + Secondary Archetype ------------------- */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -365,7 +365,7 @@ export default function FullDiagnosticResultsPage() {
           </div>
         </motion.div>
 
-        {/* ─── Sustainability Index + Pressure Indicator (hero row) ──── */}
+        {/* --- Sustainability Index + Pressure Indicator (hero row) ---- */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -425,7 +425,7 @@ export default function FullDiagnosticResultsPage() {
           </div>
         </motion.div>
 
-        {/* ─── Layer 2: 16 Dimension Scores ──────────────────────────── */}
+        {/* --- Layer 2: 16 Dimension Scores ---------------------------- */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -478,7 +478,7 @@ export default function FullDiagnosticResultsPage() {
           </div>
         </motion.div>
 
-        {/* ─── Layer 3: Derived Wellbeing Measures ───────────────────── */}
+        {/* --- Layer 3: Derived Wellbeing Measures --------------------- */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -588,7 +588,7 @@ export default function FullDiagnosticResultsPage() {
           </div>
         </motion.div>
 
-        {/* ─── Response to Pressure (4 sub-scores) ──────────────────── */}
+        {/* --- Response to Pressure (4 sub-scores) -------------------- */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -612,7 +612,7 @@ export default function FullDiagnosticResultsPage() {
           </div>
         </motion.div>
 
-        {/* ─── Decision Style (4 sub-scores) ────────────────────────── */}
+        {/* --- Decision Style (4 sub-scores) -------------------------- */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -636,7 +636,7 @@ export default function FullDiagnosticResultsPage() {
           </div>
         </motion.div>
 
-        {/* ─── What happens next ─────────────────────────────────────── */}
+        {/* --- What happens next --------------------------------------- */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

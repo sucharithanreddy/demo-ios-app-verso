@@ -5,29 +5,29 @@ The native iOS app for Verso - the AI Coach for sales professionals. Built with 
 ## Architecture
 
 ```
-┌─────────────────────┐
-│   Verso Mobile       │  ← This repo (Expo / React Native)
-│   (iOS + Android)    │
-│   ────────────────   │
-│   - AI Coach chat    │
-│   - Daily check-ins  │
-│   - Insights & trends│
-│   - Push notifs      │
-│   - Offline mode     │
-└────────┬────────────┘
-         │ REST API (HTTPS)
+┌---------------------┐
+-   Verso Mobile       -  ← This repo (Expo / React Native)
+-   (iOS + Android)    -
+-   ----------------   -
+-   - AI Coach chat    -
+-   - Daily check-ins  -
+-   - Insights & trends-
+-   - Push notifs      -
+-   - Offline mode     -
+└--------┬------------┘
+         - REST API (HTTPS)
          ▼
-┌─────────────────────┐
-│   Verso Backend      │  ← Existing Next.js app
-│   (Vercel)           │
-│   ────────────────   │
-│   /api/reframe       │  ← AI Coach engine
-│   /api/checkin       │  ← Daily check-ins
-│   /api/coaching      │  ← Coaching tips
-│   /api/diagnostic    │  ← Sales archetype
-│   /api/user/profile  │  ← User data
-│   /api/streak        │  ← Streak tracking
-└─────────────────────┘
+┌---------------------┐
+-   Verso Backend      -  ← Existing Next.js app
+-   (Vercel)           -
+-   ----------------   -
+-   /api/reframe       -  ← AI Coach engine
+-   /api/checkin       -  ← Daily check-ins
+-   /api/coaching      -  ← Coaching tips
+-   /api/diagnostic    -  ← Sales archetype
+-   /api/user/profile  -  ← User data
+-   /api/streak        -  ← Streak tracking
+└---------------------┘
 ```
 
 ## Prerequisites
@@ -73,35 +73,35 @@ Press `i` to open in iOS Simulator (requires Xcode).
 
 ```
 verso-mobile/
-├── app/                        # Expo Router (file-based navigation)
-│   ├── _layout.tsx             # Root: Clerk + ReactQuery + SafeArea
-│   ├── sign-in.tsx             # Clerk sign-in screen
-│   └── (tabs)/                 # Bottom tab navigator
-│       ├── _layout.tsx         # Tab bar config
-│       ├── index.tsx           # Home (greeting + check-in CTA + tips)
-│       ├── coach.tsx           # AI Coach chat (hero feature)
-│       ├── insights.tsx        # Trends, averages, archetype
-│       └── profile.tsx         # User info, subscription, settings
-├── components/                 # Reusable UI components
-│   ├── ChatMessageBubble.tsx   # Renders user/assistant messages
-│   ├── ChatInput.tsx           # Text input + send button
-│   ├── QuickPrompts.tsx        # Situation-based prompt chips
-│   ├── TypingIndicator.tsx     # Animated dots while AI thinks
-│   ├── CheckInModal.tsx        # Daily check-in flow
-│   ├── CheckInTrendChart.tsx   # SVG line chart
-│   ├── ImpactTagSummary.tsx    # Tag frequency bars
-│   ├── CoachingTipCard.tsx     # Coaching tip display
-│   └── ErrorBoundary.tsx       # Crash catcher
-├── lib/
-│   ├── api.ts                  # API client (fetch wrapper + auth)
-│   ├── clerk.ts                # Clerk token cache (SecureStore)
-│   ├── db.ts                   # SQLite offline storage
-│   ├── store.ts                # Zustand stores (chat state)
-│   ├── hooks.ts                # React Query hooks
-│   └── types.ts                # TypeScript types
-├── app.json                    # Expo config
-├── package.json
-└── tailwind.config.js          # NativeWind theme
+├-- app/                        # Expo Router (file-based navigation)
+-   ├-- _layout.tsx             # Root: Clerk + ReactQuery + SafeArea
+-   ├-- sign-in.tsx             # Clerk sign-in screen
+-   └-- (tabs)/                 # Bottom tab navigator
+-       ├-- _layout.tsx         # Tab bar config
+-       ├-- index.tsx           # Home (greeting + check-in CTA + tips)
+-       ├-- coach.tsx           # AI Coach chat (hero feature)
+-       ├-- insights.tsx        # Trends, averages, archetype
+-       └-- profile.tsx         # User info, subscription, settings
+├-- components/                 # Reusable UI components
+-   ├-- ChatMessageBubble.tsx   # Renders user/assistant messages
+-   ├-- ChatInput.tsx           # Text input + send button
+-   ├-- QuickPrompts.tsx        # Situation-based prompt chips
+-   ├-- TypingIndicator.tsx     # Animated dots while AI thinks
+-   ├-- CheckInModal.tsx        # Daily check-in flow
+-   ├-- CheckInTrendChart.tsx   # SVG line chart
+-   ├-- ImpactTagSummary.tsx    # Tag frequency bars
+-   ├-- CoachingTipCard.tsx     # Coaching tip display
+-   └-- ErrorBoundary.tsx       # Crash catcher
+├-- lib/
+-   ├-- api.ts                  # API client (fetch wrapper + auth)
+-   ├-- clerk.ts                # Clerk token cache (SecureStore)
+-   ├-- db.ts                   # SQLite offline storage
+-   ├-- store.ts                # Zustand stores (chat state)
+-   ├-- hooks.ts                # React Query hooks
+-   └-- types.ts                # TypeScript types
+├-- app.json                    # Expo config
+├-- package.json
+└-- tailwind.config.js          # NativeWind theme
 ```
 
 ## Key Features
