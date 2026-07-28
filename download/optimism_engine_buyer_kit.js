@@ -42,7 +42,7 @@ const doc = new Document({
       new Paragraph({ 
         spacing: { before: 200, after: 200 }, 
         shading: { fill: "FEF3C7", type: ShadingType.CLEAR },
-        children: [new TextRun({ text: "IMPORTANT UPDATE: ", bold: true, size: 22, font: "Times New Roman" }), new TextRun({ text: "Woebot Health (raised $124M) shut down in June 2025 due to funding issues. This validates the market need for AI safety — Woebot's pure AI approach couldn't scale safely. Optimism Engine's Anti-Hallucination architecture solves exactly this problem.", size: 22, font: "Times New Roman" })] 
+        children: [new TextRun({ text: "IMPORTANT UPDATE: ", bold: true, size: 22, font: "Times New Roman" }), new TextRun({ text: "Woebot Health (raised $124M) shut down in June 2025 due to funding issues. This validates the market need for AI safety - Woebot's pure AI approach couldn't scale safely. Optimism Engine's Anti-Hallucination architecture solves exactly this problem.", size: 22, font: "Times New Roman" })] 
       }),
 
       // Section 1: Tier 1 Buyers
@@ -51,13 +51,13 @@ const doc = new Document({
 
       // Wysa
       new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun("1. Wysa (HIGH PRIORITY)")] }),
-      new Paragraph({ spacing: { after: 100, line: 312 }, children: [new TextRun({ text: "Why They're Perfect: ", bold: true, size: 22, font: "Times New Roman" }), new TextRun({ text: "Wysa is in aggressive acquisition mode — they acquired April Health (behavioral health) and Kins (physical therapy) in 2024-2025. They have an AI chatbot but face the same hallucination concerns as everyone else. The Gatekeeper technology would give them immediate differentiation.", size: 22, font: "Times New Roman" })] }),
+      new Paragraph({ spacing: { after: 100, line: 312 }, children: [new TextRun({ text: "Why They're Perfect: ", bold: true, size: 22, font: "Times New Roman" }), new TextRun({ text: "Wysa is in aggressive acquisition mode - they acquired April Health (behavioral health) and Kins (physical therapy) in 2024-2025. They have an AI chatbot but face the same hallucination concerns as everyone else. The Gatekeeper technology would give them immediate differentiation.", size: 22, font: "Times New Roman" })] }),
       new Paragraph({ spacing: { after: 100, line: 312 }, children: [new TextRun({ text: "Company Details:", bold: true, size: 22, font: "Times New Roman" })] }),
       new Paragraph({ numbering: { reference: "bullet-list", level: 0 }, spacing: { after: 80, line: 312 }, children: [new TextRun({ text: "Location: Boston, USA (founded in India)", size: 20, font: "Times New Roman" })] }),
       new Paragraph({ numbering: { reference: "bullet-list", level: 0 }, spacing: { after: 80, line: 312 }, children: [new TextRun({ text: "Users: 5+ million downloads globally", size: 20, font: "Times New Roman" })] }),
       new Paragraph({ numbering: { reference: "bullet-list", level: 0 }, spacing: { after: 80, line: 312 }, children: [new TextRun({ text: "Funding: Backed by Swiss Re, MassMutual partnership", size: 20, font: "Times New Roman" })] }),
       new Paragraph({ numbering: { reference: "bullet-list", level: 0 }, spacing: { after: 100, line: 312 }, children: [new TextRun({ text: "Recent Moves: Wysa Assure (for insurers), Wysa Copilot (for clinics)", size: 20, font: "Times New Roman" })] }),
-      new Paragraph({ spacing: { after: 200, line: 312 }, children: [new TextRun({ text: "Who to Contact: ", bold: true, size: 22, font: "Times New Roman" }), new TextRun({ text: "Jo Aggarwal (CEO/Co-founder) — search on LinkedIn. Also: Ramakant Vempati (Co-founder), Head of Corporate Development.", size: 22, font: "Times New Roman" })] }),
+      new Paragraph({ spacing: { after: 200, line: 312 }, children: [new TextRun({ text: "Who to Contact: ", bold: true, size: 22, font: "Times New Roman" }), new TextRun({ text: "Jo Aggarwal (CEO/Co-founder) - search on LinkedIn. Also: Ramakant Vempati (Co-founder), Head of Corporate Development.", size: 22, font: "Times New Roman" })] }),
 
       // Intellect
       new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun("2. Intellect (HIGH PRIORITY)")] }),
@@ -67,7 +67,7 @@ const doc = new Document({
       new Paragraph({ numbering: { reference: "bullet-list", level: 0 }, spacing: { after: 80, line: 312 }, children: [new TextRun({ text: "Users: 4+ million members, 120+ languages", size: 20, font: "Times New Roman" })] }),
       new Paragraph({ numbering: { reference: "bullet-list", level: 0 }, spacing: { after: 80, line: 312 }, children: [new TextRun({ text: "Focus: Enterprise mental health benefits, coaching, therapy", size: 20, font: "Times New Roman" })] }),
       new Paragraph({ numbering: { reference: "bullet-list", level: 0 }, spacing: { after: 100, line: 312 }, children: [new TextRun({ text: "Recent: Major enterprise partnerships across Asia", size: 20, font: "Times New Roman" })] }),
-      new Paragraph({ spacing: { after: 200, line: 312 }, children: [new TextRun({ text: "Who to Contact: ", bold: true, size: 22, font: "Times New Roman" }), new TextRun({ text: "Theodoric Chew (CEO/Co-founder) — very active on LinkedIn. Also: Alvin Ea (COO/Co-founder).", size: 22, font: "Times New Roman" })] }),
+      new Paragraph({ spacing: { after: 200, line: 312 }, children: [new TextRun({ text: "Who to Contact: ", bold: true, size: 22, font: "Times New Roman" }), new TextRun({ text: "Theodoric Chew (CEO/Co-founder) - very active on LinkedIn. Also: Alvin Ea (COO/Co-founder).", size: 22, font: "Times New Roman" })] }),
 
       // Calm
       new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun("3. Calm (MEDIUM PRIORITY)")] }),
@@ -85,7 +85,7 @@ const doc = new Document({
       // ThoughtFull
       new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun("4. ThoughtFull")] }),
       new Paragraph({ spacing: { after: 100, line: 312 }, children: [new TextRun({ text: "Why They're a Fit: ", bold: true, size: 22, font: "Times New Roman" }), new TextRun({ text: "Singapore-based EAP provider competing with Intellect. They offer therapy, wellness webinars, and 24/7 support. Adding an AI CBT engine would differentiate their enterprise pitch. Likely more open to a small acquisition than the big players.", size: 22, font: "Times New Roman" })] }),
-      new Paragraph({ spacing: { after: 200, line: 312 }, children: [new TextRun({ text: "Who to Contact: ", bold: true, size: 22, font: "Times New Roman" }), new TextRun({ text: "Joan Low (Founder/CEO) — search on LinkedIn. Singapore-based, active in mental health community.", size: 22, font: "Times New Roman" })] }),
+      new Paragraph({ spacing: { after: 200, line: 312 }, children: [new TextRun({ text: "Who to Contact: ", bold: true, size: 22, font: "Times New Roman" }), new TextRun({ text: "Joan Low (Founder/CEO) - search on LinkedIn. Singapore-based, active in mental health community.", size: 22, font: "Times New Roman" })] }),
 
       // Mercer
       new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun("5. Mercer (Marsh McLennan)")] }),
@@ -112,28 +112,28 @@ const doc = new Document({
       new Paragraph({ 
         spacing: { after: 200 }, 
         shading: { fill: colors.tableBg, type: ShadingType.CLEAR },
-        children: [new TextRun({ text: "Built an AI mental health engine you should see — solves the hallucination problem.", size: 20, italics: true, font: "Times New Roman" })] 
+        children: [new TextRun({ text: "Built an AI mental health engine you should see - solves the hallucination problem.", size: 20, italics: true, font: "Times New Roman" })] 
       }),
 
       new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun("LinkedIn Message (After Connection Accepted)")] }),
       new Paragraph({ 
         spacing: { after: 200 }, 
         shading: { fill: colors.tableBg, type: ShadingType.CLEAR },
-        children: [new TextRun({ text: "Hi [Name],\n\nThanks for connecting.\n\nI built Optimism Engine — a CBT mental health app with a proprietary \"Anti-Hallucination\" architecture. Unlike standard AI chatbots, it uses a deterministic logic layer (\"The Gatekeeper\") to enforce safety and guide users through evidence-based CBT.\n\nWith Woebot shutting down last month, the industry is waking up to AI safety risks. Our engine solves exactly that problem.\n\nI'm selling the complete IP (source code, algorithms, content) for $40K — a fraction of what it would cost to build in-house.\n\nWould you be open to a 10-minute demo? I can show you the Gatekeeper in action.\n\nBest,\n[Your Name]", size: 20, font: "Times New Roman" })] 
+        children: [new TextRun({ text: "Hi [Name],\n\nThanks for connecting.\n\nI built Optimism Engine - a CBT mental health app with a proprietary \"Anti-Hallucination\" architecture. Unlike standard AI chatbots, it uses a deterministic logic layer (\"The Gatekeeper\") to enforce safety and guide users through evidence-based CBT.\n\nWith Woebot shutting down last month, the industry is waking up to AI safety risks. Our engine solves exactly that problem.\n\nI'm selling the complete IP (source code, algorithms, content) for $40K - a fraction of what it would cost to build in-house.\n\nWould you be open to a 10-minute demo? I can show you the Gatekeeper in action.\n\nBest,\n[Your Name]", size: 20, font: "Times New Roman" })] 
       }),
 
       new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun("Cold Email Template")] }),
       new Paragraph({ 
         spacing: { after: 200 }, 
         shading: { fill: colors.tableBg, type: ShadingType.CLEAR },
-        children: [new TextRun({ text: "Subject: AI safety tech for [Company] mental health offerings\n\nHi [Name],\n\nI noticed [Company]'s impressive growth in the mental health space — congratulations on [specific recent achievement].\n\nI'm reaching out because I've built something that could give [Company] a significant competitive edge: a CBT mental health engine with built-in AI safety.\n\nThe Problem: Every AI mental health app (including Woebot, which just shut down) relies on pure Generative AI — which can hallucinate. In mental health, that's dangerous.\n\nThe Solution: Optimism Engine uses a \"Gatekeeper\" logic layer that screens every input/output through deterministic safety protocols. No hallucinations. Enterprise-ready.\n\nWhat's Included:\n• Full source code (Next.js 16, PostgreSQL, GPT-4 integration)\n• Proprietary Gatekeeper algorithms (the Anti-Hallucination IP)\n• Complete CBT content library\n• Production-ready deployment\n\nI'm selling the complete IP for $40K — approximately $25K less than building equivalent technology in-house.\n\nWould you be open to a brief call to see if this fits [Company]'s roadmap?\n\nBest regards,\n[Your Name]\n[Link to live demo or 1-page teaser attached]", size: 20, font: "Times New Roman" })] 
+        children: [new TextRun({ text: "Subject: AI safety tech for [Company] mental health offerings\n\nHi [Name],\n\nI noticed [Company]'s impressive growth in the mental health space - congratulations on [specific recent achievement].\n\nI'm reaching out because I've built something that could give [Company] a significant competitive edge: a CBT mental health engine with built-in AI safety.\n\nThe Problem: Every AI mental health app (including Woebot, which just shut down) relies on pure Generative AI - which can hallucinate. In mental health, that's dangerous.\n\nThe Solution: Optimism Engine uses a \"Gatekeeper\" logic layer that screens every input/output through deterministic safety protocols. No hallucinations. Enterprise-ready.\n\nWhat's Included:\n• Full source code (Next.js 16, PostgreSQL, GPT-4 integration)\n• Proprietary Gatekeeper algorithms (the Anti-Hallucination IP)\n• Complete CBT content library\n• Production-ready deployment\n\nI'm selling the complete IP for $40K - approximately $25K less than building equivalent technology in-house.\n\nWould you be open to a brief call to see if this fits [Company]'s roadmap?\n\nBest regards,\n[Your Name]\n[Link to live demo or 1-page teaser attached]", size: 20, font: "Times New Roman" })] 
       }),
 
       new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun("Follow-Up Message (No Reply After 5 Days)")] }),
       new Paragraph({ 
         spacing: { after: 200 }, 
         shading: { fill: colors.tableBg, type: ShadingType.CLEAR },
-        children: [new TextRun({ text: "Hi [Name],\n\nJust following up on my previous message.\n\nGiven Woebot's recent shutdown (after raising $124M), the mental health industry is rethinking AI safety. Optimism Engine's Gatekeeper technology addresses exactly this gap.\n\nHappy to share a code sample or live demo if you're curious — no commitment needed.\n\nBest,\n[Your Name]", size: 20, font: "Times New Roman" })] 
+        children: [new TextRun({ text: "Hi [Name],\n\nJust following up on my previous message.\n\nGiven Woebot's recent shutdown (after raising $124M), the mental health industry is rethinking AI safety. Optimism Engine's Gatekeeper technology addresses exactly this gap.\n\nHappy to share a code sample or live demo if you're curious - no commitment needed.\n\nBest,\n[Your Name]", size: 20, font: "Times New Roman" })] 
       }),
 
       // Section 5: Action Plan
@@ -156,11 +156,11 @@ const doc = new Document({
 
       // Final Tips
       new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun("Final Tips")] }),
-      new Paragraph({ numbering: { reference: "bullet-list", level: 0 }, spacing: { after: 100, line: 312 }, children: [new TextRun({ text: "Lead with the problem: \"AI hallucination in mental health\" — this is your differentiator", size: 22, font: "Times New Roman" })] }),
-      new Paragraph({ numbering: { reference: "bullet-list", level: 0 }, spacing: { after: 100, line: 312 }, children: [new TextRun({ text: "Mention Woebot's shutdown — it validates the market need for your solution", size: 22, font: "Times New Roman" })] }),
-      new Paragraph({ numbering: { reference: "bullet-list", level: 0 }, spacing: { after: 100, line: 312 }, children: [new TextRun({ text: "Don't mention $0 development cost or 2-month timeline — ever", size: 22, font: "Times New Roman" })] }),
-      new Paragraph({ numbering: { reference: "bullet-list", level: 0 }, spacing: { after: 100, line: 312 }, children: [new TextRun({ text: "Be ready for live demo requests — know your app inside out", size: 22, font: "Times New Roman" })] }),
-      new Paragraph({ numbering: { reference: "bullet-list", level: 0 }, spacing: { after: 100, line: 312 }, children: [new TextRun({ text: "Floor price is $25K — walk away from anything lower", size: 22, font: "Times New Roman" })] }),
+      new Paragraph({ numbering: { reference: "bullet-list", level: 0 }, spacing: { after: 100, line: 312 }, children: [new TextRun({ text: "Lead with the problem: \"AI hallucination in mental health\" - this is your differentiator", size: 22, font: "Times New Roman" })] }),
+      new Paragraph({ numbering: { reference: "bullet-list", level: 0 }, spacing: { after: 100, line: 312 }, children: [new TextRun({ text: "Mention Woebot's shutdown - it validates the market need for your solution", size: 22, font: "Times New Roman" })] }),
+      new Paragraph({ numbering: { reference: "bullet-list", level: 0 }, spacing: { after: 100, line: 312 }, children: [new TextRun({ text: "Don't mention $0 development cost or 2-month timeline - ever", size: 22, font: "Times New Roman" })] }),
+      new Paragraph({ numbering: { reference: "bullet-list", level: 0 }, spacing: { after: 100, line: 312 }, children: [new TextRun({ text: "Be ready for live demo requests - know your app inside out", size: 22, font: "Times New Roman" })] }),
+      new Paragraph({ numbering: { reference: "bullet-list", level: 0 }, spacing: { after: 100, line: 312 }, children: [new TextRun({ text: "Floor price is $25K - walk away from anything lower", size: 22, font: "Times New Roman" })] }),
       new Paragraph({ numbering: { reference: "bullet-list", level: 0 }, spacing: { after: 200, line: 312 }, children: [new TextRun({ text: "Get NDA signed before granting code access", size: 22, font: "Times New Roman" })] }),
 
       new Paragraph({ 

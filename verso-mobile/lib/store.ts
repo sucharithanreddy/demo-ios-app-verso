@@ -1,12 +1,12 @@
 // ============================================================================
-// Zustand stores — client state management
+// Zustand stores - client state management
 // ============================================================================
 
 import { create } from 'zustand';
 import type { ChatMessage, EngineResponse } from './types';
 
 // ---------------------------------------------------------------------------
-// Chat store — holds the conversation in memory + syncs to SQLite
+// Chat store - holds the conversation in memory + syncs to SQLite
 // ---------------------------------------------------------------------------
 
 interface ChatState {
@@ -109,13 +109,13 @@ export const useChatStore = create<ChatState>((set, get) => ({
       isCrisisResponse: response.isCrisisResponse,
       meta: response.meta,
       createdAt: Date.now(),
-      // Mark as synced — the round is now complete and this message is part of
+      // Mark as synced - the round is now complete and this message is part of
       // the conversation history that will be sent on the next turn.
       synced: true,
     };
 
     set((state) => {
-      // Mark the immediately-preceding user message as synced too — it's now
+      // Mark the immediately-preceding user message as synced too - it's now
       // part of the committed conversation history.
       const messages = state.messages.map((m, i) =>
         i === state.messages.length - 1 && m.role === 'user'
@@ -162,7 +162,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
 }));
 
 // ---------------------------------------------------------------------------
-// Onboarding store — tracks whether the user has completed the diagnostic
+// Onboarding store - tracks whether the user has completed the diagnostic
 // ---------------------------------------------------------------------------
 
 interface OnboardingState {

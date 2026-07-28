@@ -123,7 +123,7 @@ async def render_one(mmd_path: Path, png_path: Path) -> tuple[int, int]:
         # Give it a moment to fully lay out (font loading, etc.)
         await page.wait_for_timeout(1200)
 
-        # ⚠️ Read SVG's ACTUAL rendered size — not CSS box model.
+        # ⚠️ Read SVG's ACTUAL rendered size - not CSS box model.
         # Mermaid SVGs often overflow their CSS container.
         svg_size = await page.evaluate(
             """() => {

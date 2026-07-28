@@ -10,7 +10,7 @@
 import { useState, useEffect, useCallback } from 'react';
 // Use the safe wrapper instead of Clerk's useUser directly.
 // Clerk's useUser throws "useUser can only be used within the <ClerkProvider />
-// component" when called during SSR or outside ClerkProvider — which crashes
+// component" when called during SSR or outside ClerkProvider - which crashes
 // prerendering for any page that imports this hook (e.g. /diagnostic/full).
 // useSafeUser returns { isLoaded: false, isSignedIn: false, user: null } in
 // those contexts, which is the correct "not yet loaded" state.

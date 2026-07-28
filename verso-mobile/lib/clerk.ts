@@ -1,11 +1,11 @@
 // ============================================================================
-// Clerk token cache — uses expo-secure-store (Keychain on iOS, Keystore on Android)
+// Clerk token cache - uses expo-secure-store (Keychain on iOS, Keystore on Android)
 // ============================================================================
 
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
-// On web, SecureStore isn't available — fall back to localStorage
+// On web, SecureStore isn't available - fall back to localStorage
 const webStorage = {
   async getToken(key: string): Promise<string | null> {
     if (typeof window === 'undefined') return null;
@@ -37,7 +37,7 @@ const nativeStorage = {
     try {
       await SecureStore.setItemAsync(key, token);
     } catch {
-      // ignore — non-fatal
+      // ignore - non-fatal
     }
   },
 };

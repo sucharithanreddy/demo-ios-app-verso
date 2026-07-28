@@ -91,7 +91,7 @@ export default function PricingPage() {
   // Test-mode upgrade handler. Calls /api/subscription/upgrade which
   // flips the user's subscriptionPlan + subscriptionStatus to ACTIVE.
   // This is a temporary shortcut until real Stripe + PayPal are wired
-  // — see the comment in src/app/api/subscription/upgrade/route.ts.
+  // - see the comment in src/app/api/subscription/upgrade/route.ts.
   const handleUpgrade = async (planKey: 'PRO' | 'ENTERPRISE', redirectTarget?: string) => {
     setUpgradingPlan(planKey);
     setUpgradeError(null);

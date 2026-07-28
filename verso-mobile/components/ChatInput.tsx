@@ -1,5 +1,5 @@
 // ============================================================================
-// ChatInput — text input with send button
+// ChatInput - text input with send button
 // ============================================================================
 
 import {
@@ -53,7 +53,7 @@ export function ChatInput({ onSend, disabled }: Props) {
             padding: 0,
           }}
           onSubmitEditing={() => {
-            // Submit on Enter (without shift) — only on iOS single-line behavior
+            // Submit on Enter (without shift) - only on iOS single-line behavior
           }}
           blurOnSubmit={false}
         />

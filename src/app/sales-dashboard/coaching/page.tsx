@@ -43,7 +43,7 @@ const ARCHETYPE_TIPS: Record<string, Record<string, { title: string; tip: string
     },
     bad_day: {
       title: 'Channel, Don\'t Suppress',
-      tip: 'Your intensity is a strength, but today it worked against you. Physical movement—10 pushups, a brisk walk—helps you metabolize the frustration. Then reset and attack tomorrow fresh.',
+      tip: 'Your intensity is a strength, but today it worked against you. Physical movement-10 pushups, a brisk walk-helps you metabolize the frustration. Then reset and attack tomorrow fresh.',
     },
     good_win: {
       title: 'Capture What Worked',
@@ -57,7 +57,7 @@ const ARCHETYPE_TIPS: Record<string, Record<string, { title: string; tip: string
     },
     before_call: {
       title: 'Trust Your Analysis',
-      tip: 'You\'ve done the research. You understand the situation. Now trust your preparation. Your thoughtful approach gives you a unique advantage—use it.',
+      tip: 'You\'ve done the research. You understand the situation. Now trust your preparation. Your thoughtful approach gives you a unique advantage-use it.',
     },
     after_rejection: {
       title: 'Log and Learn',
@@ -83,7 +83,7 @@ const ARCHETYPE_TIPS: Record<string, Record<string, { title: string; tip: string
     },
     after_rejection: {
       title: 'They Weren\'t the Right Fit',
-      tip: 'Your relationship-building nature makes rejection feel personal. It\'s not. The right connection is out there. Keep nurturing your network—the right fit will come.',
+      tip: 'Your relationship-building nature makes rejection feel personal. It\'s not. The right connection is out there. Keep nurturing your network-the right fit will come.',
     },
     bad_day: {
       title: 'Reconnect with Your Why',
@@ -97,7 +97,7 @@ const ARCHETYPE_TIPS: Record<string, Record<string, { title: string; tip: string
   Reactor: {
     morning: {
       title: 'Create Your Stability Ritual',
-      tip: 'Your day will have ups and downs. Start with something grounding—3 deep breaths, a short walk, or writing down your intention. This gives you a center to return to.',
+      tip: 'Your day will have ups and downs. Start with something grounding-3 deep breaths, a short walk, or writing down your intention. This gives you a center to return to.',
     },
     before_call: {
       title: 'Ground Yourself First',
@@ -105,7 +105,7 @@ const ARCHETYPE_TIPS: Record<string, Record<string, { title: string; tip: string
     },
     after_rejection: {
       title: 'Feel, Then Release',
-      tip: 'Your sensitivity means rejection hits hard. Give yourself 2 minutes to fully feel it. Then physically shake it off—stand up, move, reset. Your resilience will carry you forward.',
+      tip: 'Your sensitivity means rejection hits hard. Give yourself 2 minutes to fully feel it. Then physically shake it off-stand up, move, reset. Your resilience will carry you forward.',
     },
     bad_day: {
       title: 'Tomorrow Is a Fresh Start',
@@ -113,7 +113,7 @@ const ARCHETYPE_TIPS: Record<string, Record<string, { title: string; tip: string
     },
     good_win: {
       title: 'Capture Your Confidence',
-      tip: 'When things go well, your confidence soars. Write down exactly how you feel right now. Return to this note on tough days—it\'s proof of your capability.',
+      tip: 'When things go well, your confidence soars. Write down exactly how you feel right now. Return to this note on tough days-it\'s proof of your capability.',
     },
   },
 };

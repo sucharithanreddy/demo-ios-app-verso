@@ -154,7 +154,7 @@ story.append(Paragraph("<b>PROFESSIONAL EXPERIENCE</b>", section_header))
 
 # Job 1 - HCLTech
 story.append(Paragraph("<b>Specialist (IT Infrastructure & Cloud Support)</b>", job_title_style))
-story.append(Paragraph("HCLTech | Apr 2024 – Aug 2025 | Hyderabad, India", body_style))
+story.append(Paragraph("HCLTech | Apr 2024 - Aug 2025 | Hyderabad, India", body_style))
 bullets_hcl = [
     "Delivered L1/L2 support for AWS-based production environments running containerized applications on EKS, handling availability, performance, and deployment issues across Dev, QA, and Prod.",
     "Supported Microsoft 365 applications including Outlook, Teams, and OneDrive, ensuring seamless collaboration for enterprise users.",
@@ -172,7 +172,7 @@ story.append(Spacer(1, 6))
 
 # Job 2 - Cognizant
 story.append(Paragraph("<b>Senior Process Executive (IT Infrastructure Support)</b>", job_title_style))
-story.append(Paragraph("Cognizant | Jul 2022 – Feb 2024 | Hyderabad, India", body_style))
+story.append(Paragraph("Cognizant | Jul 2022 - Feb 2024 | Hyderabad, India", body_style))
 bullets_cognizant = [
     "Provided L1/L2 IT service desk support to enterprise users, handling production issues across deployments, networking, configuration, and runtime failures.",
     "Supported containerized applications on Kubernetes and EC2, troubleshooting pod restarts, node resource pressure, and performance issues.",
@@ -189,7 +189,7 @@ story.append(Spacer(1, 6))
 
 # Job 3 - CSS Corp
 story.append(Paragraph("<b>Engineer (Technical Support)</b>", job_title_style))
-story.append(Paragraph("CSS Corp | Sep 2021 – May 2022 | Hyderabad, India", body_style))
+story.append(Paragraph("CSS Corp | Sep 2021 - May 2022 | Hyderabad, India", body_style))
 bullets_css = [
     "Performed first-line support for cloud-hosted applications, monitoring system health and responding to alerts related to EC2, storage, and application services.",
     "Handled user account-related issues, including password resets, account unlocks, and basic access management.",
@@ -203,7 +203,7 @@ story.append(Spacer(1, 6))
 
 # Job 4 - Infosys
 story.append(Paragraph("<b>Process Executive (IT Service Desk)</b>", job_title_style))
-story.append(Paragraph("Infosys | Sep 2019 – Jun 2021 | Hyderabad, India", body_style))
+story.append(Paragraph("Infosys | Sep 2019 - Jun 2021 | Hyderabad, India", body_style))
 bullets_infosys = [
     "Provided technical support for enterprise users, resolving software, hardware, and network-related issues in production environments.",
     "Logged, categorized, prioritized, and resolved incidents and service requests as per defined SLAs and support procedures.",

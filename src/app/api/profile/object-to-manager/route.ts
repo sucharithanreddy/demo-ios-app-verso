@@ -9,7 +9,7 @@ import {
 } from '@/lib/api-utils';
 
 // ============================================================
-// POST — Submit a "right to object" request under GDPR Article 21.
+// POST - Submit a "right to object" request under GDPR Article 21.
 // This is the buried third option: user wants to be excluded
 // from ALL manager views entirely (not just anonymized).
 //
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
 }
 
 // ============================================================
-// DELETE — Withdraw a previously submitted objection request
+// DELETE - Withdraw a previously submitted objection request
 // ============================================================
 export async function DELETE(request: NextRequest) {
   try {
@@ -106,7 +106,7 @@ export async function DELETE(request: NextRequest) {
         },
       })
       .catch(() => {
-        // No existing objection — that's fine, just succeed silently
+        // No existing objection - that's fine, just succeed silently
       });
 
     return NextResponse.json({ success: true });

@@ -48,7 +48,7 @@ export default function FullDiagnosticPage() {
   const [mounted, setMounted] = useState(false);
 
   // Track when the user started the assessment (for the fast-completion
-  // response-quality flag — PDF spec §20). Recorded on first interaction
+  // response-quality flag - PDF spec §20). Recorded on first interaction
   // rather than page load so the timer doesn't run while the user is on
   // the intro screen.
   const startTimeRef = useRef<number | null>(null);
@@ -114,7 +114,7 @@ export default function FullDiagnosticPage() {
   };
 
   // Require 100% of questions answered for the paid assessment (stricter
-  // than the previous 80% threshold — the spec wants a complete result
+  // than the previous 80% threshold - the spec wants a complete result
   // so all 16 dimensions have full data). Users can still skip back and
   // fill in skipped items before submitting.
   const canSubmit = answeredCount === totalQuestions;
@@ -163,7 +163,7 @@ export default function FullDiagnosticPage() {
     // server-side and ignores the computed fields we send here (driverScore,
     // dimensionScores, sustainabilityIndex, etc.). We still send them for
     // backward compatibility with older API builds, but the persisted DB
-    // row is always the server's computation — never the client's. This
+    // row is always the server's computation - never the client's. This
     // closes the integrity hole where a user could tamper with scores
     // via DevTools before submission.
     //
@@ -176,7 +176,7 @@ export default function FullDiagnosticPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          // Raw answers — server uses these as the source of truth
+          // Raw answers - server uses these as the source of truth
           answers: answersArray,
           // Computed fields below are ignored by the server (kept for
           // backward compat with older builds that don't yet have
@@ -220,20 +220,20 @@ export default function FullDiagnosticPage() {
             sc.reactorScore !== local.reactor ||
             sc.sustainabilityIndex !== fullResult.salesWellbeingSustainabilityIndex
           ) {
-            // Server differs — log and refresh localStorage from server.
+            // Server differs - log and refresh localStorage from server.
             // We don't have the full server result here (just the
             // summary echo), so we leave the local render as-is and
             // rely on the next GET /api/diagnostic to surface the
             // canonical row.
             console.info(
-              '[diagnostic] Server scores differ from local — server is canonical',
+              '[diagnostic] Server scores differ from local - server is canonical',
               { server: sc, local: { ...local, sustainabilityIndex: fullResult.salesWellbeingSustainabilityIndex } },
             );
           }
         }
       }
     } catch (err) {
-      // Non-fatal — localStorage already has the full result
+      // Non-fatal - localStorage already has the full result
       console.warn('Failed to persist full diagnostic result to DB:', err);
     }
 
@@ -462,7 +462,7 @@ export default function FullDiagnosticPage() {
               {currentQ.text}
             </h2>
 
-            {/* Response options — 5-point Likert scale, Strongly disagree → Strongly agree */}
+            {/* Response options - 5-point Likert scale, Strongly disagree → Strongly agree */}
             <div className="space-y-2">
               {SCALE_OPTIONS.map((option) => {
                 const isSelected = answers[currentQ.id] === option.value;
@@ -510,7 +510,7 @@ export default function FullDiagnosticPage() {
           </motion.div>
         </AnimatePresence>
 
-        {/* Inline notice if the user has skipped questions — encourages them to go back */}
+        {/* Inline notice if the user has skipped questions - encourages them to go back */}
         {answeredCount < totalQuestions && currentQuestion === totalQuestions - 1 && (
           <div className="mt-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20">
             <p className="text-sm text-amber-600 dark:text-amber-400">

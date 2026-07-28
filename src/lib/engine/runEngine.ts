@@ -390,7 +390,7 @@ function intentGuidance(intent: UserIntent): string {
 
     case 'NEXT_STEP':
       return `INTENT: NEXT_STEP
-- Convert overwhelm into a tiny plan (1–3 steps).
+- Convert overwhelm into a tiny plan (1-3 steps).
 - Practical, not preachy.
 - Ask a narrowing question only if it helps action.`;
 
@@ -1018,7 +1018,7 @@ Hard rules:
 - If AskQuestion=true, questions must be specific to the user's last message (use a concrete detail). Avoid generic templates.
 - Ask at most ONE question will be used, but you may provide up to 3 candidates in "questions".
 - Distortion labels ONLY if clearly present and helpful; otherwise set thoughtPattern to "".
-- If intent is NEXT_STEP / intervention is TINY_PLAN, put a tiny plan (1–3 steps) inside the reframe.
+- If intent is NEXT_STEP / intervention is TINY_PLAN, put a tiny plan (1-3 steps) inside the reframe.
 - Return ONLY valid JSON.
 
 JSON:
@@ -1068,7 +1068,7 @@ Be precise. Go deep.`;
  * Build a concise "USER PROFILE" context block for the LLM prompt.
  * Tells the AI how this user typically experiences sales pressure based
  * on their Sales Wellbeing Map result, so the same trigger can be
- * coached differently for different archetypes — the Phase 3 promise
+ * coached differently for different archetypes - the Phase 3 promise
  * from the product briefing ("AI Companion").
  *
  * Kept deliberately short (under ~120 words) to avoid bloating the
@@ -1080,13 +1080,13 @@ function buildUserProfileBlock(profile: UserProfile): string {
 
   const archetypeGuidance: Record<string, string> = {
     driver:
-      'This person is a Driver — they tie self-worth to achievement, push harder under pressure, and find it hard to switch off. Under stress they over-work, skip recovery, and may frame setbacks as personal failures.',
+      'This person is a Driver - they tie self-worth to achievement, push harder under pressure, and find it hard to switch off. Under stress they over-work, skip recovery, and may frame setbacks as personal failures.',
     strategist:
-      'This person is a Strategist — they seek clarity before action, plan for contingencies, and ruminate on unclear outcomes. Under stress they over-analyze, delay action, and get stuck in analysis paralysis.',
+      'This person is a Strategist - they seek clarity before action, plan for contingencies, and ruminate on unclear outcomes. Under stress they over-analyze, delay action, and get stuck in analysis paralysis.',
     connector:
-      'This person is a Connector — relationships and trust are central to their work, they process externally, and take rejection personally. Under stress they over-accommodate, absorb others\' emotions, and risk boundary erosion.',
+      'This person is a Connector - relationships and trust are central to their work, they process externally, and take rejection personally. Under stress they over-accommodate, absorb others\' emotions, and risk boundary erosion.',
     reactor:
-      'This person is a Reactor — their confidence and energy fluctuate with outcomes, they absorb setbacks deeply, and may react in ways they later regret. Under stress they ruminate, lose routines, and struggle to switch off.',
+      'This person is a Reactor - their confidence and energy fluctuate with outcomes, they absorb setbacks deeply, and may react in ways they later regret. Under stress they ruminate, lose routines, and struggle to switch off.',
   };
 
   const primaryGuide = archetypeGuidance[p] || '';
@@ -1100,7 +1100,7 @@ function buildUserProfileBlock(profile: UserProfile): string {
     : '';
 
   if (!primaryGuide) return '';
-  return `USER PROFILE — Sales Wellbeing Map\n${primaryGuide}${secondaryGuide}${scoreLine}\nUse this to interpret their message through the lens of how THEY typically experience pressure, not generically.`;
+  return `USER PROFILE - Sales Wellbeing Map\n${primaryGuide}${secondaryGuide}${scoreLine}\nUse this to interpret their message through the lens of how THEY typically experience pressure, not generically.`;
 }
 
 // ============================================================================
@@ -1132,7 +1132,7 @@ function buildResponsePrompt(
       askQuestion: true,
     } satisfies EngineDecision);
 
-  const profileBlock = userProfile ? `\n\n${buildUserProfileBlock(userProfile)}\nWhen coaching this person, speak to how THEIR archetype tends to show up in this kind of situation. Do not give generic advice — anchor the reframe and any questions in their specific pattern.` : '';
+  const profileBlock = userProfile ? `\n\n${buildUserProfileBlock(userProfile)}\nWhen coaching this person, speak to how THEIR archetype tends to show up in this kind of situation. Do not give generic advice - anchor the reframe and any questions in their specific pattern.` : '';
 
   const questionsWarning =
     previousQuestions.length > 0
@@ -1193,7 +1193,7 @@ AskQuestion: ${d.askQuestion ? 'true' : 'false'}`;
       stateObjective = `Objective: separate facts vs story. If you ask a question, it must be concrete.`;
       break;
     case 'PLAN':
-      stateObjective = `Objective: produce a tiny plan (1–3 steps) that fits their situation. Optional 1 narrowing question.`;
+      stateObjective = `Objective: produce a tiny plan (1-3 steps) that fits their situation. Optional 1 narrowing question.`;
       break;
     case 'RESTRUCTURE':
       stateObjective = `Objective: if a distortion is clearly present, name it (otherwise leave blank) and provide a clean reframe.`;
@@ -1320,7 +1320,7 @@ Return ONLY valid JSON:
   ],
   "acknowledgment": "Pick the best one from acknowledgments and paste it here exactly (no labels).",
   "thoughtPattern": "If clearly present, a pattern name. Otherwise empty string.",
-  "patternNote": "Short explanation (1–2 sentences).",
+  "patternNote": "Short explanation (1-2 sentences).",
   "reframe": "Offer a compassionate reframe that challenges the distortion. Provide a new, healthier way to look at the situation.",
   "questions": [
     "Question A: Ask about the specific trigger (What started this?).",

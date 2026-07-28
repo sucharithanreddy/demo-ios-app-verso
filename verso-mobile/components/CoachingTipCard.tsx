@@ -1,5 +1,5 @@
 // ============================================================================
-// CoachingTipCard — displays a single coaching tip
+// CoachingTipCard - displays a single coaching tip
 // ============================================================================
 
 import { View, Text } from 'react-native';

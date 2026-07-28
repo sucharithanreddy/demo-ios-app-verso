@@ -1,5 +1,5 @@
 // ============================================================================
-// QuickPrompts — horizontal scroll of situation-based prompts
+// QuickPrompts - horizontal scroll of situation-based prompts
 // ============================================================================
 
 import { View, Text, Pressable, ScrollView } from 'react-native';

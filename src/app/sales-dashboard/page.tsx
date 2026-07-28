@@ -40,7 +40,7 @@ export default function SalesDashboardPage() {
   const [hasFullDiagnostic, setHasFullDiagnostic] = useState(false);
 
   useEffect(() => {
-    // Get archetype from localStorage — guard against malformed JSON
+    // Get archetype from localStorage - guard against malformed JSON
     const results = localStorage.getItem('diagnosticResults');
     if (results) {
       try {
@@ -191,7 +191,7 @@ export default function SalesDashboardPage() {
     {
       title: hasFullDiagnostic ? 'Full Map Complete' : 'Full Wellbeing Map',
       description: hasFullDiagnostic
-        ? '64-Q assessment done — view your sub-dimensions'
+        ? '64-Q assessment done - view your sub-dimensions'
         : '64-Q deep dive: 8 sub-dimensions + wellbeing index',
       href: hasFullDiagnostic ? '/diagnostic/full/results' : '/diagnostic/full',
       icon: BookOpen,
@@ -349,7 +349,7 @@ export default function SalesDashboardPage() {
                   <div key={day} className="text-center">
                     <p className="text-xs text-muted-foreground mb-2">{day}</p>
                     <div className="w-full aspect-square rounded-lg bg-secondary/50 flex items-center justify-center">
-                      <span className="text-lg">—</span>
+                      <span className="text-lg">-</span>
                     </div>
                   </div>
                 ))}

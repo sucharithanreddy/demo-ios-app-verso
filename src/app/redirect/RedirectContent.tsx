@@ -42,7 +42,7 @@ export function RedirectContent() {
         console.log('[REDIRECT PAGE] Is valid type:', isValidType);
 
         if (isValidType) {
-          // We have a valid type from URL — pass it to the server, but
+          // We have a valid type from URL - pass it to the server, but
           // let the SERVER decide the redirect. For existing users the
           // server ignores the selected type and uses their persisted DB
           // type (so a manager who signs in again with the landing-page
@@ -60,7 +60,7 @@ export function RedirectContent() {
           const data = await res.json();
           console.log('[REDIRECT PAGE] API response:', data);
 
-          // Trust the server's redirectUrl — it knows the user's actual
+          // Trust the server's redirectUrl - it knows the user's actual
           // persisted type. Fall back to the URL type only if the server
           // didn't return a redirect.
           const target = data.redirectUrl
@@ -93,7 +93,7 @@ export function RedirectContent() {
             const data = await res.json();
             console.log('[REDIRECT PAGE] API response:', data);
 
-            // Same as above — trust the server.
+            // Same as above - trust the server.
             const target = data.redirectUrl
               || (normalizedStored === 'SALES_MANAGER' ? '/manager-dashboard' : '/sales-dashboard');
             router.push(target);

@@ -24,7 +24,7 @@ export async function GET() {
 
     const dbCheck = await checkDatabaseConnection();
     if (!dbCheck.connected) {
-      // DB unavailable — fall back to empty rather than 503, so the UI keeps working
+      // DB unavailable - fall back to empty rather than 503, so the UI keeps working
       return NextResponse.json({ results: [], dbUnavailable: true });
     }
 
@@ -56,7 +56,7 @@ export async function GET() {
     //   2. If we ever fix a scoring bug server-side, every existing
     //      row automatically picks up the fix on next read.
     //   3. Dashboards, the AI Companion, and manager reports always
-    //      see canonical scores — never stale or tampered values.
+    //      see canonical scores - never stale or tampered values.
     //
     // Rows whose answers are missing/unparseable (e.g. very old rows
     // from before answers were persisted) pass through unchanged.
@@ -112,7 +112,7 @@ export async function GET() {
 // }
 //
 // Backward compatibility: if the client doesn't call this endpoint at all
-// (older builds), nothing breaks — they just don't get server-side persistence.
+// (older builds), nothing breaks - they just don't get server-side persistence.
 export async function POST(request: NextRequest) {
   try {
     const { userId } = await auth();
@@ -184,7 +184,7 @@ export async function POST(request: NextRequest) {
     // persisted DB row is always the server's computation.
     //
     // If server-side scoring fails (e.g. fewer than 64 answers for a
-    // Full Map), we 400 — the client must fix and resubmit.
+    // Full Map), we 400 - the client must fix and resubmit.
     // -----------------------------------------------------------------
     const isFullMap = validation.attemptSource === 'full_map';
     let scored;
@@ -216,7 +216,7 @@ export async function POST(request: NextRequest) {
         reactorScore: scored.reactorScore,
         primaryProfile: scored.primaryProfile,
         secondaryProfile: scored.secondaryProfile,
-        // Raw answers preserved (PDF spec §5 — retain original responses)
+        // Raw answers preserved (PDF spec §5 - retain original responses)
         answers: validation.answers!,
         strengths: validation.strengths ?? null,
         wellbeingRisks: validation.wellbeingRisks ?? null,

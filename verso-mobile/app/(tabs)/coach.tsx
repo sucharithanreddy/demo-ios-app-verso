@@ -1,5 +1,5 @@
 // ============================================================================
-// Coach screen — AI Coach chat (the hero feature)
+// Coach screen - AI Coach chat (the hero feature)
 // ============================================================================
 
 import {
@@ -47,7 +47,7 @@ export default function CoachScreen() {
   const backendSessionId = useChatStore((s) => s.backendSessionId);
   const setBackendSessionId = useChatStore((s) => s.setBackendSessionId);
 
-  // The most recent assistant message — drives the depth indicator + state
+  // The most recent assistant message - drives the depth indicator + state
   const lastAssistantMessage = useMemo(() => {
     for (let i = messages.length - 1; i >= 0; i--) {
       if (messages[i].role === 'assistant') return messages[i];
@@ -105,7 +105,7 @@ export default function CoachScreen() {
       // This persists the conversation cross-device without blocking the chat.
       let sessionId = backendSessionId;
       if (!sessionId) {
-        // Fire-and-forget — don't await. We'll capture the sessionId when it lands.
+        // Fire-and-forget - don't await. We'll capture the sessionId when it lands.
         createSession(text)
           .then((res) => {
             if (res?.sessionId) {
@@ -115,7 +115,7 @@ export default function CoachScreen() {
           })
           .catch(() => {});
       } else {
-        // Subsequent messages — append to existing backend session.
+        // Subsequent messages - append to existing backend session.
         appendSessionMessage(sessionId, {
           role: 'user',
           content: text,
@@ -140,7 +140,7 @@ export default function CoachScreen() {
 
         // Best-effort: persist assistant message + session state to backend.
         // Wait for sessionId in case the createSession call from this same
-        // turn hasn't resolved yet — race condition tolerant.
+        // turn hasn't resolved yet - race condition tolerant.
         const targetSessionId = sessionId ?? useChatStore.getState().backendSessionId;
         if (targetSessionId) {
           appendSessionMessage(targetSessionId, {
@@ -224,7 +224,7 @@ export default function CoachScreen() {
     ({ item, index }: { item: ChatMessage; index: number }) => (
       <ChatMessageBubble
         message={item}
-        // Only animate the most recent assistant message — older messages
+        // Only animate the most recent assistant message - older messages
         // should render instantly when hydrated or scrolled back into view.
         animate={
           item.role === 'assistant' &&
@@ -325,7 +325,7 @@ export default function CoachScreen() {
         </View>
       )}
 
-      {/* Iceberg depth indicator — sticky above the input */}
+      {/* Iceberg depth indicator - sticky above the input */}
       {showDepthIndicator && lastAssistantMessage && (
         <View className="px-4 pb-2">
           <IcebergDepthIndicator

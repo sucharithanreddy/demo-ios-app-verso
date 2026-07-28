@@ -1,5 +1,5 @@
 // ============================================================================
-// Stripe server client — singleton
+// Stripe server client - singleton
 // ============================================================================
 
 import Stripe from 'stripe';
@@ -19,7 +19,7 @@ export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? '', {
 });
 
 // ---------------------------------------------------------------------------
-// Price IDs — set these in your .env after creating products in Stripe
+// Price IDs - set these in your .env after creating products in Stripe
 // ---------------------------------------------------------------------------
 
 export const STRIPE_PRICES = {
@@ -52,7 +52,7 @@ export async function getOrCreateStripeCustomer(
       await stripe.customers.retrieve(user.stripeCustomerId);
       return user.stripeCustomerId;
     } catch {
-      // Customer was deleted in Stripe — fall through to create a new one
+      // Customer was deleted in Stripe - fall through to create a new one
     }
   }
 

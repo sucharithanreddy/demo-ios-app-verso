@@ -57,7 +57,7 @@ db/
 # clerk configuration (can include secrets)
 /.clerk/
 
-# Scratch / debug files — never commit
+# Scratch / debug files - never commit
 chat_content.json
 tool-results/
 workspace/

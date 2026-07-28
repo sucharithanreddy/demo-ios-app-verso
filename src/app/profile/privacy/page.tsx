@@ -327,7 +327,7 @@ export default function PrivacySettingsPage() {
                     <p className="font-semibold text-foreground">Show as &ldquo;Anonymous team member&rdquo;</p>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Your manager still sees your archetype, dimension scores, and trends — but your name and email are replaced with &ldquo;Anonymous team member.&rdquo;
+                    Your manager still sees your archetype, dimension scores, and trends - but your name and email are replaced with &ldquo;Anonymous team member.&rdquo;
                     Your data still contributes to team-level insights.
                   </p>
                 </div>
@@ -380,7 +380,7 @@ export default function PrivacySettingsPage() {
           <div className="space-y-3 text-sm text-muted-foreground">
             <p>
               <strong className="text-foreground">Individual results are private.</strong>{' '}
-              Your manager only sees aggregated team trends — never your individual check-in responses or AI Companion conversations.
+              Your manager only sees aggregated team trends - never your individual check-in responses or AI Companion conversations.
             </p>
             <p>
               <strong className="text-foreground">Managers cannot use this data for performance decisions.</strong>{' '}

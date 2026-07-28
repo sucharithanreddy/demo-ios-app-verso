@@ -149,7 +149,7 @@ export default function FullDiagnosticResultsPage() {
     if (shouldBeDark) document.documentElement.classList.add('dark');
 
     // Load the full result from localStorage (set by /diagnostic/full
-    // on submit). If absent, the user landed here directly — redirect
+    // on submit). If absent, the user landed here directly - redirect
     // them to the assessment.
     const raw = localStorage.getItem('fullDiagnosticResults');
     if (raw) {
@@ -626,7 +626,7 @@ export default function FullDiagnosticResultsPage() {
             <h2 className="text-lg font-semibold text-foreground">Decision Style</h2>
           </div>
           <p className="text-sm text-muted-foreground mb-6">
-            How you tend to make decisions. The strongest style is your primary tendency — but all four contribute.
+            How you tend to make decisions. The strongest style is your primary tendency - but all four contribute.
           </p>
           <div className="grid sm:grid-cols-2 gap-3">
             <PressureSubCard label="Fast / instinctive" description="Act quickly on instinct" score={result.derivedMeasures.decisionStyle.fast} />
@@ -650,7 +650,7 @@ export default function FullDiagnosticResultsPage() {
             <div>
               <h2 className="text-lg font-semibold text-foreground mb-1">Your AI Companion now knows your pattern</h2>
               <p className="text-sm text-muted-foreground">
-                Your full profile has been saved. When you use the Reflect AI tool, your responses will be personalised based on how YOUR pattern tends to experience sales pressure — not generic advice.
+                Your full profile has been saved. When you use the Reflect AI tool, your responses will be personalised based on how YOUR pattern tends to experience sales pressure - not generic advice.
               </p>
             </div>
           </div>
@@ -714,7 +714,7 @@ function DerivedMeasureCard({
   // For 'pressure' direction: higher = more pressure/cost.
   // invertMeaning flips the rendering interpretation (e.g. Relationship
   // Orientation is presented as a strength even though it's not strictly
-  // "health" — we just don't flag it as a risk at high values).
+  // "health" - we just don't flag it as a risk at high values).
   const safeScore = Math.max(0, Math.min(100, Math.round(Number(score) || 0)));
   const hue = direction === 'pressure' ? pressureHue(safeScore) : healthHue(safeScore);
   const colors = direction === 'pressure' ? PRESSURE_COLOR_MAP[hue] : HEALTH_COLOR[hue];

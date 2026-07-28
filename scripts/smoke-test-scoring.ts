@@ -15,7 +15,7 @@ import {
 } from '../src/lib/full-diagnostic-questions';
 
 function main() {
-  console.log('=== Verso Sales Wellbeing Map — Scoring Smoke Test ===\n');
+  console.log('=== Verso Sales Wellbeing Map - Scoring Smoke Test ===\n');
 
   // 1. Verify the question bank structure
   console.log(`Total questions: ${fullDiagnosticQuestions.length}`);
@@ -37,7 +37,7 @@ function main() {
   }
   console.log(`Max same-archetype consecutive: ${maxConsec} (must be ≤ 2)`);
 
-  // 3. Synthetic "all neutral" answers — every dimension should land at 50%
+  // 3. Synthetic "all neutral" answers - every dimension should land at 50%
   const neutralAnswers = fullDiagnosticQuestions.map(q => ({ questionId: q.id, score: 3 }));
   const neutralResult = calculateFullResults(neutralAnswers, 600);
   console.log('\n=== All-neutral responses (every answer = 3) ===');
@@ -48,7 +48,7 @@ function main() {
   console.log(`Pressure Indicator: ${neutralResult.wellbeingPressureIndicator}`);
   console.log(`Classification: ${neutralResult.profileClassification}`);
 
-  // 4. Synthetic "all strongly agree" answers — reverse-scored items become 1, others become 5
+  // 4. Synthetic "all strongly agree" answers - reverse-scored items become 1, others become 5
   //    For each dimension: raw = 3*5 + 1*1 = 16 (3 standard at 5, 1 reverse at 1)
   //    Dimension % = ((16-4)/16)*100 = 75
   const agreeAnswers = fullDiagnosticQuestions.map(q => ({ questionId: q.id, score: 5 }));
@@ -62,7 +62,7 @@ function main() {
   console.log(`Derived: confidenceStability=${agreeResult.derivedMeasures.confidenceStability} (100 - R1=75 = 25)`);
   console.log(`Derived: energySustainability=${agreeResult.derivedMeasures.energySustainability} (100 - mean(D3=75, D4=75, R3=75) = 25)`);
 
-  // 5. Synthetic "all strongly disagree" — reverse-scored become 5, standard become 1
+  // 5. Synthetic "all strongly disagree" - reverse-scored become 5, standard become 1
   //    For each dimension: raw = 3*1 + 1*5 = 8, % = ((8-4)/16)*100 = 25
   const disagreeAnswers = fullDiagnosticQuestions.map(q => ({ questionId: q.id, score: 1 }));
   const disagreeResult = calculateFullResults(disagreeAnswers, 600);
@@ -71,13 +71,13 @@ function main() {
   console.log(`Sample dim D1: ${disagreeResult.dimensionScores.D1}, D4: ${disagreeResult.dimensionScores.D4}`);
   console.log(`Sustainability Index: ${disagreeResult.salesWellbeingSustainabilityIndex}`);
 
-  // 6. Response quality flags — fast completion
+  // 6. Response quality flags - fast completion
   const fastResult = calculateFullResults(neutralAnswers, 180); // 3 minutes
   console.log('\n=== Response quality (3-minute completion) ===');
   console.log(`fastCompletion flag: ${fastResult.responseQuality.fastCompletion} (expected true)`);
   console.log(`hasFlags: ${fastResult.responseQuality.hasFlags}`);
 
-  // 7. Response quality — straight-lining (all 3s = 100% same option)
+  // 7. Response quality - straight-lining (all 3s = 100% same option)
   console.log(`\nStraight-lining check (all neutral): straightLining=${neutralResult.responseQuality.straightLining} (expected true, 100% > 85%)`);
   console.log(`Excessive neutrality (all 3s): excessiveNeutrality=${neutralResult.responseQuality.excessiveNeutrality} (expected true, 100% > 60%)`);
 

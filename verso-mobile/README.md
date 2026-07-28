@@ -1,6 +1,6 @@
-# Verso Mobile — React Native (Expo)
+# Verso Mobile - React Native (Expo)
 
-The native iOS app for Verso — the AI Coach for sales professionals. Built with Expo SDK 52, React Native 0.76, Clerk auth, and NativeWind (Tailwind CSS for React Native).
+The native iOS app for Verso - the AI Coach for sales professionals. Built with Expo SDK 52, React Native 0.76, Clerk auth, and NativeWind (Tailwind CSS for React Native).
 
 ## Architecture
 
@@ -34,9 +34,9 @@ The native iOS app for Verso — the AI Coach for sales professionals. Built wit
 
 - **Node.js** 18+
 - **npm** or **bun**
-- **Xcode 16+** (for iOS builds — macOS only)
+- **Xcode 16+** (for iOS builds - macOS only)
 - **CocoaPods** (`sudo gem install cocoapods`)
-- **Apple Developer Account** ($99/year — [enroll here](https://developer.apple.com/programs/))
+- **Apple Developer Account** ($99/year - [enroll here](https://developer.apple.com/programs/))
 - **EAS CLI** (`npm install -g eas-cli`)
 
 ## Quick Start
@@ -217,7 +217,7 @@ Set up in App Store Connect:
 
 ### Step 7: Screenshots & Metadata
 
-Required screenshots (6.7" iPhone — iPhone 15 Pro):
+Required screenshots (6.7" iPhone - iPhone 15 Pro):
 1. Home screen with greeting
 2. AI Coach chat (mid-conversation)
 3. Daily check-in modal
@@ -227,7 +227,7 @@ Required screenshots (6.7" iPhone — iPhone 15 Pro):
 
 App Store metadata:
 - **Subtitle** (30 chars): "AI coaching for sales minds"
-- **Description** (4000 chars): Focus on outcomes — mental resilience, pattern awareness, personalized coaching
+- **Description** (4000 chars): Focus on outcomes - mental resilience, pattern awareness, personalized coaching
 - **Keywords** (100 chars): sales,coach,ai,wellbeing,mental,performance,mindset,resilience,burnout,motivation
 - **Categories**: Business (primary), Health & Fitness (secondary)
 

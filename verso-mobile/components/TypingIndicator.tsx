@@ -1,5 +1,5 @@
 // ============================================================================
-// TypingIndicator — three pulsing dots shown while AI is thinking
+// TypingIndicator - three pulsing dots shown while AI is thinking
 // ============================================================================
 
 import { View } from 'react-native';

@@ -1,12 +1,12 @@
 // ============================================================================
-// IcebergDepthIndicator — visualizes how deep the conversation has gone.
+// IcebergDepthIndicator - visualizes how deep the conversation has gone.
 //
 // The engine returns `layerProgress` = { surface, trigger, emotion, coreBelief }
 // each 0-100. We render 4 horizontal layers stacked vertically, like an
 // iceberg seen from the side. The current "effective layer" glows; deeper
 // layers fade in as the conversation progresses.
 //
-// This is the signature visual of the AI companion — it shows the user that
+// This is the signature visual of the AI companion - it shows the user that
 // the conversation is going somewhere, not just circling on the surface.
 // ============================================================================
 
@@ -205,7 +205,7 @@ function LayerRow({
 }
 
 // ---------------------------------------------------------------------------
-// Compact variant — 4 dots, the active one glows. Used inline in the chat
+// Compact variant - 4 dots, the active one glows. Used inline in the chat
 // header to give a constant sense of progress without taking vertical space.
 // ---------------------------------------------------------------------------
 

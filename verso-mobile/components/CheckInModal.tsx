@@ -1,5 +1,5 @@
 // ============================================================================
-// CheckInModal — daily check-in flow (mood, energy, confidence, impact tags)
+// CheckInModal - daily check-in flow (mood, energy, confidence, impact tags)
 // ============================================================================
 
 import {
@@ -82,7 +82,7 @@ export function CheckInModal({ visible, onClose }: Props) {
         [{ text: 'Done', onPress: handleClose }]
       );
     } catch (err) {
-      // Offline — save to pending queue
+      // Offline - save to pending queue
       await savePendingCheckIn({
         id: checkInId,
         ...input,
@@ -238,7 +238,7 @@ export function CheckInModal({ visible, onClose }: Props) {
 }
 
 // ---------------------------------------------------------------------------
-// Rating row — 5 dots
+// Rating row - 5 dots
 // ---------------------------------------------------------------------------
 
 function RatingRow({

@@ -9,7 +9,7 @@ import {
 } from '@/lib/api-utils';
 
 // ============================================================
-// GET — Fetch the current user's manager visibility preference
+// GET - Fetch the current user's manager visibility preference
 // ============================================================
 export async function GET(request: NextRequest) {
   try {
@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
 }
 
 // ============================================================
-// PATCH — Update the user's manager visibility preference
+// PATCH - Update the user's manager visibility preference
 // Body: { managerVisibility: 'NAMED' | 'ANONYMOUS' }
 // ============================================================
 export async function PATCH(request: NextRequest) {

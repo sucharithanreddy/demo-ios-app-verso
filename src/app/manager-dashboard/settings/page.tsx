@@ -608,7 +608,7 @@ export default function ManagerSettingsPage() {
             </div>
           </motion.div>
 
-          {/* Role & Account — switch role / view as different user type */}
+          {/* Role & Account - switch role / view as different user type */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -631,7 +631,7 @@ export default function ManagerSettingsPage() {
                 <p className="text-2xl font-bold text-foreground mt-0.5">
                   {profile?.userType
                     ? profile.userType.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, c => c.toUpperCase())
-                    : '—'}
+                    : '-'}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
                   Want to switch between Individual, Sales Person, or Sales Manager? Use the profile setup page to change your role.

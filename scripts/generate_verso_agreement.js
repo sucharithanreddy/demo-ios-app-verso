@@ -1,12 +1,12 @@
 // ============================================================================
-// Verso × Developer — Software Purchase, Assignment, Exclusive Licence,
+// Verso × Developer - Software Purchase, Assignment, Exclusive Licence,
 // Revenue Sharing & Technical Services Agreement
 //
-// Source: PDF (Untitled%20document.pdf.pdf) provides the substantive content —
+// Source: PDF (Untitled%20document.pdf.pdf) provides the substantive content -
 // the Optimism Engine purchase for ₹40L, deferred via revenue share, exclusive
 // license during payment, ongoing technical services.
 //
-// Structure: docx template (Verso_Developer_Agreement_Revised (3).docx) —
+// Structure: docx template (Verso_Developer_Agreement_Revised (3).docx) -
 // 12 clauses + Schedule 1, English law, LCIA arbitration, professional format.
 // ============================================================================
 
@@ -18,7 +18,7 @@ const {
 const fs = require('fs');
 
 // ---------------------------------------------------------------------------
-// Palette — per contract scene: pure black for ALL text. No colored headings.
+// Palette - per contract scene: pure black for ALL text. No colored headings.
 // ---------------------------------------------------------------------------
 const BLACK = '000000';
 const MUTED = '6E6560'; // only for table header backgrounds (decoration)
@@ -77,7 +77,7 @@ function subtitle(text) {
 }
 
 function sectionHeading(text) {
-  // Heading 1 — Xiao San (15pt = size 30), SimHei, bold, black
+  // Heading 1 - Xiao San (15pt = size 30), SimHei, bold, black
   return new Paragraph({
     heading: HeadingLevel.HEADING_1,
     spacing: { before: 360, after: 180, line: 360 },
@@ -113,7 +113,7 @@ function body(text, opts = {}) {
   });
 }
 
-// Body with mixed bold runs — for clauses with key terms in bold
+// Body with mixed bold runs - for clauses with key terms in bold
 function bodyRich(runs, opts = {}) {
   return new Paragraph({
     alignment: AlignmentType.JUSTIFIED,
@@ -180,7 +180,7 @@ function clauseRich(num, runs, opts = {}) {
   });
 }
 
-// Sub-sub clause (a) (b) (c) — lettered list inside a clause
+// Sub-sub clause (a) (b) (c) - lettered list inside a clause
 function letteredClause(letter, text, opts = {}) {
   return new Paragraph({
     alignment: AlignmentType.JUSTIFIED,
@@ -336,7 +336,7 @@ function compTable(rows) {
   });
 }
 
-// Schedule 1 — Software modules table
+// Schedule 1 - Software modules table
 function scheduleTable(rows) {
   const headerRow = new TableRow({
     tableHeader: true,
@@ -413,7 +413,7 @@ function signatureBlock() {
   ];
 
   const partyAValues = [
-    '[Enrico — Full Legal Name]',
+    '[Enrico - Full Legal Name]',
     'Co-Founder, Verso',
     '_______________________',
     '_______________________',
@@ -754,10 +754,10 @@ children.push(clause('4.6',
 ));
 
 // ============================================================================
-// 5. INTELLECTUAL PROPERTY — OWNERSHIP AND ASSIGNMENT
+// 5. INTELLECTUAL PROPERTY - OWNERSHIP AND ASSIGNMENT
 // ============================================================================
 
-children.push(sectionHeading('5.  Intellectual Property — Ownership and Assignment'));
+children.push(sectionHeading('5.  Intellectual Property - Ownership and Assignment'));
 
 children.push(subHeading('Key Principle: Conditional Assignment upon Full Payment'));
 
@@ -1097,7 +1097,7 @@ children.push(body(
 children.push(signatureBlock());
 
 // ============================================================================
-// SCHEDULE 1 — DESCRIPTION OF THE SOFTWARE
+// SCHEDULE 1 - DESCRIPTION OF THE SOFTWARE
 // ============================================================================
 
 children.push(sectionHeading('Schedule 1 \u2014 Description of the Software (THE OPTIMISM ENGINE)'));
@@ -1136,7 +1136,7 @@ children.push(body(
 const doc = new Document({
   creator: 'Verso',
   title: 'Software Purchase, Assignment, Exclusive Licence, Revenue Sharing and Technical Services Agreement',
-  subject: 'Verso x Developer — Optimism Engine Acquisition',
+  subject: 'Verso x Developer - Optimism Engine Acquisition',
   description: 'Legal agreement for the purchase and assignment of THE OPTIMISM ENGINE AI platform from the Developer to Verso, with deferred payment via revenue share, 6-month sunset date, and ongoing technical services. Revised to protect the Developer\u2019s rights, time, and money. Material commercial terms (Purchase Consideration amount, Revenue Share percentage, liability cap) to be filled in prior to execution.',
   styles: {
     default: {

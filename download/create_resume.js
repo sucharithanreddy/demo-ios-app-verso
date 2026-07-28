@@ -78,7 +78,7 @@ const doc = new Document({
         children: [
           new TextRun("DevOps/Site Reliability Engineer with hands-on experience running and fixing production systems. Over the years I have readjusted my focus to understanding "),
           new TextRun({ text: "why incidents happen", bold: true }),
-          new TextRun("—rather than just restoring services, but identifying recurring patterns, underlying system gaps, and preventing repeat failures. Recently expanded into "),
+          new TextRun("-rather than just restoring services, but identifying recurring patterns, underlying system gaps, and preventing repeat failures. Recently expanded into "),
           new TextRun({ text: "AI/ML application development", bold: true }),
           new TextRun(", building and deploying a production AI application from concept to client demo. Comfortable troubleshooting Linux, Kubernetes, CI/CD pipelines, and cloud infrastructure, with a strong ownership mindset and ability to simplify complex operational problems.")
         ]
@@ -133,9 +133,9 @@ const doc = new Document({
       new Paragraph({ style: "SectionHeader", children: [new TextRun("FEATURED PROJECT")] }),
       new Paragraph({
         children: [
-          new TextRun({ text: "Verso – AI-Powered Emotional Intelligence App", bold: true, size: 22, color: colors.body }),
+          new TextRun({ text: "Verso - AI-Powered Emotional Intelligence App", bold: true, size: 22, color: colors.body }),
           new TextRun({ text: "  |  ", size: 18, color: colors.secondary }),
-          new TextRun({ text: "Feb 2026 – Present", size: 18, color: colors.secondary, italics: true })
+          new TextRun({ text: "Feb 2026 - Present", size: 18, color: colors.secondary, italics: true })
         ]
       }),
       new Paragraph({ style: "Bullet", children: [
@@ -144,11 +144,11 @@ const doc = new Document({
       ]}),
       new Paragraph({ style: "Bullet", children: [
         new TextRun({ text: "• ", size: 20 }),
-        new TextRun({ text: "Full-stack development using Next.js 16, TypeScript, PostgreSQL with Prisma, and AI SDK integration—deployed to Railway with Docker containerization and secure authentication.", size: 20 })
+        new TextRun({ text: "Full-stack development using Next.js 16, TypeScript, PostgreSQL with Prisma, and AI SDK integration-deployed to Railway with Docker containerization and secure authentication.", size: 20 })
       ]}),
       new Paragraph({ style: "Bullet", children: [
         new TextRun({ text: "• ", size: 20 }),
-        new TextRun({ text: "Handled end-to-end product ownership: research, design, development, deployment, client demos, and technical sales—successfully pitched the product for a ", size: 20 }),
+        new TextRun({ text: "Handled end-to-end product ownership: research, design, development, deployment, client demos, and technical sales-successfully pitched the product for a ", size: 20 }),
         new TextRun({ text: "$40K client engagement.", bold: true, size: 20, color: colors.accent })
       ]}),
       
@@ -159,8 +159,8 @@ const doc = new Document({
       new Paragraph({
         children: [
           new TextRun({ text: "Specialist", bold: true, size: 22, color: colors.body }),
-          new TextRun({ text: " – HCLTech  |  ", size: 20, color: colors.body }),
-          new TextRun({ text: "Apr 2024 – Aug 2025  |  Hyderabad, India", size: 18, color: colors.secondary, italics: true })
+          new TextRun({ text: " - HCLTech  |  ", size: 20, color: colors.body }),
+          new TextRun({ text: "Apr 2024 - Aug 2025  |  Hyderabad, India", size: 18, color: colors.secondary, italics: true })
         ]
       }),
       new Paragraph({ style: "Bullet", children: [new TextRun({ text: "• Supported AWS-based production environments running containerized applications on EKS, handling availability, performance, and deployment issues across Dev, QA, and Prod.", size: 20 })] }),
@@ -178,8 +178,8 @@ const doc = new Document({
       new Paragraph({
         children: [
           new TextRun({ text: "Senior Process Executive", bold: true, size: 22, color: colors.body }),
-          new TextRun({ text: " – Cognizant  |  ", size: 20, color: colors.body }),
-          new TextRun({ text: "Jul 2022 – Feb 2024  |  Hyderabad, India", size: 18, color: colors.secondary, italics: true })
+          new TextRun({ text: " - Cognizant  |  ", size: 20, color: colors.body }),
+          new TextRun({ text: "Jul 2022 - Feb 2024  |  Hyderabad, India", size: 18, color: colors.secondary, italics: true })
         ]
       }),
       new Paragraph({ style: "Bullet", children: [new TextRun({ text: "• Supported containerized applications on Kubernetes and EC2, handling production issues across deployments, networking, configuration, and runtime failures.", size: 20 })] }),
@@ -191,8 +191,8 @@ const doc = new Document({
       new Paragraph({
         children: [
           new TextRun({ text: "Engineer", bold: true, size: 22, color: colors.body }),
-          new TextRun({ text: " – CSS Corp  |  ", size: 20, color: colors.body }),
-          new TextRun({ text: "Sep 2021 – May 2022  |  Hyderabad, India", size: 18, color: colors.secondary, italics: true })
+          new TextRun({ text: " - CSS Corp  |  ", size: 20, color: colors.body }),
+          new TextRun({ text: "Sep 2021 - May 2022  |  Hyderabad, India", size: 18, color: colors.secondary, italics: true })
         ]
       }),
       new Paragraph({ style: "Bullet", children: [new TextRun({ text: "• Performed first-line support for cloud-hosted applications, monitoring system health and responding to alerts related to EC2, storage, and application services.", size: 20 })] }),
@@ -202,8 +202,8 @@ const doc = new Document({
       new Paragraph({
         children: [
           new TextRun({ text: "Process Executive", bold: true, size: 22, color: colors.body }),
-          new TextRun({ text: " – Infosys  |  ", size: 20, color: colors.body }),
-          new TextRun({ text: "Sep 2019 – Jun 2021  |  Hyderabad, India", size: 18, color: colors.secondary, italics: true })
+          new TextRun({ text: " - Infosys  |  ", size: 20, color: colors.body }),
+          new TextRun({ text: "Sep 2019 - Jun 2021  |  Hyderabad, India", size: 18, color: colors.secondary, italics: true })
         ]
       }),
       new Paragraph({ style: "Bullet", children: [new TextRun({ text: "• Provided technical support for enterprise users, resolving software, hardware, and network-related issues in production environments.", size: 20 })] }),
@@ -230,7 +230,7 @@ const doc = new Document({
             new TableCell({ borders: noBorders, width: { size: 5100, type: WidthType.DXA },
               children: [
                 new Paragraph({ children: [
-                  new TextRun({ text: "• AWS Solutions Architect – Associate ", size: 18, color: colors.body }),
+                  new TextRun({ text: "• AWS Solutions Architect - Associate ", size: 18, color: colors.body }),
                   new TextRun({ text: "(Preparing)", size: 16, color: colors.secondary, italics: true })
                 ]}),
                 new Paragraph({ children: [

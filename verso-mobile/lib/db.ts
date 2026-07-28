@@ -1,5 +1,5 @@
 // ============================================================================
-// Offline storage — SQLite for messages, AsyncStorage for simple state
+// Offline storage - SQLite for messages, AsyncStorage for simple state
 // ============================================================================
 
 import * as SQLite from 'expo-sqlite';
@@ -51,7 +51,7 @@ async function getDb(): Promise<SQLite.SQLiteDatabase> {
     );
   `);
 
-  // Best-effort schema migration — add columns that may not exist on older DBs.
+  // Best-effort schema migration - add columns that may not exist on older DBs.
   // ALTER TABLE ADD COLUMN is idempotent-safe via try/catch.
   const migrations: Array<{ col: string; type: string }> = [
     { col: 'patternNote', type: 'TEXT' },
@@ -67,7 +67,7 @@ async function getDb(): Promise<SQLite.SQLiteDatabase> {
     try {
       await db.execAsync(`ALTER TABLE messages ADD COLUMN ${m.col} ${m.type};`);
     } catch {
-      // Column already exists — ignore.
+      // Column already exists - ignore.
     }
   }
 
@@ -241,7 +241,7 @@ export async function deletePendingCheckIn(id: string): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
-// AsyncStorage helpers — for simple key-value state
+// AsyncStorage helpers - for simple key-value state
 // ---------------------------------------------------------------------------
 
 export async function getItem<T>(key: string): Promise<T | null> {

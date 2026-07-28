@@ -34,7 +34,7 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DIRECT_DATABASE_URL }}
         run: |
-          npx prisma migrate resolve --applied 0001_baseline || echo "Baseline already applied — continuing"
+          npx prisma migrate resolve --applied 0001_baseline || echo "Baseline already applied - continuing"
 
       - name: Commit baseline migration
         run: |

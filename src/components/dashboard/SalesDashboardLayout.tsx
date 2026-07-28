@@ -107,7 +107,7 @@ export function SalesDashboardLayout({ children }: SalesDashboardLayoutProps) {
     setIsDark(shouldBeDark);
     if (shouldBeDark) document.documentElement.classList.add('dark');
 
-    // Get archetype from localStorage — wrap in try/catch because a malformed
+    // Get archetype from localStorage - wrap in try/catch because a malformed
     // value would crash every sales-dashboard page (this layout wraps them all)
     // and surface as a "client-side exception" error.
     const results = localStorage.getItem('diagnosticResults');
@@ -170,7 +170,7 @@ export function SalesDashboardLayout({ children }: SalesDashboardLayoutProps) {
           setStreak(data.streak.currentStreak || 0);
         }
       } catch (e) {
-        // Use localStorage fallback — guard against malformed JSON
+        // Use localStorage fallback - guard against malformed JSON
         const stored = localStorage.getItem('userStreak');
         if (stored) {
           try {

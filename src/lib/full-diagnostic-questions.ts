@@ -1,19 +1,19 @@
 // src/lib/full-diagnostic-questions.ts
 //
-// Verso Sales Wellbeing Map — 64-question assessment bank.
+// Verso Sales Wellbeing Map - 64-question assessment bank.
 //
-// Source: "Verso Sales Wellbeing Map — Product, Assessment and
+// Source: "Verso Sales Wellbeing Map - Product, Assessment and
 // Interactive Dashboard Development Brief" (uploaded product spec).
 //
 // Architecture (per the brief):
 //   - 4 archetypes × 4 dimensions × 4 questions = 64 items total
-//   - Driver (D1–D4), Strategist (S1–S4),
-//     Connector (C1–C4), Reactor (R1–R4)
+//   - Driver (D1-D4), Strategist (S1-S4),
+//     Connector (C1-C4), Reactor (R1-R4)
 //   - 5-point Likert scale: Strongly disagree (1) → Strongly agree (5)
 //   - 13 reverse-scored items: D4.4, S1.4, S2.4, S3.4, S4.4,
 //     C1.4, C2.4, C3.4, C4.4, R1.4, R2.4, R3.4, R4.4
-//   - Dimension % = ((raw - 4) / 16) × 100  (raw range 4–20)
-//   - Archetype % = ((raw - 16) / 64) × 100 (raw range 16–80)
+//   - Dimension % = ((raw - 4) / 16) × 100  (raw range 4-20)
+//   - Archetype % = ((raw - 16) / 64) × 100 (raw range 16-80)
 //   - Mixed presentation order with controlled constraints
 //     (no archetype clustering, reverse items distributed)
 //
@@ -23,7 +23,7 @@
 
 export type Archetype = 'driver' | 'strategist' | 'connector' | 'reactor';
 
-// 16 dimensions — D1..D4, S1..S4, C1..C4, R1..R4
+// 16 dimensions - D1..D4, S1..S4, C1..C4, R1..R4
 export type DimensionCode =
   | 'D1' | 'D2' | 'D3' | 'D4'
   | 'S1' | 'S2' | 'S3' | 'S4'
@@ -32,7 +32,7 @@ export type DimensionCode =
 
 export interface FullDiagnosticQuestion {
   id: number;            // 1..64, stable across all sessions
-  code: string;          // 'D1.1', 'D1.2', ..., 'R4.4' — human-readable PDF id
+  code: string;          // 'D1.1', 'D1.2', ..., 'R4.4' - human-readable PDF id
   archetype: Archetype;
   dimension: DimensionCode;
   dimensionLabel: string; // e.g. 'Action and urgency'
@@ -64,7 +64,7 @@ export const DIMENSION_META: Record<DimensionCode, { archetype: Archetype; label
 };
 
 // ---------------------------------------------------------------------------
-// The 64-question bank — PDF spec §5.
+// The 64-question bank - PDF spec §5.
 //
 // ID assignment is stable and deterministic:
 //   D1.1=1, D1.2=2, D1.3=3, D1.4=4
@@ -195,7 +195,7 @@ export function reverseScore(raw: number): number {
 }
 
 // ---------------------------------------------------------------------------
-// Subset for the free Snapshot (16 questions — the .1 of each dimension).
+// Subset for the free Snapshot (16 questions - the .1 of each dimension).
 // ---------------------------------------------------------------------------
 export const snapshotQuestions = fullDiagnosticQuestions.filter(q => q.isSnapshot);
 
@@ -341,7 +341,7 @@ export const PRESSURE_LABELS: Record<WellbeingPressureLevel, string> = {
 };
 
 // ---------------------------------------------------------------------------
-// Full result shape — mirrors what gets stored in DiagnosticResult.derivedMeasures
+// Full result shape - mirrors what gets stored in DiagnosticResult.derivedMeasures
 // and localStorage('fullDiagnosticResults').
 // ---------------------------------------------------------------------------
 export interface DerivedMeasures {
@@ -428,11 +428,11 @@ export const ASSESSMENT_VERSION = 'verso-swm-v1.0';
 // ---------------------------------------------------------------------------
 // Calculate the full multi-layer result from a set of answers.
 //
-// @param answers Array of { questionId, score (1-5) } — must cover all 64
+// @param answers Array of { questionId, score (1-5) } - must cover all 64
 //                questions for a complete result. Missing answers are
-//                treated as neutral (3) — matches the existing snapshot
+//                treated as neutral (3) - matches the existing snapshot
 //                page behaviour and the spec's "unanswered = neutral" rule.
-// @param completionTimeSeconds Optional — used for the fast-completion flag.
+// @param completionTimeSeconds Optional - used for the fast-completion flag.
 // ---------------------------------------------------------------------------
 export function calculateFullResults(
   answers: { questionId: number; score: number }[],
@@ -499,7 +499,7 @@ export function calculateFullResults(
   //   1. Blended: top two within 5pp OR both > 75
   //   2. Balanced: top-min < 15 AND top ≤ 70
   //   3. Flexible: when no archetype > 55, "avoid applying a highly
-  //      definitive label" — language: "Your responses suggest a
+  //      definitive label" - language: "Your responses suggest a
   //      flexible profile without one strongly dominant pattern."
   //   4. Strong primary: default
   //
@@ -508,7 +508,7 @@ export function calculateFullResults(
   //   archetype score exceeds 55, the output should avoid applying a
   //   highly definitive label." This means even if the top two are
   //   within 5pp (which would otherwise trigger "blended"), if the
-  //   top is ≤ 55 we should use flexible language instead — because
+  //   top is ≤ 55 we should use flexible language instead - because
   //   "blended" tone says "Your profile combines STRONG X and Y
   //   patterns" which is wrong when nothing is actually strong.
   //
@@ -552,7 +552,7 @@ export function calculateFullResults(
   // The spec names R3.2 (replaying difficult conversations) and R3.3
   // (slow to feel like myself after setback) as the R3 items most
   // directly tied to boundary pressure. We use those two as the
-  // "selected R3 items" — they capture the inability to mentally
+  // "selected R3 items" - they capture the inability to mentally
   // disengage that defines boundary failure.
   const boundarySustainability = clampPct(
     100 - mean(dim('D4'), dim('C4'), qScoredPct('R3.2'), qScoredPct('R3.3'))

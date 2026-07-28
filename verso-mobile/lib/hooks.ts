@@ -1,5 +1,5 @@
 // ============================================================================
-// React Query hooks — data fetching with caching + optimistic updates
+// React Query hooks - data fetching with caching + optimistic updates
 // ============================================================================
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';

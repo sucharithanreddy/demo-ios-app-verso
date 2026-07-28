@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
 
     // Hydrate the user's Sales Wellbeing Map profile from the DB, if available.
     // Best-effort: if the DB is unreachable or the user has never taken the
-    // assessment, we proceed WITHOUT a profile — the engine falls back to
+    // assessment, we proceed WITHOUT a profile - the engine falls back to
     // its original (non-personalized) behaviour. This keeps the public /
     // unauthenticated path working.
     const userProfile = await loadUserProfile(userId);
@@ -109,7 +109,7 @@ async function loadUserProfile(clerkUserId: string | null): Promise<UserProfile 
       completedAt: latest.createdAt.toISOString(),
     };
   } catch (err) {
-    // Non-fatal — engine works without a profile
+    // Non-fatal - engine works without a profile
     console.warn('loadUserProfile: failed to load, proceeding without profile:', err);
     return undefined;
   }

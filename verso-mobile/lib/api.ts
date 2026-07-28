@@ -1,5 +1,5 @@
 // ============================================================================
-// API client — talks to the Next.js backend
+// API client - talks to the Next.js backend
 // ============================================================================
 
 import { getToken } from './auth-token';
@@ -33,7 +33,7 @@ export class ApiError extends Error {
 }
 
 // ---------------------------------------------------------------------------
-// Backend user shape (from /api/user/profile) — mapped to our UserProfile
+// Backend user shape (from /api/user/profile) - mapped to our UserProfile
 // ---------------------------------------------------------------------------
 
 interface BackendUserProfile {
@@ -177,7 +177,7 @@ export async function fetchCoachingTips(
 }
 
 // ---------------------------------------------------------------------------
-// AI Coach — /api/reframe (the engine)
+// AI Coach - /api/reframe (the engine)
 // ---------------------------------------------------------------------------
 
 export interface CoachRequest {
@@ -245,7 +245,7 @@ export async function sendCoachMessage(
 }
 
 // ---------------------------------------------------------------------------
-// Sessions (conversation persistence) — best-effort, non-blocking
+// Sessions (conversation persistence) - best-effort, non-blocking
 // ---------------------------------------------------------------------------
 
 export interface SessionSummary {
@@ -292,7 +292,7 @@ export async function createSession(
 
 /**
  * Append a message (user or assistant) to a backend session.
- * Best-effort: failures are silently swallowed — local SQLite is the
+ * Best-effort: failures are silently swallowed - local SQLite is the
  * source of truth for the chat UI, backend sessions are for cross-device
  * continuity + insights.
  */
@@ -323,7 +323,7 @@ export async function appendSessionMessage(
       body: JSON.stringify({ sessionId, ...message }),
     });
   } catch {
-    // Best-effort — don't break the chat UX on backend persistence failure.
+    // Best-effort - don't break the chat UX on backend persistence failure.
   }
 }
 

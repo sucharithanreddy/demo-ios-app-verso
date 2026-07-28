@@ -1,5 +1,5 @@
 /**
- * TEST-ONLY CLEANUP SCRIPT — DO NOT IMPORT FROM APP CODE
+ * TEST-ONLY CLEANUP SCRIPT - DO NOT IMPORT FROM APP CODE
  *
  * Removes every User row whose email matches the test-user pattern
  * (`testuser+<n>@verso.dev`). Cascade deletes automatically remove
@@ -13,7 +13,7 @@
  *
  * Safety:
  *   - Asks for explicit "yes" confirmation before deleting.
- *   - Only matches emails ending in @verso.dev — real users are untouched.
+ *   - Only matches emails ending in @verso.dev - real users are untouched.
  *   - The real manager account is never touched (their email doesn't match).
  */
 
@@ -69,7 +69,7 @@ async function main() {
       const diagnosticCount = u._count.diagnosticResults;
       const checkInCount = u._count.salesCheckIns;
       console.log(
-        `   • ${u.email} (${u.name ?? 'no name'}) — ${diagnosticCount} diagnostic(s), ${checkInCount} check-in(s)`,
+        `   • ${u.email} (${u.name ?? 'no name'}) - ${diagnosticCount} diagnostic(s), ${checkInCount} check-in(s)`,
       );
     }
     console.log('');

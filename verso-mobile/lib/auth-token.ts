@@ -1,5 +1,5 @@
 // ============================================================================
-// Auth token bridge — lets non-React code (lib/api.ts) access the Clerk token
+// Auth token bridge - lets non-React code (lib/api.ts) access the Clerk token
 // ============================================================================
 
 type TokenGetter = () => Promise<string | null>;
@@ -16,7 +16,7 @@ export function setTokenGetter(getter: TokenGetter | null): void {
 
 /**
  * Get the current Clerk session token (or null if not authenticated).
- * Safe to call from anywhere — returns null if no getter is registered.
+ * Safe to call from anywhere - returns null if no getter is registered.
  */
 export async function getToken(): Promise<string | null> {
   if (!tokenGetter) return null;

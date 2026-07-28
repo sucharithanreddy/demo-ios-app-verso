@@ -1,5 +1,5 @@
 // ============================================================================
-// Type definitions — mirror the backend Prisma models + API contracts
+// Type definitions - mirror the backend Prisma models + API contracts
 // ============================================================================
 
 export type Archetype = 'Driver' | 'Strategist' | 'Connector' | 'Reactor';
@@ -57,7 +57,7 @@ export interface UserStreak {
 }
 
 // ============================================================================
-// AI Engine response — matches /api/reframe output EXACTLY
+// AI Engine response - matches /api/reframe output EXACTLY
 // ============================================================================
 
 export type IcebergLayer =
@@ -92,7 +92,7 @@ export interface EngineMeta {
 }
 
 export interface EngineResponse {
-  // Core structured response — what the user sees
+  // Core structured response - what the user sees
   acknowledgment: string;
   thoughtPattern?: string;
   patternNote?: string;
@@ -104,16 +104,16 @@ export interface EngineResponse {
   icebergLayer?: string;
   layerInsight?: string;
 
-  // Progress + state — drives the depth visualization
+  // Progress + state - drives the depth visualization
   progressScore?: number;            // 0-100 overall conversation progress
   layerProgress?: LayerProgress;     // per-layer depth
   groundingMode?: boolean;
   groundingTurns?: number;
 
-  // Crisis flag — engine detected acute safety concern
+  // Crisis flag - engine detected acute safety concern
   isCrisisResponse?: boolean;
 
-  // Engine meta — provider, turn count, layer, intent, decision
+  // Engine meta - provider, turn count, layer, intent, decision
   meta?: EngineMeta;
 }
 

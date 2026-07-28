@@ -1,5 +1,5 @@
 // ============================================================================
-// Sign-in screen — custom Clerk email + code (OTP) sign-in for mobile
+// Sign-in screen - custom Clerk email + code (OTP) sign-in for mobile
 // ============================================================================
 
 import {

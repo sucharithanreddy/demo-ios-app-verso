@@ -1,5 +1,5 @@
 // ============================================================================
-// Profile screen — user info, archetype, subscription, settings
+// Profile screen - user info, archetype, subscription, settings
 // ============================================================================
 
 import {

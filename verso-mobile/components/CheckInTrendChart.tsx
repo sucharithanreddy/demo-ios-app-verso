@@ -1,5 +1,5 @@
 // ============================================================================
-// CheckInTrendChart — SVG line chart (mood, energy, confidence)
+// CheckInTrendChart - SVG line chart (mood, energy, confidence)
 // ============================================================================
 
 import { View, Text } from 'react-native';

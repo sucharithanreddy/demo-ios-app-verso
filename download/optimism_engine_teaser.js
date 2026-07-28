@@ -47,7 +47,7 @@ const doc = new Document({
 
       // Key Differentiator
       new Paragraph({ spacing: { before: 200, after: 150 }, children: [new TextRun({ text: "WHY IT'S DIFFERENT", bold: true, size: 24, color: colors.primary, font: "Times New Roman" })] }),
-      new Paragraph({ spacing: { after: 200, line: 276 }, children: [new TextRun({ text: "Every other mental health AI app relies 100% on Generative AI—which can hallucinate, miss crisis signals, or provide harmful advice. Optimism Engine adds a proprietary safety layer that screens every input and output. This addresses the #1 concern for enterprise buyers, regulators, and clinical partners.", size: 20, font: "Times New Roman" })] }),
+      new Paragraph({ spacing: { after: 200, line: 276 }, children: [new TextRun({ text: "Every other mental health AI app relies 100% on Generative AI-which can hallucinate, miss crisis signals, or provide harmful advice. Optimism Engine adds a proprietary safety layer that screens every input and output. This addresses the #1 concern for enterprise buyers, regulators, and clinical partners.", size: 20, font: "Times New Roman" })] }),
 
       // Features Grid
       new Paragraph({ spacing: { before: 200, after: 150 }, children: [new TextRun({ text: "CORE FEATURES", bold: true, size: 24, color: colors.primary, font: "Times New Roman" })] }),

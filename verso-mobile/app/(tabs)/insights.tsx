@@ -1,5 +1,5 @@
 // ============================================================================
-// Insights screen — check-in history, trends, weekly synthesis
+// Insights screen - check-in history, trends, weekly synthesis
 // ============================================================================
 
 import { View, Text, ScrollView, RefreshControl, Pressable } from 'react-native';
@@ -83,7 +83,7 @@ export default function InsightsScreen() {
             <View className="px-6 mb-6">
               <View className="bg-surface border border-border rounded-2xl p-5">
                 <Text className="text-muted text-caption font-semibold mb-3">
-                  LAST 7 CHECK-INS — AVERAGE
+                  LAST 7 CHECK-INS - AVERAGE
                 </Text>
                 <View className="flex-row justify-between">
                   <MetricCard label="Mood" value={averages.mood} icon="happy-outline" color="#22C55E" />
@@ -222,13 +222,13 @@ export default function InsightsScreen() {
 function getArchetypeDescription(archetype: string): string {
   switch (archetype) {
     case 'Driver':
-      return 'You push hard and aim high. Your strength is momentum — but watch for burnout under sustained pressure.';
+      return 'You push hard and aim high. Your strength is momentum - but watch for burnout under sustained pressure.';
     case 'Strategist':
-      return 'You think ahead and plan carefully. Your strength is preparation — but watch for analysis paralysis when stakes are high.';
+      return 'You think ahead and plan carefully. Your strength is preparation - but watch for analysis paralysis when stakes are high.';
     case 'Connector':
-      return 'You thrive on relationships and trust. Your strength is warmth — but you may take rejection more personally than others.';
+      return 'You thrive on relationships and trust. Your strength is warmth - but you may take rejection more personally than others.';
     case 'Reactor':
-      return 'You feel deeply and respond fast. Your strength is passion — but emotional spikes can hijack your focus if unchecked.';
+      return 'You feel deeply and respond fast. Your strength is passion - but emotional spikes can hijack your focus if unchecked.';
     default:
       return 'Take the diagnostic to unlock personalized insights.';
   }

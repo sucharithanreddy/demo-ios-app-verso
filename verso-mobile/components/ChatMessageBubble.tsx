@@ -1,19 +1,19 @@
 // ============================================================================
-// ChatMessageBubble — renders a single message (user or assistant)
+// ChatMessageBubble - renders a single message (user or assistant)
 //
 // Assistant messages are structured into 5 visible sections + an optional
 // crisis footer. Each section fades + slides in with a staggered delay to
 // make the response feel "thoughtful" rather than "instant":
 //
-//   1. Acknowledgment   — "I hear you. That's heavy."
-//   2. Thought pattern  — yellow chip with the cognitive distortion
-//   3. Pattern note     — small muted line explaining the pattern
-//   4. Reframe          — orange card with the cognitive reframe (markdown)
-//   5. Question         — the probing question that moves the conversation
-//   6. Encouragement    — small italic closing line
+//   1. Acknowledgment   - "I hear you. That's heavy."
+//   2. Thought pattern  - yellow chip with the cognitive distortion
+//   3. Pattern note     - small muted line explaining the pattern
+//   4. Reframe          - orange card with the cognitive reframe (markdown)
+//   5. Question         - the probing question that moves the conversation
+//   6. Encouragement    - small italic closing line
 //
 // When the engine flags a crisis response, we hide 2/3/4/5 and show a
-// warm, supportive footer instead — the user needs presence, not analysis.
+// warm, supportive footer instead - the user needs presence, not analysis.
 // ============================================================================
 
 import { View, Text } from 'react-native';
@@ -37,7 +37,7 @@ interface Props {
 const ENTRY_DURATION = 320;
 // Reanimated v3.16: Easing.bezier returns an EasingFunction wrapper,
 // but FadeInDown.easing() expects a raw (t:number)=>number. Use a simple
-// ease-out curve instead — works on both iOS and Android, looks great.
+// ease-out curve instead - works on both iOS and Android, looks great.
 const EASE_OUT = (t: number) => 1 - Math.pow(1 - t, 3);
 
 export function ChatMessageBubble({ message, animate = false }: Props) {
@@ -58,7 +58,7 @@ export function ChatMessageBubble({ message, animate = false }: Props) {
     );
   }
 
-  // Crisis response — strip the structured analysis. Just presence.
+  // Crisis response - strip the structured analysis. Just presence.
   if (message.isCrisisResponse) {
     return (
       <View className="flex-row justify-start mb-3">
@@ -98,7 +98,7 @@ export function ChatMessageBubble({ message, animate = false }: Props) {
   return (
     <View className="flex-row justify-start mb-3">
       <View className="max-w-[85%]">
-        {/* 1. Acknowledgment — the warm reflection */}
+        {/* 1. Acknowledgment - the warm reflection */}
         {message.acknowledgment && (
           <Reveal delay={0} animate={animate}>
             <View className="bg-surface border border-border rounded-2xl rounded-bl-md px-4 py-3 mb-1.5">
@@ -109,7 +109,7 @@ export function ChatMessageBubble({ message, animate = false }: Props) {
           </Reveal>
         )}
 
-        {/* 2. Thought pattern — the cognitive distortion chip */}
+        {/* 2. Thought pattern - the cognitive distortion chip */}
         {message.thoughtPattern && (
           <Reveal delay={120} animate={animate}>
             <View className="bg-warning/10 border border-warning/20 rounded-xl px-3 py-2 mb-1.5 flex-row items-start gap-2">
@@ -126,7 +126,7 @@ export function ChatMessageBubble({ message, animate = false }: Props) {
                 <Text className="text-ink text-caption leading-5 font-medium">
                   {message.thoughtPattern}
                 </Text>
-                {/* 3. Pattern note — why this pattern shows up */}
+                {/* 3. Pattern note - why this pattern shows up */}
                 {message.patternNote && (
                   <Text className="text-muted text-caption leading-5 mt-1">
                     {message.patternNote}
@@ -137,7 +137,7 @@ export function ChatMessageBubble({ message, animate = false }: Props) {
           </Reveal>
         )}
 
-        {/* 4. Reframe — the cognitive reframe (the heart of the response) */}
+        {/* 4. Reframe - the cognitive reframe (the heart of the response) */}
         {message.reframe && (
           <Reveal delay={240} animate={animate}>
             <View className="bg-accent/10 border border-accent/20 rounded-xl px-3 py-2.5 mb-1.5">
@@ -161,7 +161,7 @@ export function ChatMessageBubble({ message, animate = false }: Props) {
           </Reveal>
         )}
 
-        {/* 5. Question — the probe that moves the conversation forward */}
+        {/* 5. Question - the probe that moves the conversation forward */}
         {message.question && (
           <Reveal delay={360} animate={animate}>
             <View className="bg-paper border border-border rounded-2xl rounded-bl-md px-4 py-3 mb-1.5">
@@ -172,7 +172,7 @@ export function ChatMessageBubble({ message, animate = false }: Props) {
           </Reveal>
         )}
 
-        {/* 6. Encouragement — the closing lift */}
+        {/* 6. Encouragement - the closing lift */}
         {message.encouragement && (
           <Reveal delay={440} animate={animate}>
             <View className="px-2 mt-0.5">
@@ -211,7 +211,7 @@ export function ChatMessageBubble({ message, animate = false }: Props) {
 }
 
 // ---------------------------------------------------------------------------
-// Reveal wrapper — staggered fade-in for fresh assistant messages
+// Reveal wrapper - staggered fade-in for fresh assistant messages
 // ---------------------------------------------------------------------------
 
 function Reveal({

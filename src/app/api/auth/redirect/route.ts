@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
     // REDIRECT-URL DETERMINATION (read this before touching the logic)
     //
     // For EXISTING users, the redirect MUST be based on their persisted
-    // userType in the DB — NOT on `selectedUserType` from the request.
+    // userType in the DB - NOT on `selectedUserType` from the request.
     // The landing page defaults selectedUserType to 'INDIVIDUAL', so if
     // we used it for existing users we'd silently demote managers to
     // individual on every sign-in after the first. That was the bug:
@@ -205,7 +205,7 @@ export async function POST(request: NextRequest) {
         }
         console.log('[REDIRECT API POST] User created/updated successfully');
       } else {
-        // ── NEW USER, no type selected — default to INDIVIDUAL ──
+        // ── NEW USER, no type selected - default to INDIVIDUAL ──
         effectiveUserType = 'INDIVIDUAL';
         console.log('[REDIRECT API POST] No type selected, creating INDIVIDUAL');
 
@@ -254,7 +254,7 @@ export async function POST(request: NextRequest) {
         }
       }
     } catch (dbError) {
-      // DB failed — fall back to selectedType (or INDIVIDUAL) so the
+      // DB failed - fall back to selectedType (or INDIVIDUAL) so the
       // user still gets redirected somewhere useful.
       console.error('[REDIRECT API POST] Database error (non-fatal):', dbError);
       effectiveUserType = isValidType

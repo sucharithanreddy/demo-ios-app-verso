@@ -27,7 +27,7 @@ import { CircularGauge } from './CircularGauge';
 import { RadarChart, type RadarAxis } from './RadarChart';
 
 // ---------------------------------------------------------------------------
-// Types — mirror FullDiagnosticResult from src/lib/full-diagnostic-questions.ts
+// Types - mirror FullDiagnosticResult from src/lib/full-diagnostic-questions.ts
 // ---------------------------------------------------------------------------
 type ArchetypeKey = 'driver' | 'strategist' | 'connector' | 'reactor';
 type DimensionCodeKey =
@@ -76,7 +76,7 @@ export interface WellbeingDashboardResult {
 }
 
 // ---------------------------------------------------------------------------
-// Archetype config — colors, icons, descriptions, narrative summaries
+// Archetype config - colors, icons, descriptions, narrative summaries
 // ---------------------------------------------------------------------------
 interface ArchetypeConfig {
   key: ArchetypeKey;
@@ -126,7 +126,7 @@ const ARCHETYPES: Record<ArchetypeKey, ArchetypeConfig> = {
     gradient: 'from-blue-500 via-sky-500 to-cyan-500',
     tagline: 'Clarity, planning, analysis',
     summary:
-      'You respond to challenge by stepping back and seeking clarity. You analyse, reassess and aim to understand before acting — bringing strong judgement, but risking over-analysis when uncertainty lingers.',
+      'You respond to challenge by stepping back and seeking clarity. You analyse, reassess and aim to understand before acting - bringing strong judgement, but risking over-analysis when uncertainty lingers.',
     strengths: [
       'Thoughtful, considered decision-making',
       'Strong planning and problem-solving',
@@ -150,7 +150,7 @@ const ARCHETYPES: Record<ArchetypeKey, ArchetypeConfig> = {
     gradient: 'from-emerald-500 via-green-500 to-teal-500',
     tagline: 'Relationships, trust, communication',
     summary:
-      'You respond by focusing on people. You prioritise communication, trust and collaboration — a relational strength, though sustained emotional engagement can lead to fatigue or boundary pressure.',
+      'You respond by focusing on people. You prioritise communication, trust and collaboration - a relational strength, though sustained emotional engagement can lead to fatigue or boundary pressure.',
     strengths: [
       'Strong emotional intelligence',
       'Builds trust and lasting relationships',
@@ -174,7 +174,7 @@ const ARCHETYPES: Record<ArchetypeKey, ArchetypeConfig> = {
     gradient: 'from-amber-500 via-yellow-500 to-orange-500',
     tagline: 'Emotional sensitivity to outcomes',
     summary:
-      'You experience the emotional impact of sales more strongly. Your confidence and energy can fluctuate with wins and setbacks — bringing passion and accountability, but needing active stabilisation strategies.',
+      'You experience the emotional impact of sales more strongly. Your confidence and energy can fluctuate with wins and setbacks - bringing passion and accountability, but needing active stabilisation strategies.',
     strengths: [
       'Strong accountability and care',
       'High engagement with outcomes',
@@ -192,7 +192,7 @@ const ARCHETYPES: Record<ArchetypeKey, ArchetypeConfig> = {
 };
 
 // ---------------------------------------------------------------------------
-// Dimension metadata — labels + which archetype each belongs to
+// Dimension metadata - labels + which archetype each belongs to
 // ---------------------------------------------------------------------------
 const DIMENSION_META: Record<DimensionCodeKey, { label: string; archetype: ArchetypeKey }> = {
   D1: { label: 'Action and urgency', archetype: 'driver' },
@@ -238,7 +238,7 @@ const SUSTAINABILITY_BAND_META: Record<
   mixed: {
     label: 'Mixed sustainability',
     color: '#f59e0b',
-    description: 'Your pattern shows a mix of sustainable and pressure-prone areas — small adjustments would help.',
+    description: 'Your pattern shows a mix of sustainable and pressure-prone areas - small adjustments would help.',
   },
   several_pressure_points: {
     label: 'Several pressure points',
@@ -248,7 +248,7 @@ const SUSTAINABILITY_BAND_META: Record<
   significant_pressure: {
     label: 'Significant pressure pattern',
     color: '#ef4444',
-    description: 'Your current pattern carries significant pressure across several measures — recovery and support are recommended.',
+    description: 'Your current pattern carries significant pressure across several measures - recovery and support are recommended.',
   },
 };
 
@@ -267,7 +267,7 @@ const CLASSIFICATION_LABELS: Record<ProfileClassificationKey, string> = {
 };
 
 // ---------------------------------------------------------------------------
-// Helper — band a 0..100 "higher = healthier" score into a color + label
+// Helper - band a 0..100 "higher = healthier" score into a color + label
 // ---------------------------------------------------------------------------
 function healthBand(score: number): { color: string; label: string; tone: 'good' | 'ok' | 'watch' | 'risk' } {
   const s = Math.max(0, Math.min(100, score));
@@ -361,7 +361,7 @@ export function WellbeingDashboard({ result, onRetake, onViewFullResults }: Well
       )}
 
       {/* ───────────────────────────────────────────────────────────
-          2. ARCHETYPE HERO — primary archetype with circular gauge
+          2. ARCHETYPE HERO - primary archetype with circular gauge
           ─────────────────────────────────────────────────────────── */}
       <ArchetypeHero
         result={result}
@@ -371,12 +371,12 @@ export function WellbeingDashboard({ result, onRetake, onViewFullResults }: Well
       />
 
       {/* ───────────────────────────────────────────────────────────
-          3. SUSTAINABILITY INDEX HERO — the composite gauge
+          3. SUSTAINABILITY INDEX HERO - the composite gauge
           ─────────────────────────────────────────────────────────── */}
       <SustainabilityHero result={result} />
 
       {/* ───────────────────────────────────────────────────────────
-          4. TAB BAR — Overview / Dimensions / Pressure / Decision
+          4. TAB BAR - Overview / Dimensions / Pressure / Decision
           ─────────────────────────────────────────────────────────── */}
       <div className="sticky top-[64px] z-20 -mx-1 px-1 py-2 backdrop-blur-md">
         <div className="glass rounded-2xl border border-border/50 p-1.5 flex gap-1 overflow-x-auto">
@@ -482,7 +482,7 @@ function ArchetypeHero({
       transition={{ duration: 0.5 }}
       className="relative overflow-hidden rounded-3xl border border-border/50 shadow-premium"
     >
-      {/* Gradient background — uses selected archetype's color */}
+      {/* Gradient background - uses selected archetype's color */}
       <div
         className={cn('absolute inset-0 bg-gradient-to-br opacity-15', selected.gradient)}
       />
@@ -544,7 +544,7 @@ function ArchetypeHero({
                 transition={{ duration: 0.3 }}
               >
                 <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-                  {selected.name} <span style={{ color: selected.color }}>— {Math.round(score)}%</span>
+                  {selected.name} <span style={{ color: selected.color }}>- {Math.round(score)}%</span>
                 </h2>
                 <p className="text-foreground/80 leading-relaxed mb-4">
                   {selected.summary}
@@ -580,10 +580,10 @@ function ArchetypeHero({
           </div>
         </div>
 
-        {/* Ranked archetypes — clickable mini-gauges */}
+        {/* Ranked archetypes - clickable mini-gauges */}
         <div className="mt-8 pt-6 border-t border-border/40">
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-4">
-            All 4 Patterns — Tap to explore
+            All 4 Patterns - Tap to explore
           </p>
           <div className="grid grid-cols-4 gap-2 md:gap-4">
             {rankedArchetypes.map((a, idx) => {
@@ -690,7 +690,7 @@ function SustainabilityHero({ result }: { result: WellbeingDashboardResult }) {
             <h3 className="text-lg font-semibold text-foreground">Sales Wellbeing Sustainability Index</h3>
             <p className="text-xs text-muted-foreground">
               Composite of confidence, energy, recovery, boundaries, tolerance and behavioural stability.
-              This is not a clinical mental-health score — it reflects how sustainable your current pattern is.
+              This is not a clinical mental-health score - it reflects how sustainable your current pattern is.
             </p>
           </div>
         </div>
@@ -727,11 +727,11 @@ function SustainabilityHero({ result }: { result: WellbeingDashboardResult }) {
             {/* Band scale visualization */}
             <div className="space-y-1.5">
               {([
-                { range: '80–100', label: 'Strongly sustainable',  color: '#10b981', active: result.sustainabilityBand === 'strongly_sustainable' },
-                { range: '65–79',  label: 'Generally sustainable', color: '#22c55e', active: result.sustainabilityBand === 'generally_sustainable' },
-                { range: '50–64',  label: 'Mixed sustainability',  color: '#f59e0b', active: result.sustainabilityBand === 'mixed' },
-                { range: '35–49',  label: 'Several pressure points', color: '#f97316', active: result.sustainabilityBand === 'several_pressure_points' },
-                { range: '0–34',   label: 'Significant pressure',  color: '#ef4444', active: result.sustainabilityBand === 'significant_pressure' },
+                { range: '80-100', label: 'Strongly sustainable',  color: '#10b981', active: result.sustainabilityBand === 'strongly_sustainable' },
+                { range: '65-79',  label: 'Generally sustainable', color: '#22c55e', active: result.sustainabilityBand === 'generally_sustainable' },
+                { range: '50-64',  label: 'Mixed sustainability',  color: '#f59e0b', active: result.sustainabilityBand === 'mixed' },
+                { range: '35-49',  label: 'Several pressure points', color: '#f97316', active: result.sustainabilityBand === 'several_pressure_points' },
+                { range: '0-34',   label: 'Significant pressure',  color: '#ef4444', active: result.sustainabilityBand === 'significant_pressure' },
               ]).map(band => (
                 <div
                   key={band.range}
@@ -813,7 +813,7 @@ function SustainabilityHero({ result }: { result: WellbeingDashboardResult }) {
 }
 
 // ===========================================================================
-// TAB: OVERVIEW — 12 derived measures in a colorful grid
+// TAB: OVERVIEW - 12 derived measures in a colorful grid
 // ===========================================================================
 function OverviewTab({ result }: { result: WellbeingDashboardResult }) {
   const measures = [
@@ -905,7 +905,7 @@ function OverviewTab({ result }: { result: WellbeingDashboardResult }) {
 }
 
 // ===========================================================================
-// TAB: DIMENSIONS — all 16 dimensions grouped by archetype
+// TAB: DIMENSIONS - all 16 dimensions grouped by archetype
 // ===========================================================================
 function DimensionsTab({ result }: { result: WellbeingDashboardResult }) {
   const archetypes: ArchetypeKey[] = ['driver', 'strategist', 'connector', 'reactor'];
@@ -997,7 +997,7 @@ function DimensionsTab({ result }: { result: WellbeingDashboardResult }) {
 }
 
 // ===========================================================================
-// TAB: PRESSURE — Response to Pressure radar + narrative
+// TAB: PRESSURE - Response to Pressure radar + narrative
 // ===========================================================================
 function PressureTab({ result }: { result: WellbeingDashboardResult }) {
   const rp = result.derivedMeasures.responseToPressure;
@@ -1025,7 +1025,7 @@ function PressureTab({ result }: { result: WellbeingDashboardResult }) {
           <div>
             <h3 className="text-lg font-semibold text-foreground">Response to Pressure</h3>
             <p className="text-xs text-muted-foreground">
-              Your pattern isn&apos;t a single response — it&apos;s a combination of four. All four contribute.
+              Your pattern isn&apos;t a single response - it&apos;s a combination of four. All four contribute.
             </p>
           </div>
         </div>
@@ -1123,7 +1123,7 @@ function PressureTab({ result }: { result: WellbeingDashboardResult }) {
 }
 
 // ===========================================================================
-// TAB: DECISION STYLE — 4-axis profile
+// TAB: DECISION STYLE - 4-axis profile
 // ===========================================================================
 function DecisionTab({ result }: { result: WellbeingDashboardResult }) {
   const ds = result.derivedMeasures.decisionStyle;
@@ -1146,7 +1146,7 @@ function DecisionTab({ result }: { result: WellbeingDashboardResult }) {
           <div>
             <h3 className="text-lg font-semibold text-foreground">Decision Style</h3>
             <p className="text-xs text-muted-foreground">
-              How you tend to make decisions. The strongest style is your primary tendency — but all four contribute.
+              How you tend to make decisions. The strongest style is your primary tendency - but all four contribute.
             </p>
           </div>
         </div>

@@ -6,7 +6,7 @@
 //   The original architecture computed all scores in the browser via
 //   calculateFullResults() and POSTed them to /api/diagnostic, which
 //   trusted them verbatim. For a PAID assessment this is an integrity
-//   hole — a user can open DevTools, rewrite the fetch body, and
+//   hole - a user can open DevTools, rewrite the fetch body, and
 //   persist any scores they want. Downstream dashboards, the AI
 //   Companion, and manager reports would then hydrate from tampered
 //   data forever.
@@ -17,14 +17,14 @@
 //   calls scoreFullMapServerSide() and ignores every computed field
 //   the client sent. The client still computes locally for the
 //   immediate results-page render, but the persisted DB row is always
-//   the server's computation — never the client's.
+//   the server's computation - never the client's.
 //
 // RELATIONSHIP TO OTHER MODULES
 //   - full-diagnostic-questions.ts: exports calculateFullResults, the
 //     pure scoring function. Both client and this module call it.
 //   - diagnostic-validation.ts: validates INPUT shape (answers array,
 //     primary profile string, etc.). Does NOT compute scores.
-//   - This module: ties them together — validates, then computes,
+//   - This module: ties them together - validates, then computes,
 //     then returns a DB-ready payload.
 
 import {
@@ -35,12 +35,12 @@ import {
 import { normalizeAttemptSource, normalizeClassification } from './diagnostic-validation';
 
 /**
- * Output of server-side scoring — everything the DB row needs,
+ * Output of server-side scoring - everything the DB row needs,
  * nothing it doesn't. Mirrors the DiagnosticResult Prisma model
  * fields that depend on scoring.
  */
 export interface ServerScoredResult {
-  // Archetype scores (0-100) — title-cased profiles for DB storage
+  // Archetype scores (0-100) - title-cased profiles for DB storage
   driverScore: number;
   strategistScore: number;
   connectorScore: number;
@@ -94,7 +94,7 @@ export function scoreFullMapServerSide(
     let score = Number((a as Record<string, unknown>).score);
     if (!Number.isFinite(qid) || qid < 1 || qid > 64) continue;
     if (!Number.isFinite(score)) continue;
-    // Clamp to 1-5 — Likert range per spec §4
+    // Clamp to 1-5 - Likert range per spec §4
     score = Math.max(1, Math.min(5, Math.round(score)));
     sanitized.push({ questionId: qid, score });
   }
@@ -106,7 +106,7 @@ export function scoreFullMapServerSide(
   }
 
   // ---- 2. Compute the full multi-layer result ----
-  // calculateFullResults is a pure function — safe to call server-side.
+  // calculateFullResults is a pure function - safe to call server-side.
   // Missing answers default to 3 (neutral) inside the scorer, but we've
   // already enforced all 64 above so this path won't trigger here.
   const fullResult = calculateFullResults(sanitized, completionTimeSeconds);
@@ -154,7 +154,7 @@ export function scoreFullMapServerSide(
  *
  * The Snapshot uses the same 64-question bank but only the 16 items
  * flagged isSnapshot: true (the .1 of each dimension). We still call
- * calculateFullResults — unanswered questions default to neutral (3),
+ * calculateFullResults - unanswered questions default to neutral (3),
  * which gives a defensible (if coarser) result. The persisted row is
  * marked attemptSource: 'snapshot' so dashboards can distinguish.
  */

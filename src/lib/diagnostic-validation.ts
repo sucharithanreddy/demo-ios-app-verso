@@ -19,14 +19,14 @@ export const VALID_PROFILES = ['Driver', 'Strategist', 'Connector', 'Reactor'] a
 export type ValidProfile = (typeof VALID_PROFILES)[number];
 
 /**
- * Valid attempt sources — distinguishes the free 16-question Snapshot
+ * Valid attempt sources - distinguishes the free 16-question Snapshot
  * from the paid 64-question Full Map.
  */
 export const VALID_ATTEMPT_SOURCES = ['snapshot', 'full_map'] as const;
 export type ValidAttemptSource = (typeof VALID_ATTEMPT_SOURCES)[number];
 
 /**
- * Valid profile classifications (PDF spec §8) — only set on Full Map
+ * Valid profile classifications (PDF spec §8) - only set on Full Map
  * attempts.
  */
 export const VALID_CLASSIFICATIONS = ['strong_primary', 'blended', 'balanced', 'flexible'] as const;
@@ -43,7 +43,7 @@ export const VALID_CLASSIFICATIONS = ['strong_primary', 'blended', 'balanced', '
  */
 export function clampScore(v: unknown): number {
   const n = typeof v === 'number' ? v : Number(v) || 0;
-  // Guard against NaN — typeof NaN === 'number', so the check above
+  // Guard against NaN - typeof NaN === 'number', so the check above
   // lets it through, but Math.round(NaN) === NaN and that propagates
   // through Math.min/max. Coerce to 0 so bad input can never produce
   // a NaN score that would later break DB insertion or rendering.
@@ -82,7 +82,7 @@ export function normalizeSecondaryProfile(input: unknown): ValidProfile | null {
 
 /**
  * Normalize an attemptSource string. Returns null for invalid/missing
- * input — the caller treats null as "use the default" (snapshot).
+ * input - the caller treats null as "use the default" (snapshot).
  */
 export function normalizeAttemptSource(input: unknown): ValidAttemptSource | null {
   if (typeof input !== 'string') return null;
@@ -94,7 +94,7 @@ export function normalizeAttemptSource(input: unknown): ValidAttemptSource | nul
 
 /**
  * Normalize a profileClassification string. Returns null for invalid
- * input — the caller treats null as "not set" (only used by Full Map).
+ * input - the caller treats null as "not set" (only used by Full Map).
  */
 export function normalizeClassification(input: unknown): string | null {
   if (typeof input !== 'string') return null;
@@ -123,7 +123,7 @@ export interface SanitizedAnswer {
  *  - Preserve order.
  *
  * Returns null if the input isn't an array or if no entries survive
- * filtering — the caller should treat null as "invalid payload" and
+ * filtering - the caller should treat null as "invalid payload" and
  * return a 400.
  */
 export function sanitizeAnswers(input: unknown): SanitizedAnswer[] | null {
@@ -193,7 +193,7 @@ export interface DiagnosticValidationResult {
   attemptSource?: ValidAttemptSource | null;
   assessmentVersion?: string | null;
 
-  // Full Map (64Q) — Verso Sales Wellbeing Map v1.0 fields
+  // Full Map (64Q) - Verso Sales Wellbeing Map v1.0 fields
   dimensionScores?: Record<string, unknown> | null;
   derivedMeasures?: Record<string, unknown> | null;
   sustainabilityIndex?: number | null;
@@ -211,7 +211,7 @@ export interface DiagnosticValidationResult {
  * or returns a 400 with the error message (on failure).
  */
 export function validateDiagnosticBody(body: any): DiagnosticValidationResult {
-  // primaryProfile — required, must be a valid archetype
+  // primaryProfile - required, must be a valid archetype
   const primaryProfile = normalizePrimaryProfile(body?.primaryProfile);
   if (!primaryProfile) {
     return {
@@ -220,16 +220,16 @@ export function validateDiagnosticBody(body: any): DiagnosticValidationResult {
     };
   }
 
-  // scores — required, clamped to 0-100
+  // scores - required, clamped to 0-100
   const driverScore = clampScore(body?.driverScore);
   const strategistScore = clampScore(body?.strategistScore);
   const connectorScore = clampScore(body?.connectorScore);
   const reactorScore = clampScore(body?.reactorScore);
 
-  // secondaryProfile — optional
+  // secondaryProfile - optional
   const secondaryProfile = normalizeSecondaryProfile(body?.secondaryProfile);
 
-  // answers — required, non-empty after sanitization
+  // answers - required, non-empty after sanitization
   const answers = sanitizeAnswers(body?.answers);
   if (!answers) {
     return {
@@ -238,7 +238,7 @@ export function validateDiagnosticBody(body: any): DiagnosticValidationResult {
     };
   }
 
-  // Optional metadata arrays — pass through if arrays, else null
+  // Optional metadata arrays - pass through if arrays, else null
   const strengths = Array.isArray(body?.strengths) ? body.strengths : null;
   const wellbeingRisks = Array.isArray(body?.wellbeingRisks)
     ? body.wellbeingRisks
@@ -247,19 +247,19 @@ export function validateDiagnosticBody(body: any): DiagnosticValidationResult {
     ? body.recommendations
     : null;
 
-  // isPaid — defaults to false
+  // isPaid - defaults to false
   const isPaid = Boolean(body?.isPaid);
 
-  // attemptSource — optional, defaults to null (DB column is nullable)
+  // attemptSource - optional, defaults to null (DB column is nullable)
   const attemptSource = normalizeAttemptSource(body?.attemptSource);
 
-  // assessmentVersion — optional string
+  // assessmentVersion - optional string
   const assessmentVersion =
     typeof body?.assessmentVersion === 'string' && body.assessmentVersion.trim()
       ? body.assessmentVersion.trim().slice(0, 64) // cap length for DB safety
       : null;
 
-  // Full Map fields — all optional, only set when attemptSource === 'full_map'
+  // Full Map fields - all optional, only set when attemptSource === 'full_map'
   const dimensionScores = coerceOptionalJson(body?.dimensionScores);
   const derivedMeasures = coerceOptionalJson(body?.derivedMeasures);
   const sustainabilityIndex = coerceOptionalInt(body?.sustainabilityIndex);
@@ -300,7 +300,7 @@ export function validateDiagnosticBody(body: any): DiagnosticValidationResult {
  * Project a DiagnosticResult row (from Prisma) into the UserProfile
  * shape the Optimism Engine expects.
  *
- * Returns undefined if the row is missing required fields (defensive —
+ * Returns undefined if the row is missing required fields (defensive -
  * shouldn't happen with a well-formed DB row, but the engine should
  * never crash because of a bad row).
  *

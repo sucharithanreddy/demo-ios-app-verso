@@ -6,7 +6,7 @@ The `docx` JS library v9.5.3 emits invalid XML for table widths when using
 `WidthType.PERCENTAGE`:
   - `<w:tblW w:type="pct" w:w="100%"/>`    (should be w:w="5000")
   - `<w:tcW  w:type="pct" w:w="50%"/>`     (should be w:w="2500")
-  - `<w:gridCol w:w="100"/>`               (100 twips ≈ 0.07" — collapses columns)
+  - `<w:gridCol w:w="100"/>`               (100 twips ≈ 0.07" - collapses columns)
 
 OOXML requires that when `w:type="pct"`, the `w:w` value be an integer
 expressed in fiftieths of a percent (5000 = 100%, 2500 = 50%, etc.).
@@ -55,7 +55,7 @@ def fix_document_xml(xml: str) -> str:
     def rebuild_table(match: re.Match) -> str:
         table_xml = match.group(0)
         # Find the first <w:tr>...</w:tr> row, then collect the <w:tcW> values
-        # of its cells — those define the column proportions for the table.
+        # of its cells - those define the column proportions for the table.
         first_row = re.search(r'<w:tr>.*?</w:tr>', table_xml, re.DOTALL)
         if not first_row:
             return table_xml
@@ -88,7 +88,7 @@ def fix_document_xml(xml: str) -> str:
             flags=re.DOTALL,
         )
         if n == 0:
-            # No grid existed — insert one right after <w:tblPr>...</w:tblPr>
+            # No grid existed - insert one right after <w:tblPr>...</w:tblPr>
             new_table, n = re.subn(
                 r'(</w:tblPr>)',
                 r'\1' + new_grid,
@@ -113,7 +113,7 @@ def main():
     doc_xml_path = WORK / 'word' / 'document.xml'
     xml = doc_xml_path.read_text(encoding='utf-8')
 
-    # Sanity check — count the malformed patterns before fixing
+    # Sanity check - count the malformed patterns before fixing
     before_pct = len(re.findall(r'w:w="\d+%"', xml))
     before_grid = len(re.findall(r'<w:gridCol w:w="100"/>', xml))
     print(f"Before: {before_pct} malformed pct widths, "

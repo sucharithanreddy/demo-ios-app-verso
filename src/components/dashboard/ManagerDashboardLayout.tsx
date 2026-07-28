@@ -114,7 +114,7 @@ export function ManagerDashboardLayout({ children }: ManagerDashboardLayoutProps
 
           // Only bounce if we have an AFFIRMATIVE non-manager type.
           // If userType is null/undefined (user row not created yet, DB
-          // unavailable, or API error), do NOT bounce — the redirect flow
+          // unavailable, or API error), do NOT bounce - the redirect flow
           // that sent us here already validated the type via
           // POST /api/auth/redirect. Bouncing on null causes the
           // "manager can't reach manager-dashboard" bug when the DB
@@ -181,7 +181,7 @@ export function ManagerDashboardLayout({ children }: ManagerDashboardLayoutProps
   }
 
   // Only block render if we definitively know they're not a manager.
-  // If userType is null/unknown, allow render — the redirect flow already
+  // If userType is null/unknown, allow render - the redirect flow already
   // validated the role, and bouncing here would trap the user on a
   // spinner forever if the DB row isn't created yet.
   if (userType === 'INDIVIDUAL' || userType === 'SALES_PERSON') {

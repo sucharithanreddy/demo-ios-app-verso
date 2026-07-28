@@ -1,5 +1,5 @@
 // ============================================================================
-// ErrorBoundary — catch render crashes so the app doesn't white-screen
+// ErrorBoundary - catch render crashes so the app doesn't white-screen
 // ============================================================================
 
 import { Component, type ReactNode } from 'react';
@@ -38,7 +38,7 @@ export class ErrorBoundary extends Component<Props, State> {
               Something went wrong
             </Text>
             <Text style={{ fontSize: 14, color: '#71717A', marginBottom: 16, lineHeight: 20 }}>
-              The app hit an unexpected error. You can try again — your data is safe.
+              The app hit an unexpected error. You can try again - your data is safe.
             </Text>
             {this.state.error && (
               <ScrollView style={{ maxHeight: 120, marginBottom: 16 }} showsVerticalScrollIndicator>

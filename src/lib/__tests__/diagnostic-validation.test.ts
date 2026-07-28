@@ -380,7 +380,7 @@ describe('validateDiagnosticBody', () => {
     expect(result.valid).toBe(false);
   });
 
-  // ─── Full Map (64Q) — Verso Sales Wellbeing Map v1.0 fields ──────
+  // ─── Full Map (64Q) - Verso Sales Wellbeing Map v1.0 fields ──────
 
   test('accepts attemptSource = "full_map" and normalizes case', () => {
     const result = validateDiagnosticBody({ ...validBody, attemptSource: 'FULL_MAP' });

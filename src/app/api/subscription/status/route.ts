@@ -12,7 +12,7 @@
 //      (subscriptionCurrentPeriodEnd is null OR in the future)
 //   2. OR the user has at least one UnlockCodeUsage row pointing
 //      to an active, non-expired UnlockCode. This is the path
-//      managers use to grant free Pro access to their team —
+//      managers use to grant free Pro access to their team -
 //      they generate a code in /admin/codes, share it, the team
 //      member redeems it at /profile, and the redemption row
 //      grants Pro access until the code expires.
@@ -147,7 +147,7 @@ export async function GET() {
       plan = 'PRO';
       status = 'ACTIVE';
     } else if (user.subscriptionStatus === 'CANCELLED') {
-      // Stripe cancelled — keep the plan label for UX but mark as cancelled
+      // Stripe cancelled - keep the plan label for UX but mark as cancelled
       // so the UI can show "your subscription ends on X" rather than
       // immediately downgrading.
       plan = user.subscriptionPlan === 'ENTERPRISE' ? 'ENTERPRISE'

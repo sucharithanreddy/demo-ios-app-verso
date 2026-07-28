@@ -404,7 +404,7 @@ export default function DiagnosticPage() {
     localStorage.setItem('diagnosticResults', JSON.stringify(results));
 
     // Persist to DB so manager dashboards + AI engine can read it.
-    // Best-effort — if the API is unreachable or returns an error,
+    // Best-effort - if the API is unreachable or returns an error,
     // we still navigate to the results page (localStorage has the data).
     const primaryProfileTitleCase = report.primaryProfile
       ? report.primaryProfile.charAt(0).toUpperCase() + report.primaryProfile.slice(1)
@@ -438,7 +438,7 @@ export default function DiagnosticPage() {
         }),
       });
     } catch (err) {
-      // Non-fatal — localStorage already has the result
+      // Non-fatal - localStorage already has the result
       console.warn('Failed to persist diagnostic result to DB:', err);
     }
 
@@ -661,7 +661,7 @@ export default function DiagnosticPage() {
                   Want to go deeper?
                 </p>
                 <p className="text-xs text-muted-foreground mb-3">
-                  This 16-question Snapshot reveals your primary pattern. The full 64-question Sales Wellbeing Map adds 8 sub-dimension scores, 4 cross-archetype wellbeing indicators, and an overall wellbeing index — your AI Companion uses all of it to personalize advice.
+                  This 16-question Snapshot reveals your primary pattern. The full 64-question Sales Wellbeing Map adds 8 sub-dimension scores, 4 cross-archetype wellbeing indicators, and an overall wellbeing index - your AI Companion uses all of it to personalize advice.
                 </p>
                 <Link
                   href="/diagnostic/full"

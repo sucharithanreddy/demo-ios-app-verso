@@ -16,7 +16,7 @@
 //   POST /api/stripe/webhook                       → receives checkout.session.completed
 //                                                    and updates the User row
 //
-// For now, anyone signed in can call this — which is fine for a
+// For now, anyone signed in can call this - which is fine for a
 // pre-launch test environment, but MUST be locked down before launch.
 
 import { NextRequest, NextResponse } from 'next/server';

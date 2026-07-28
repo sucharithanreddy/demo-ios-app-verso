@@ -52,7 +52,7 @@ export function CircularGauge({
   const safe = Math.max(0, Math.min(100, Number(value) || 0));
   const radius = (size - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
-  // 270° arc starting at 135° (bottom-left) — looks like a speedometer
+  // 270° arc starting at 135° (bottom-left) - looks like a speedometer
   // but a full ring is more flexible. Use full ring for now.
   const offset = circumference - (safe / 100) * circumference;
 

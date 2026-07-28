@@ -1,5 +1,5 @@
 // ============================================================================
-// Home screen — daily check-in status + AI greeting + streak
+// Home screen - daily check-in status + AI greeting + streak
 // ============================================================================
 
 import { View, Text, ScrollView, Pressable, RefreshControl } from 'react-native';

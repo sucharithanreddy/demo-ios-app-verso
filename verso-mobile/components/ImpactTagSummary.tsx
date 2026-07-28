@@ -1,5 +1,5 @@
 // ============================================================================
-// ImpactTagSummary — frequency of impact tags across check-ins
+// ImpactTagSummary - frequency of impact tags across check-ins
 // ============================================================================
 
 import { View, Text } from 'react-native';

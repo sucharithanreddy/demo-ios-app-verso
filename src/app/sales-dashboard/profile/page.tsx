@@ -296,12 +296,12 @@ export default function SalesProfilePage() {
     if (stored) {
       try {
         const parsed = JSON.parse(stored) as DiagnosticResults;
-        // Validate the parsed shape — a partial/garbage object can crash
+        // Validate the parsed shape - a partial/garbage object can crash
         // the render. Require at least primaryProfile to be a string.
         if (parsed && typeof parsed.primaryProfile === 'string') {
           setResults(parsed);
         } else {
-          // Stale or malformed — clear it so we don't keep crashing.
+          // Stale or malformed - clear it so we don't keep crashing.
           console.warn('[PROFILE] discarding malformed diagnosticResults', parsed);
           localStorage.removeItem('diagnosticResults');
         }
@@ -442,7 +442,7 @@ export default function SalesProfilePage() {
   return (
     <SalesDashboardLayout>
       <div className="max-w-5xl mx-auto">
-        {/* ── Snapshot summary (16-question) — only shown when no full diagnostic exists ──
+        {/* ── Snapshot summary (16-question) - only shown when no full diagnostic exists ──
             When the user has taken the 64-question Full Map, the interactive
             <WellbeingDashboard /> below replaces this entire snapshot block. */}
         {!hasFullDiagnostic && (
@@ -496,15 +496,15 @@ export default function SalesProfilePage() {
           <div className="space-y-4">
             {Object.entries(results.percentages || {}).map(([key, value]) => {
               // percentages keys can be lowercase ('driver') or capitalized ('Driver')
-              // — normalize to the capitalized form so ARCHETYPE_INFO lookup works.
+              // - normalize to the capitalized form so ARCHETYPE_INFO lookup works.
               const normalizedKey = key.charAt(0).toUpperCase() + key.slice(1).toLowerCase();
               const info = ARCHETYPE_INFO[normalizedKey as keyof typeof ARCHETYPE_INFO];
               if (!info) {
-                // Unknown key — skip rather than crash. This is what was throwing
+                // Unknown key - skip rather than crash. This is what was throwing
                 // the "client-side exception" on /sales-dashboard/profile.
                 return null;
               }
-              // primaryProfile may also be lowercase — normalize for comparison
+              // primaryProfile may also be lowercase - normalize for comparison
               const normalizedPrimary = results.primaryProfile
                 ? results.primaryProfile.charAt(0).toUpperCase() + results.primaryProfile.slice(1).toLowerCase()
                 : '';
@@ -720,7 +720,7 @@ export default function SalesProfilePage() {
                     </span>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    64-question Sales Wellbeing Map — completed on{' '}
+                    64-question Sales Wellbeing Map - completed on{' '}
                     {fullResults.completedAt
                       ? new Date(fullResults.completedAt).toLocaleDateString()
                       : 'N/A'}
@@ -730,7 +730,7 @@ export default function SalesProfilePage() {
               </div>
             </motion.div>
 
-            {/* The new interactive dashboard — replaces the old Layer 1/2/3 cards */}
+            {/* The new interactive dashboard - replaces the old Layer 1/2/3 cards */}
             <WellbeingDashboard
               result={fullResults}
               onViewFullResults={() => window.location.href = '/diagnostic/full/results'}
@@ -741,7 +741,7 @@ export default function SalesProfilePage() {
             />
           </>
         ) : (
-          /* No full diagnostic yet — show the upsell CTA card. */
+          /* No full diagnostic yet - show the upsell CTA card. */
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -757,7 +757,7 @@ export default function SalesProfilePage() {
                   Go deeper with the Full Wellbeing Map
                 </h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  This profile is based on the 16-question Snapshot. The full 64-question Sales Wellbeing Map unlocks 16 underlying dimensions, 12 derived wellbeing measures, and a Sales Wellbeing Sustainability Index — your AI Companion uses all of it to personalize advice.
+                  This profile is based on the 16-question Snapshot. The full 64-question Sales Wellbeing Map unlocks 16 underlying dimensions, 12 derived wellbeing measures, and a Sales Wellbeing Sustainability Index - your AI Companion uses all of it to personalize advice.
                 </p>
                 <Link
                   href="/diagnostic/full"
@@ -797,7 +797,7 @@ export default function SalesProfilePage() {
           </Link>
         </motion.div>
 
-        {/* Retake Assessment (snapshot) — hidden when full diagnostic is present,
+        {/* Retake Assessment (snapshot) - hidden when full diagnostic is present,
             the dashboard already provides its own retake action */}
         {!hasFullDiagnostic && (
         <motion.div

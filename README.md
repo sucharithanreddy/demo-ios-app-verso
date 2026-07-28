@@ -285,7 +285,7 @@ White-label licensing
 
 API-based B2B licensing
 
-Revenue strategy is not embedded — the engine is infrastructure-ready.
+Revenue strategy is not embedded - the engine is infrastructure-ready.
 
 ### 🚀 Deployment
 

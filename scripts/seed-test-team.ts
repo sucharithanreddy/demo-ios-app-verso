@@ -1,5 +1,5 @@
 /**
- * TEST-ONLY SEED SCRIPT — DO NOT IMPORT FROM APP CODE
+ * TEST-ONLY SEED SCRIPT - DO NOT IMPORT FROM APP CODE
  *
  * Inserts 20 fake sales-person users under one real manager account,
  * each with randomized DiagnosticResult + SalesCheckIn + UserStreak rows
@@ -128,7 +128,7 @@ function randFloat(min: number, max: number): number {
 
 function daysAgo(n: number): Date {
   // Normalize to UTC midnight so two calls with the same n return the same
-  // timestamp — important for SalesCheckIn's @@unique([userId, date]).
+  // timestamp - important for SalesCheckIn's @@unique([userId, date]).
   const d = new Date(Date.now() - n * 24 * 60 * 60 * 1000);
   d.setUTCHours(0, 0, 0, 0);
   return d;
@@ -139,7 +139,7 @@ function randomDateInLast(days: number): Date {
 }
 
 // Fisher-Yates shuffle (in-place). Used to pick N distinct day offsets
-// from [0..29] without collisions — required because SalesCheckIn has
+// from [0..29] without collisions - required because SalesCheckIn has
 // a @@unique([userId, date]) constraint.
 function shuffle<T>(arr: T[]): T[] {
   for (let i = arr.length - 1; i > 0; i--) {
@@ -358,7 +358,7 @@ async function main() {
     });
     const existingEmails = new Set(existing.map((u) => u.email));
     if (existing.length > 0) {
-      console.log(`   Found ${existing.length} existing test users — will skip them.`);
+      console.log(`   Found ${existing.length} existing test users - will skip them.`);
     }
 
     // 3. Plan the 20 users. Pre-assign each an email + profile bucket so we can
@@ -416,7 +416,7 @@ async function main() {
       });
 
       // Diagnostic + check-ins depend on the bucket + hasDiagnostic.
-      // Users with no diagnostic (the first 4) also get no check-ins —
+      // Users with no diagnostic (the first 4) also get no check-ins -
       // they are pure empty state.
       const effectiveBucket: ProfileBucket = hasDiagnostic ? plan.bucket : 'noData';
 
@@ -435,7 +435,7 @@ async function main() {
         await prisma.diagnosticResult.create({
           data: {
             userId: user.id,
-            primaryProfile: archetype, // MUST be capitalized — API filters on exact strings
+            primaryProfile: archetype, // MUST be capitalized - API filters on exact strings
             secondaryProfile: secondary,
             driverScore: scores.driverScore,
             strategistScore: scores.strategistScore,
@@ -484,7 +484,7 @@ async function main() {
         ? `bucket=${effectiveBucket}, ${checkIns.length} check-ins`
         : 'no diagnostic (empty state)';
       console.log(
-        `   [${created}/${toCreate.length}] ${plan.email} — ${fullName} — ${archetypeLabel}`,
+        `   [${created}/${toCreate.length}] ${plan.email} - ${fullName} - ${archetypeLabel}`,
       );
     }
 

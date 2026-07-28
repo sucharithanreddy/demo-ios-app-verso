@@ -1,5 +1,5 @@
 // ============================================================================
-// Root layout — Clerk + React Query + SafeArea + AuthBridge
+// Root layout - Clerk + React Query + SafeArea + AuthBridge
 // ============================================================================
 
 import { ClerkProvider, useAuth } from '@clerk/clerk-expo';

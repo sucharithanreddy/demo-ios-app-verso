@@ -1,5 +1,5 @@
 // ============================================================================
-// Tab navigation — Home, Coach, Insights, Profile
+// Tab navigation - Home, Coach, Insights, Profile
 // ============================================================================
 
 import { Tabs, Redirect } from 'expo-router';

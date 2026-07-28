@@ -1,6 +1,6 @@
 name: Test Team Data
 
-# Manual-only trigger. Never runs automatically — protects production data.
+# Manual-only trigger. Never runs automatically - protects production data.
 # Two actions:
 #   - seed    : inserts 20 fake sales-person users + diagnostics + check-ins + streaks
 #               under the manager with clerkId "user_3G3WIKMf0gExMInrLjScYxFBold"

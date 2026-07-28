@@ -177,8 +177,8 @@ describe('profile classification', () => {
   test('returns "balanced" when high-low spread < 15 and top ≤ 70', () => {
     // All archetypes at 50 (neutral) is actually "flexible" because top ≤ 55.
     // To get "balanced": top in (55, 70], spread < 15.
-    // Driver=4 (≈75 with the reverse-item adjustment), others=3 (50) — too high.
-    // Try: driver=4, others=3 — but driver will be > 70.
+    // Driver=4 (≈75 with the reverse-item adjustment), others=3 (50) - too high.
+    // Try: driver=4, others=3 - but driver will be > 70.
     //
     // Better approach: use 4 dimensions of driver at 4 and rest at 3.
     // We need top ≤ 70 AND spread < 15.
@@ -283,13 +283,13 @@ describe('derived measures', () => {
   });
 
   test('Boundary Sustainability now includes R3 items (not just D4 and C4)', () => {
-    // Verify the formula was fixed — R3.2 and R3.3 should affect the result.
+    // Verify the formula was fixed - R3.2 and R3.3 should affect the result.
     // Set R3.2 and R3.3 to 5 (high rumination = low boundary sustainability)
     // while keeping D4 and C4 dimensions low.
     const answers = byDimension({
-      D4: 1, // low — would normally help boundary sustainability
+      D4: 1, // low - would normally help boundary sustainability
       C4: 1, // low
-      R3: 5, // HIGH — should now LOWER boundary sustainability via the R3 items
+      R3: 5, // HIGH - should now LOWER boundary sustainability via the R3 items
     });
     const result = calculateFullResults(answers);
     // With D4=1, C4=1 (both at 0%), but R3.2 and R3.3 at 5 (=100%),
@@ -487,7 +487,7 @@ describe('scoreFullMapServerSide', () => {
     expect(serverResult.driverScore).toBe(expected.archetypeScores.driver);
   });
 
-  test('ignores computed fields the client sent — recomputes from raw answers only', () => {
+  test('ignores computed fields the client sent - recomputes from raw answers only', () => {
     // This is the core integrity test: even if a malicious client sends
     // a totally different set of "computed" scores, the server returns
     // the scores derived from the raw answers.
