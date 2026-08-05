@@ -20,9 +20,22 @@
 import { PrismaClient, UserType } from '@prisma/client';
 
 // --- Test-only configuration (NOT loaded by app code) -----------------------
+//
+// The manager is resolved in this order:
+//   1. SEED_MANAGER_CLERK_ID env var (if set and non-empty)
+//   2. SEED_MANAGER_EMAIL env var   (if set and non-empty)
+//   3. Hardcoded defaults below (original Sucharitha account, kept for
+//      backward compatibility with existing CI invocations).
+//
+// This lets the same script seed a team under any manager without code
+// edits - the GitHub Actions workflow passes the manager via inputs.
 
-const MANAGER_CLERK_ID = 'user_3G3WIKMf0gExMInrLjScYxFBold';
-const MANAGER_EMAIL_FALLBACK = 'sucharithareddyn13@gmail.com';
+const DEFAULT_MANAGER_CLERK_ID = 'user_3G3WIKMf0gExMInrLjScYxFBold';
+const DEFAULT_MANAGER_EMAIL_FALLBACK = 'sucharithareddyn13@gmail.com';
+
+const MANAGER_CLERK_ID = process.env.SEED_MANAGER_CLERK_ID?.trim() || DEFAULT_MANAGER_CLERK_ID;
+const MANAGER_EMAIL_FALLBACK = process.env.SEED_MANAGER_EMAIL?.trim() || DEFAULT_MANAGER_EMAIL_FALLBACK;
+
 const TOTAL_TEST_USERS = 20;
 const TEST_EMAIL_PATTERN = /testuser\+\d+@verso\.dev$/;
 const TEST_EMAIL_DOMAIN = '@verso.dev';
@@ -298,6 +311,10 @@ function generateCheckIns(userId: string, bucket: ProfileBucket): Array<{
 
 async function main() {
   console.log('--- Test team seed script ---');
+  console.log('');
+  console.log(`   Target manager clerkId: ${MANAGER_CLERK_ID}`);
+  console.log(`   Target manager email:   ${MANAGER_EMAIL_FALLBACK}`);
+  console.log(`   (defaults used if env vars not set: ${MANAGER_CLERK_ID === DEFAULT_MANAGER_CLERK_ID ? 'YES' : 'NO'})`);
   console.log('');
 
   if (!process.env.DATABASE_URL) {

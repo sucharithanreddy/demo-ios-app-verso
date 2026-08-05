@@ -3,7 +3,8 @@ name: Test Team Data
 # Manual-only trigger. Never runs automatically - protects production data.
 # Two actions:
 #   - seed    : inserts 20 fake sales-person users + diagnostics + check-ins + streaks
-#               under the manager with clerkId "user_3G3WIKMf0gExMInrLjScYxFBold"
+#               under the manager specified by manager_clerk_id / manager_email inputs
+#               (defaults to the original Sucharitha account).
 #   - delete  : permanently deletes every User whose email matches testuser+<n>@verso.dev
 #               (cascade-deletes all their DiagnosticResult / SalesCheckIn / UserStreak rows).
 #               Requires typed confirmation "DELETE-TEST-DATA" in the confirm field.
@@ -19,6 +20,14 @@ on:
         options:
           - seed
           - delete
+      manager_clerk_id:
+        description: "Manager's Clerk user ID to seed under (e.g. user_abc123...). Leave blank to use default."
+        required: false
+        default: ""
+      manager_email:
+        description: "Manager's email (used as fallback if clerkId doesn't match). Leave blank to use default."
+        required: false
+        default: ""
       confirm:
         description: 'For delete: type DELETE-TEST-DATA exactly. Ignored for seed.'
         required: false
@@ -39,6 +48,10 @@ jobs:
     env:
       # Prefer DATABASE_URL if set; fall back to DIRECT_DATABASE_URL (existing convention).
       DATABASE_URL: ${{ secrets.DATABASE_URL || secrets.DIRECT_DATABASE_URL }}
+      # Pass the manager selector through to the script. Empty string falls back
+      # to the hardcoded default in scripts/seed-test-team.ts.
+      SEED_MANAGER_CLERK_ID: ${{ github.event.inputs.manager_clerk_id }}
+      SEED_MANAGER_EMAIL: ${{ github.event.inputs.manager_email }}
     steps:
       - uses: actions/checkout@v4
 
