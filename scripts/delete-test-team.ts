@@ -1,10 +1,14 @@
 /**
  * TEST-ONLY CLEANUP SCRIPT - DO NOT IMPORT FROM APP CODE
  *
- * Removes every User row whose email matches the test-user pattern
- * (`testuser+<n>@verso.dev`). Cascade deletes automatically remove
- * their DiagnosticResult, SalesCheckIn, UserStreak, and any other
- * related rows (per prisma/schema.prisma's onDelete: Cascade).
+ * Removes every User row whose email matches the test-user pattern.
+ * Matches BOTH the legacy pattern (`testuser+<n>@verso.dev`, used before
+ * per-manager namespacing was added) and the current manager-namespaced
+ * pattern (`testuser+<6-char-tag>-<n>@verso.dev`).
+ *
+ * Cascade deletes automatically remove their DiagnosticResult, SalesCheckIn,
+ * UserStreak, and any other related rows (per prisma/schema.prisma's
+ * onDelete: Cascade).
  *
  * Usage (run locally with DATABASE_URL pointing at the Vercel Postgres DB):
  *
@@ -15,12 +19,17 @@
  *   - Asks for explicit "yes" confirmation before deleting.
  *   - Only matches emails ending in @verso.dev - real users are untouched.
  *   - The real manager account is never touched (their email doesn't match).
+ *   - Deletes across ALL managers. To delete only one manager's test team,
+ *     run the script and confirm the list of emails shown before typing "yes".
  */
 
 import { PrismaClient } from '@prisma/client';
 
 const TEST_EMAIL_DOMAIN = '@verso.dev';
-const TEST_EMAIL_PATTERN = /testuser\+\d+@verso\.dev$/;
+// Matches:
+//   - Legacy:   testuser+1@verso.dev, testuser+20@verso.dev
+//   - Namespaced: testuser+a3f2c1-1@verso.dev, testuser+mr7ogb-20@verso.dev
+const TEST_EMAIL_PATTERN = /^testuser\+([a-z0-9]+-)?\d+@verso\.dev$/;
 
 async function main() {
   console.log('--- Test team cleanup script ---');

@@ -18,6 +18,7 @@
  */
 
 import { PrismaClient, UserType } from '@prisma/client';
+import crypto from 'crypto';
 
 // --- Test-only configuration (NOT loaded by app code) -----------------------
 //
@@ -37,8 +38,26 @@ const MANAGER_CLERK_ID = process.env.SEED_MANAGER_CLERK_ID?.trim() || DEFAULT_MA
 const MANAGER_EMAIL_FALLBACK = process.env.SEED_MANAGER_EMAIL?.trim() || DEFAULT_MANAGER_EMAIL_FALLBACK;
 
 const TOTAL_TEST_USERS = 20;
-const TEST_EMAIL_PATTERN = /testuser\+\d+@verso\.dev$/;
 const TEST_EMAIL_DOMAIN = '@verso.dev';
+
+// Manager-specific email tag (6-char sha1 of clerkId) so each manager gets
+// their own 20 test users with globally-unique emails. Without this, two
+// managers would collide on `testuser+1@verso.dev` and the second seed
+// would fail on the email unique constraint.
+//
+// Example: clerkId "user_3G56QZINrK1vO2yGyWpY0f0PEV2" -> tag "a3f2c1"
+//          -> emails testuser+a3f2c1-1@verso.dev .. testuser+a3f2c1-20@verso.dev
+const MANAGER_TAG = crypto
+  .createHash('sha1')
+  .update(MANAGER_CLERK_ID)
+  .digest('hex')
+  .slice(0, 6);
+
+const TEST_EMAIL_PATTERN = new RegExp(`^testuser\\+${MANAGER_TAG}-\\d+@verso\\.dev$`);
+
+function testEmailFor(n: number): string {
+  return `testuser+${MANAGER_TAG}-${n}${TEST_EMAIL_DOMAIN}`;
+}
 
 // --- Random data pools ------------------------------------------------------
 
@@ -315,6 +334,8 @@ async function main() {
   console.log(`   Target manager clerkId: ${MANAGER_CLERK_ID}`);
   console.log(`   Target manager email:   ${MANAGER_EMAIL_FALLBACK}`);
   console.log(`   (defaults used if env vars not set: ${MANAGER_CLERK_ID === DEFAULT_MANAGER_CLERK_ID ? 'YES' : 'NO'})`);
+  console.log(`   Manager tag (email suffix): ${MANAGER_TAG}`);
+  console.log(`   Email pattern: testuser+${MANAGER_TAG}-<n>@verso.dev`);
   console.log('');
 
   if (!process.env.DATABASE_URL) {
@@ -368,21 +389,34 @@ async function main() {
     console.log('');
 
     // 2. Check for existing test users (idempotency).
-    console.log('🔎 Checking for existing test users...');
+    // Filter by managerId AND email pattern so that test users seeded under
+    // OTHER managers (different MANAGER_TAG) don't cause us to skip this
+    // manager's seed. Each manager gets their own 20 users.
+    console.log(`🔎 Checking for existing test users under this manager (tag=${MANAGER_TAG})...`);
     const existing = await prisma.user.findMany({
-      where: { email: { contains: TEST_EMAIL_DOMAIN } },
+      where: {
+        managerId: manager.id,
+        email: { contains: TEST_EMAIL_DOMAIN },
+      },
       select: { id: true, email: true },
     });
-    const existingEmails = new Set(existing.map((u) => u.email));
+    // Defensive: also apply the regex to filter out any @verso.dev emails
+    // that don't actually match this manager's tag pattern.
+    const existingEmails = new Set(
+      existing.filter((u) => TEST_EMAIL_PATTERN.test(u.email)).map((u) => u.email),
+    );
     if (existing.length > 0) {
-      console.log(`   Found ${existing.length} existing test users - will skip them.`);
+      console.log(`   Found ${existing.length} existing @verso.dev users under this manager.`);
+      console.log(`   Of those, ${existingEmails.size} match this manager's tag pattern (${MANAGER_TAG}).`);
     }
 
     // 3. Plan the 20 users. Pre-assign each an email + profile bucket so we can
     //    deterministically decide who gets skipped vs. created.
+    //    Email pattern is manager-specific (testuser+<tag>-<n>@verso.dev) so
+    //    multiple managers can each have their own 20 test users.
     const planned = Array.from({ length: TOTAL_TEST_USERS }, (_, i) => {
       const n = i + 1;
-      const email = `testuser+${n}${TEST_EMAIL_DOMAIN}`;
+      const email = testEmailFor(n);
       const bucket = PROFILE_DISTRIBUTION[i] ?? 'stable';
       return { n, email, bucket };
     });
